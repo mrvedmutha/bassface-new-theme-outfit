@@ -22,11 +22,11 @@ across sites anyway.
 
 Currently vendored:
 
-| File | Version | Global | Gzip |
-|---|---|---|---|
-| `assets/gsap.min.js` | 3.15.0 | `window.gsap` | ~28KB |
-| `assets/lenis.min.js` | 1.3.25 | `window.Lenis` | ~5KB |
-| `assets/lenis.css` | 1.3.25 | — | ~0.3KB |
+| File                  | Version | Global         | Gzip   |
+| --------------------- | ------- | -------------- | ------ |
+| `assets/gsap.min.js`  | 3.15.0  | `window.gsap`  | ~28KB  |
+| `assets/lenis.min.js` | 1.3.25  | `window.Lenis` | ~5KB   |
+| `assets/lenis.css`    | 1.3.25  | —              | ~0.3KB |
 
 **No ScrollTrigger.** Dawn's `assets/animations.js` already does IntersectionObserver-based scroll
 reveals with `prefers-reduced-motion` handling, wired into 8+ sections via `scroll-trigger`
@@ -84,14 +84,29 @@ npm run fix           # autofix js + css + formatting
 
 ## Git flow
 
+There is **no CI** on this repo, by choice. Commits and deploys are done by hand.
+
 ```
 git commit → husky pre-commit → lint-staged on staged files only (~2-5s)
-git push   → GitHub Actions: eslint + stylelint + prettier + theme check
+git push   → nothing runs
 ```
 
-The pre-commit hook is **fast feedback, not enforcement** — it is bypassable with `--no-verify`.
-CI is the gate. Deployment is a CI job and must never be a git hook.
+Two consequences worth being honest about:
 
-Deploy is not wired up yet. When it is: push to a **fixed theme ID**, never `--unpublished`
-(that flag creates a new theme every run and hits the 20-theme limit fast). See the comment block
-at the bottom of `.github/workflows/ci.yml`.
+1. The pre-commit hook is the **only** automated gate, and it is bypassable with `--no-verify`.
+   Nothing catches a bypassed commit afterwards.
+2. `lint-staged` only sees **staged files**. Theme Check and the full-tree sweep never run
+   automatically. Run them yourself before anything ships:
+
+   ```bash
+   npm run lint          # js + css + liquid + formatting, whole tree
+   ```
+
+### Deploying
+
+By hand, via the Shopify CLI. Push to a **fixed theme ID**, never `--unpublished` — that flag
+creates a brand new theme on every run and you'll hit the 20-theme limit fast.
+
+```bash
+shopify theme push --theme <DEV_THEME_ID> --path .
+```
