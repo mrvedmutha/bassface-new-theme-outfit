@@ -102,11 +102,19 @@ Two consequences worth being honest about:
    npm run lint          # js + css + liquid + formatting, whole tree
    ```
 
-### Deploying
+### Division of labour — this matters
 
-By hand, via the Shopify CLI. Push to a **fixed theme ID**, never `--unpublished` — that flag
-creates a brand new theme on every run and you'll hit the 20-theme limit fast.
+**Claude owns the git repo. Shreyans owns the store.**
 
-```bash
-shopify theme push --theme <DEV_THEME_ID> --path .
-```
+| Command                        | Who          | Why                                                                                                                |
+| ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `shopify theme check --path .` | **Claude**   | Read-only static analysis of local files. No auth, no store connection, nothing leaves the machine. It's a linter. |
+| `shopify theme push`           | **Shreyans** | Writes to the store                                                                                                |
+| `shopify theme pull`           | **Shreyans** | Overwrites local files from the store                                                                              |
+| `shopify theme dev`            | **Shreyans** | Opens an authenticated session against the store                                                                   |
+
+Claude does not run `push`, `pull` or `dev` — not to preview, not to "just check", not even with a
+`--theme` flag pointing at a dev theme. Shreyans reviews the theme code and deploys it himself.
+
+When deploying, push to a **fixed theme ID**, never `--unpublished` — that flag creates a brand new
+theme on every run and hits the 20-theme limit fast.
