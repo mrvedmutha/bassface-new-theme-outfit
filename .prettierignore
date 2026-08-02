@@ -10,3 +10,13 @@ assets/lenis.css
 # when we rewrite a file, drop it from the ignore lists in the same commit.
 assets/
 locales/
+
+# Shopify-owned JSON. The theme editor writes these, and `shopify theme pull`
+# brings them back in Shopify's own formatting. Letting Prettier reformat them
+# means every pull produces pure-formatting churn and avoidable conflicts.
+# settings_data.json also carries a /* */ header comment, so it is JSONC rather
+# than strict JSON.
+config/settings_data.json
+sections/*.json
+templates/*.json
+templates/customers/*.json
