@@ -1,0 +1,12 @@
+node_modules/
+package-lock.json
+
+# Vendored third-party builds — never reformat
+assets/gsap.min.js
+assets/lenis.min.js
+assets/lenis.css
+
+# Dawn stock files. Same ratchet as eslint.config.mjs and .stylelintrc.json:
+# when we rewrite a file, drop it from the ignore lists in the same commit.
+assets/
+locales/
