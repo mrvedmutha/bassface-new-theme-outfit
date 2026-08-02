@@ -1,0 +1,64 @@
+{%- comment -%}
+  Preloader — rendered from layout/theme.liquid as the first thing inside <body>
+  so it covers the page before anything else can paint.
+
+  Configured from Theme settings -> Preloader (config/settings_schema.json), not
+  a section: it belongs to the layout rather than to any one template, so it has
+  no business appearing in the section list of the home page.
+
+  Styles are in assets/bf-preloader.css, pulled in from <head> where being
+  render-blocking is the correct behaviour for a preloader. Colours arrive as
+  custom properties set inline below, so that file stays static and cacheable.
+{%- endcomment -%}
+
+{%- if settings.preloader_enabled -%}
+  {%- comment -%}
+    Runs as this snippet parses, before any page content below it can paint, so
+    there is no frame where the document is scrollable and uncovered.
+  {%- endcomment -%}
+  <script>
+    document.documentElement.classList.add('is-preloading');
+  </script>
+
+  <bf-preloader data-once-per-session="{{ settings.preloader_once_per_session }}">
+    <div
+      class="preloader"
+      style="--preloader-bg: {{ settings.preloader_background_color }}; --preloader-mark: {{ settings.preloader_mark_color }};"
+    >
+      <div class="preloader__stage">
+        <div class="preloader__cards is-hidden">
+          {%- if settings.preloader_image_source == 'collection' -%}
+            {%- for product in settings.preloader_collection.products limit: 6 -%}
+              {%- if product.featured_image -%}
+                {%- render 'bf-preloader-card', image: product.featured_image -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- else -%}
+            {%- for i in (1..6) -%}
+              {%- assign key = 'preloader_image_' | append: i -%}
+              {%- assign image = settings[key] -%}
+              {%- if image != blank -%}
+                {%- render 'bf-preloader-card', image: image -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endif -%}
+        </div>
+
+        <div class="preloader__mark-mask">
+          {%- comment -%}
+            letter_class is what lets the JS and CSS find the individual letters.
+            Without it the paths carry only bf-wordmark__letter and nothing
+            animates.
+          {%- endcomment -%}
+          {%- render 'bf-wordmark', class: 'preloader__mark is-hidden', letter_class: 'preloader__mark-letter' -%}
+        </div>
+
+        <div class="preloader__counter-mask">
+          <span class="preloader__counter">000</span>
+        </div>
+      </div>
+    </div>
+  </bf-preloader>
+
+  <script src="{{ 'bf-preloader.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}

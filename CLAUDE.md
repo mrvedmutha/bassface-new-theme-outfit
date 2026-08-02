@@ -32,6 +32,39 @@ Currently vendored:
 reveals with `prefers-reduced-motion` handling, wired into 8+ sections via `scroll-trigger`
 attributes. Use that before reaching for a plugin.
 
+## File naming — every custom file starts with `bf-`
+
+**Anything we write carries a `bf-` prefix.** No exceptions. It's how a Bassface file is told apart
+from a Dawn stock file at a glance, in a flat `assets/` folder holding 100+ files.
+
+| Kind    | Path                        |
+| ------- | --------------------------- |
+| Section | `sections/bf-<name>.liquid` |
+| Snippet | `snippets/bf-<name>.liquid` |
+| Styles  | `assets/bf-<name>.css`      |
+| Script  | `assets/bf-<name>.js`       |
+
+The four files of one component share the same `<name>`. Custom element tags match too:
+`assets/bf-preloader.js` registers `<bf-preloader>`.
+
+Dawn's stock files keep their existing names — never rename them. The prefix is for new work only,
+which also means `git status` and the legacy ignore lists stay easy to read.
+
+**BEM block names drop the prefix.** `assets/bf-preloader.css` defines the block `preloader`, not
+`bf-preloader` — the prefix is a filesystem convention, not a CSS one.
+
+## Layout vs section
+
+Anything that belongs to the **layout** rather than to one template — preloader, cursor, page
+transitions — is a **snippet rendered from `theme.liquid`**, configured from
+`config/settings_schema.json` under Theme settings.
+
+Do not make it a section. A static section rendered from `theme.liquid` shows up in the section
+list of whatever template the merchant happens to be editing, which reads as though the preloader
+belongs to the home page. Theme settings is the correct home for a global element.
+
+Sections are for things that live inside `content_for_layout` and can be reordered per template.
+
 ## CSS — BEM, enforced
 
 `block`, `block__element`, `block--modifier`. Kebab-case within each part.

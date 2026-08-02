@@ -8,6 +8,101 @@
     "theme_support_url": "https://support.shopify.com/"
   },
   {
+    "name": "Preloader",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "preloader_enabled",
+        "label": "Enable preloader",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "preloader_once_per_session",
+        "label": "Show only once per session",
+        "info": "Off means the animation plays on every page load, adding ~4.8s before content on every navigation.",
+        "default": false
+      },
+      {
+        "type": "header",
+        "content": "Images"
+      },
+      {
+        "type": "select",
+        "id": "preloader_image_source",
+        "label": "Image source",
+        "options": [
+          {
+            "value": "custom",
+            "label": "Custom images"
+          },
+          {
+            "value": "collection",
+            "label": "Collection products"
+          }
+        ],
+        "default": "custom"
+      },
+      {
+        "type": "collection",
+        "id": "preloader_collection",
+        "label": "Collection",
+        "info": "Uses the featured image of the first 6 products."
+      },
+      {
+        "type": "paragraph",
+        "content": "Up to 6 images. Empty slots are skipped. Portrait 9:12 works best — around 900x1200."
+      },
+      {
+        "type": "image_picker",
+        "id": "preloader_image_1",
+        "label": "Image 1"
+      },
+      {
+        "type": "image_picker",
+        "id": "preloader_image_2",
+        "label": "Image 2"
+      },
+      {
+        "type": "image_picker",
+        "id": "preloader_image_3",
+        "label": "Image 3"
+      },
+      {
+        "type": "image_picker",
+        "id": "preloader_image_4",
+        "label": "Image 4"
+      },
+      {
+        "type": "image_picker",
+        "id": "preloader_image_5",
+        "label": "Image 5"
+      },
+      {
+        "type": "image_picker",
+        "id": "preloader_image_6",
+        "label": "Image 6"
+      },
+      {
+        "type": "header",
+        "content": "Colours"
+      },
+      {
+        "type": "color",
+        "id": "preloader_background_color",
+        "label": "Background",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "preloader_mark_color",
+        "label": "Wordmark and counter",
+        "info": "Blends with difference over the images, so it inverts against bright photos.",
+        "default": "#EDE4DD"
+      }
+    ]
+  },
+  {
     "name": "t:settings_schema.logo.name",
     "settings": [
       {
