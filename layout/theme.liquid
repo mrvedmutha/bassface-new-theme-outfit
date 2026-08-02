@@ -67,6 +67,13 @@
       <script src="{{ 'animations.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
 
+    {%- comment -%}
+      Deliberately render-blocking. A preloader is the one case where that is
+      correct: nothing may paint before these rules exist, or the page flashes
+      for a frame before the panel covers it.
+    {%- endcomment -%}
+    {{ 'bf-preloader.css' | asset_url | stylesheet_tag }}
+
     {{ content_for_header }}
 
     {%- liquid
@@ -326,6 +333,9 @@
   </head>
 
   <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
+    {%- comment -%} First in <body> so it covers the page before anything below can paint. {%- endcomment -%}
+    {% section 'preloader' %}
+
     <a class="skip-to-content-link button visually-hidden" href="#MainContent">
       {{ 'accessibility.skip_to_text' | t }}
     </a>

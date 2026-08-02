@@ -1,0 +1,128 @@
+/* @define preloader */
+
+/*
+ * Loaded from <head> in theme.liquid, deliberately render-blocking.
+ * A preloader is the one case where that is correct: nothing may paint before
+ * these rules exist, or the page flashes for a frame before the panel covers it.
+ * The file is ~2KB on Shopify's CDN over an already-open connection.
+ *
+ * Colours come in as custom properties set inline on .preloader by the section,
+ * so this file stays static and cacheable.
+ */
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--preloader-bg, #000);
+  color: var(--preloader-mark, #ede4dd);
+  clip-path: inset(0 0 0 0);
+  contain: layout paint style;
+}
+
+.preloader__stage {
+  position: relative;
+}
+
+/* Cards are viewport-centred so every one lands on the same point, stacking
+   into a scattered pile as each pops in at its own random tilt. */
+.preloader__cards {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  contain: layout paint style;
+}
+
+.preloader__card {
+  position: absolute;
+  width: 30vw;
+  aspect-ratio: 9 / 12;
+  height: auto;
+  object-fit: cover;
+  transform: scale(0) rotate(0deg);
+  backface-visibility: hidden;
+}
+
+/* overflow:hidden is the mask the letters rise into */
+.preloader__mark-mask {
+  overflow: hidden;
+}
+
+/* mix-blend-mode is what makes the wordmark read cream on black but invert to
+   dark wherever a bright card slides underneath it. It relies on `contain` on
+   .preloader to isolate the blend from the page behind. */
+.preloader__mark {
+  position: relative;
+  display: block;
+  width: min(70vw, 900px);
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+  fill: currentcolor;
+  mix-blend-mode: difference;
+}
+
+.preloader__mark-letter {
+  transform: translateY(110%);
+  transform-box: fill-box;
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+
+.preloader__counter-mask {
+  position: absolute;
+  top: 200%;
+  left: 80%;
+  overflow: hidden;
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.preloader__counter {
+  display: block;
+  color: currentcolor;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media screen and (width >= 750px) {
+  .preloader__card {
+    width: 12vw;
+  }
+
+  .preloader__mark {
+    width: min(46vw, 900px);
+  }
+
+  .preloader__counter-mask {
+    top: -40%;
+    left: 105%;
+  }
+}
+
+/* @end */
+
+/*
+ * State utilities live outside the component definition above, so they are not
+ * held to the BEM pattern — they are applied to elements the component does not
+ * own (<html>, <body>) and to component parts by JS.
+ */
+
+/* JS removes this once the intro timeline starts */
+.is-hidden {
+  visibility: hidden;
+}
+
+/* Scroll stays locked until the preloader hands control back. The class goes on
+   <html> synchronously as the section parses, before any content can paint.
+   `overflow` on the root element propagates to the viewport, so this alone
+   locks scrolling — no matching rule on <body> is needed. */
+.is-preloading {
+  height: 100%;
+  overflow: hidden;
+}
