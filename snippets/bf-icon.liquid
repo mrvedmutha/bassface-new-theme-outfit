@@ -1,0 +1,70 @@
+{%- comment -%}
+  Renders one Lucide icon as inline SVG.
+
+  Vendored as path data rather than an asset file or an icon font: these are the
+  ten glyphs the whole design uses, they are a few hundred bytes each, and inline
+  SVG is the only form that inherits `currentColor` from the surrounding theme.
+
+  No class is emitted. Dawn already defines 55 rules on `.icon`, so anything we
+  named would either collide or need a prefix the CSS convention forbids. Size
+  and colour come from the caller instead.
+
+  Accepts:
+    icon         - required, one of the names in the case below
+    size         - px, default 24. The UI Kit sizes icons 30-40% larger than the
+                   adjacent text: Lucide glyphs sit small inside their box.
+    stroke_width - default 2, Lucide's own default at 24px
+    label        - optional. Omit for decorative icons next to visible text
+                   (renders aria-hidden); pass a string when the icon is the
+                   only content, e.g. an icon-only button.
+
+  Usage:
+    {%- render 'bf-icon', icon: 'search', size: 20 -%}
+    {%- render 'bf-icon', icon: 'x', size: 24, label: 'Close' -%}
+{%- endcomment -%}
+
+{%- liquid
+  assign size = size | default: 24
+  assign stroke_width = stroke_width | default: 2
+-%}
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="{{ size }}"
+  height="{{ size }}"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="{{ stroke_width }}"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  {% if label != blank %}
+    role="img" aria-label="{{ label | escape }}"
+  {% else %}
+    aria-hidden="true" focusable="false"
+  {% endif %}
+>
+  {%- case icon -%}
+    {%- when 'arrow-right' -%}
+      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+    {%- when 'arrow-up-right' -%}
+      <path d="M7 7h10v10"/><path d="M7 17 17 7"/>
+    {%- when 'check' -%}
+      <path d="M20 6 9 17l-5-5"/>
+    {%- when 'chevron-down' -%}
+      <path d="m6 9 6 6 6-6"/>
+    {%- when 'circle-x' -%}
+      <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+    {%- when 'minus' -%}
+      <path d="M5 12h14"/>
+    {%- when 'plus' -%}
+      <path d="M5 12h14"/><path d="M12 5v14"/>
+    {%- when 'search' -%}
+      <path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>
+    {%- when 'sliders-horizontal' -%}
+      <path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/>
+      <path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/>
+      <path d="M8 12H3"/>
+    {%- when 'x' -%}
+      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+  {%- endcase -%}
+</svg>

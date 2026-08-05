@@ -1,0 +1,33 @@
+/* @define logo */
+
+/*
+ * The logo is painted as a CSS mask, not an <img> or inline SVG.
+ *
+ * The design needs the mark and wordmark in red, cream and black depending on
+ * the active theme, and inside the nav drawer they invert again. An <img> cannot
+ * follow `currentColor`, and inlining the mark costs 17KB of path data on every
+ * page. A mask keeps one cacheable file per shape and lets `background-color`
+ * do the colouring, so the logo tracks --bf-ink for free.
+ *
+ * Only the alpha channel of the source SVG is used, which is why the mask files
+ * are the plain black exports.
+ */
+
+.logo {
+  display: block;
+  background-color: currentcolor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+/* Caller sets width; aspect-ratio derives the height from the source viewBox. */
+.logo--mark {
+  aspect-ratio: 478.98 / 479.73;
+  mask-image: url("bf-logo-mark.svg");
+}
+
+.logo--wordmark {
+  aspect-ratio: 240.89 / 37.06;
+  mask-image: url("bf-logo-wordmark.svg");
+}

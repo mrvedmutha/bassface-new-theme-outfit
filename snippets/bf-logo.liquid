@@ -1,0 +1,30 @@
+{%- comment -%}
+  Renders the Bassface logo, coloured by the surrounding theme.
+
+  Painted as a CSS mask over `currentColor` (see assets/bf-logo.css), so one file
+  per shape serves red, cream and black — including inside an inverted drawer —
+  with no per-colour variants and no inline path data.
+
+  Accepts:
+    shape - 'mark' (the face) or 'wordmark' (the lettering). Default 'mark'.
+    width - CSS length, e.g. '30px'. Height follows from the source aspect ratio.
+    label - accessible name. Pass blank for a decorative instance sitting next to
+            a text link that already names the destination.
+
+  Usage:
+    {%- render 'bf-logo', shape: 'mark', width: '30px', label: shop.name -%}
+{%- endcomment -%}
+
+{%- liquid
+  assign shape = shape | default: 'mark'
+  assign width = width | default: '30px'
+-%}
+<span
+  class="logo logo--{{ shape }}"
+  style="width: {{ width }};"
+  {% if label != blank %}
+    role="img" aria-label="{{ label | escape }}"
+  {% else %}
+    aria-hidden="true"
+  {% endif %}
+></span>
