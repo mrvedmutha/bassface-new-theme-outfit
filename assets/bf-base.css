@@ -1,0 +1,391 @@
+/*
+ * bf-base.css — design tokens + element-level base for the Bassface redesign.
+ *
+ * Source of truth: the UI Kit frame (MWqVB) in new-design/pen/bassface-new-design.pen.
+ * Loaded AFTER Dawn's base.css in theme.liquid so it wins on source order without
+ * needing inflated specificity.
+ *
+ * No `@define` comment here on purpose: this file declares no BEM block. It is
+ * custom properties, @font-face and bare element selectors only. Component files
+ * carry their own `@define` and consume the tokens below. Do not add a class
+ * selector to this file — put it in the component's own stylesheet instead.
+ */
+
+/* ==========================================================================
+   Archivo — self-hosted, variable weight axis 100..900.
+   Two subsets, split exactly as Google splits them. `latin` covers $ £ € ¥ ¢;
+   `latin-ext` is what carries ₹ (U+20B9) and the rest of the Currency Symbols
+   block, so it only downloads on pages that actually price in one of them.
+   ========================================================================== */
+
+@font-face {
+  font-family: Archivo;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("archivo-latin.woff2") format("woff2");
+  unicode-range: u+0000-00ff, u+0131, u+0152-0153, u+02bb-02bc, u+02c6, u+02da, u+02dc, u+0304, u+0308,
+    u+0329, u+2000-206f, u+20ac, u+2122, u+2191, u+2193, u+2212, u+2215, u+feff, u+fffd;
+}
+
+@font-face {
+  font-family: Archivo;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("archivo-latin-ext.woff2") format("woff2");
+  unicode-range: u+0100-02ba, u+02bd-02c5, u+02c7-02cc, u+02ce-02d7, u+02dd-02ff, u+0304, u+0308,
+    u+0329, u+1d00-1dbf, u+1e00-1e9f, u+1ef2-1eff, u+2020, u+20a0-20ab, u+20ad-20c0, u+2113,
+    u+2c60-2c7f, u+a720-a7ff;
+}
+
+:root {
+  /* ------------------------------------------------------------------
+     Colour — two tokens per theme, not a palette.
+     Every surface in the system is one of three (surface, ink) pairs, and
+     drawers/overlays are the same pair swapped. Nothing else is needed:
+     "muted" is the ink at reduced alpha, and there is no grey anywhere.
+     ------------------------------------------------------------------ */
+  --bf-red: #ff0001;
+  --bf-cream: #ede4dd;
+  --bf-black: #000;
+
+  /* Red theme is the default. See [data-bf-theme] below for the other two.
+     Each theme spells out its own inverted pair against the raw colours rather
+     than deriving it with var(--bf-ink). A custom property is resolved on the
+     element that declares it and then inherits as a fixed value, so a derived
+     pair declared once here would stay stuck on the red theme's colours inside
+     a dark-themed subtree. */
+  --bf-surface: var(--bf-cream);
+  --bf-ink: var(--bf-red);
+  --bf-surface-invert: var(--bf-red);
+  --bf-ink-invert: var(--bf-cream);
+  --bf-ink-muted: color-mix(in srgb, var(--bf-ink) 55%, transparent);
+  --bf-hairline: color-mix(in srgb, var(--bf-ink) 35%, transparent);
+
+  /* Overlay scrim. Only ever black, only ever behind a modal or drawer. */
+  --bf-scrim: rgb(0 0 0 / 45%);
+
+  /* ------------------------------------------------------------------
+     Type — one family, one variable axis.
+     ------------------------------------------------------------------ */
+  --bf-font: "Archivo", "Helvetica Neue", helvetica, arial, sans-serif;
+  --bf-weight-regular: 400;
+  --bf-weight-medium: 500;
+  --bf-weight-bold: 700;
+  --bf-weight-extrabold: 800;
+  --bf-weight-black: 900;
+  --bf-leading-tight: 1;
+  --bf-leading-snug: 1.15;
+  --bf-leading-normal: 1.3;
+  --bf-leading-relaxed: 1.4;
+
+  /* Type scale. Sizes in rem against Dawn's 62.5% root (1rem = 10px), so the
+     merchant's body-scale setting and the visitor's browser font-size both
+     still apply. Tracking in em so it rides the size instead of drifting. */
+
+  /* 175 / 900 / -8.75 — footer big numeral */
+  --bf-text-hero-size: 17.5rem;
+  --bf-text-hero-weight: var(--bf-weight-black);
+  --bf-text-hero-tracking: -0.05em;
+
+  /* 48 / 500 / -1.2 — PDP, collection and search page titles. Steps to 36 below laptop. */
+  --bf-text-title-size: 4.8rem;
+  --bf-text-title-weight: var(--bf-weight-medium);
+  --bf-text-title-tracking: -0.025em;
+
+  /* 36 / 400 / 0 — primary product CTA. Deliberately does NOT scale down. */
+  --bf-text-cta-size: 3.6rem;
+  --bf-text-cta-weight: var(--bf-weight-regular);
+  --bf-text-cta-tracking: 0;
+
+  /* 32 / 900 / -0.8 — sale price. Compare-at uses the same size at 500 + strikethrough. */
+  --bf-text-price-size: 3.2rem;
+  --bf-text-price-weight: var(--bf-weight-black);
+  --bf-text-price-tracking: -0.025em;
+
+  /* 28 / 500 / -0.6 — full-screen search overlay input */
+  --bf-text-search-size: 2.8rem;
+  --bf-text-search-weight: var(--bf-weight-medium);
+  --bf-text-search-tracking: -0.0214em;
+
+  /* 24 / 400 / -0.6 — homepage band section headers */
+  --bf-text-subhead-size: 2.4rem;
+  --bf-text-subhead-weight: var(--bf-weight-regular);
+  --bf-text-subhead-tracking: -0.025em;
+
+  /* 22 / 700 / -0.3 — collection card title, accordion row, drawer heading */
+  --bf-text-card-title-size: 2.2rem;
+  --bf-text-card-title-weight: var(--bf-weight-bold);
+  --bf-text-card-title-tracking: -0.0136em;
+
+  /* 20 / 900 / -0.4 — PDP size and quantity section labels */
+  --bf-text-control-size: 2rem;
+  --bf-text-control-weight: var(--bf-weight-black);
+  --bf-text-control-tracking: -0.02em;
+
+  /* 18 / 900 / -0.3 — sidebar and drawer filter group labels */
+  --bf-text-group-title-size: 1.8rem;
+  --bf-text-group-title-weight: var(--bf-weight-black);
+  --bf-text-group-title-tracking: -0.0167em;
+
+  /* 16 / 400 / -0.2 — paragraphs and product copy. 700 for emphasis. */
+  --bf-text-body-size: 1.6rem;
+  --bf-text-body-weight: var(--bf-weight-regular);
+  --bf-text-body-tracking: -0.0125em;
+
+  /* 15 / 400 / -0.2 — nav links and toolbar controls. The most-used style here. */
+  --bf-text-ui-size: 1.5rem;
+  --bf-text-ui-weight: var(--bf-weight-regular);
+  --bf-text-ui-tracking: -0.0133em;
+
+  /* 13 / 400 / -0.2 — fine print, price-range inputs */
+  --bf-text-caption-size: 1.3rem;
+  --bf-text-caption-weight: var(--bf-weight-regular);
+  --bf-text-caption-tracking: -0.0154em;
+
+  /* 11 / 400 / +0.5 — product card category. The only uppercase tracked style. */
+  --bf-text-eyebrow-size: 1.1rem;
+  --bf-text-eyebrow-weight: var(--bf-weight-regular);
+  --bf-text-eyebrow-tracking: 0.0455em;
+
+  /* ------------------------------------------------------------------
+     Spacing — 4px base unit. The UI Kit permits nothing outside this scale
+     except one-off hero and footer numerals.
+     ------------------------------------------------------------------ */
+  --bf-space-4: 0.4rem;
+  --bf-space-6: 0.6rem;
+  --bf-space-8: 0.8rem;
+  --bf-space-10: 1rem;
+  --bf-space-12: 1.2rem;
+  --bf-space-14: 1.4rem;
+  --bf-space-16: 1.6rem;
+  --bf-space-20: 2rem;
+  --bf-space-24: 2.4rem;
+  --bf-space-26: 2.6rem;
+  --bf-space-28: 2.8rem;
+  --bf-space-32: 3.2rem;
+  --bf-space-40: 4rem;
+  --bf-space-64: 6.4rem;
+
+  /* ------------------------------------------------------------------
+     Borders — 1px is the only weight. 2px for PDP section breaks. Radius 0
+     everywhere except the checkbox.
+     ------------------------------------------------------------------ */
+  --bf-border-width: 1px;
+  --bf-border-width-section: 2px;
+  --bf-border: var(--bf-border-width) solid var(--bf-ink);
+  --bf-border-hairline: var(--bf-border-width) solid var(--bf-hairline);
+  --bf-radius: 0;
+  --bf-radius-checkbox: 3px;
+
+  /* ------------------------------------------------------------------
+     Layout. The design has no container element — content is the viewport
+     minus twice the page padding, which is what produces the board widths
+     1392 / 976 / 802 / 416 / 358. So --bf-page-max caps the OUTER edge at the
+     1440 reference breakpoint and the padding does the rest; at 1440 the
+     content lands on 1392 exactly.
+
+     There is deliberately no shared container class. Each component applies
+     the three lines itself, which keeps every block self-contained and avoids
+     inventing a global class name in a theme that already has `.page-width`:
+
+       max-width: var(--bf-page-max);
+       margin-inline: auto;
+       padding-inline: var(--bf-page-padding);
+
+     Breakpoint values are duplicated as literals in the @media rules below —
+     custom properties are not allowed in media queries.
+     ------------------------------------------------------------------ */
+  --bf-bp-mobile: 448px;
+  --bf-bp-tablet: 834px;
+  --bf-bp-laptop: 1024px;
+  --bf-bp-desktop: 1440px;
+  --bf-page-padding: var(--bf-space-16);
+  --bf-page-max: 144rem;
+
+  /* ------------------------------------------------------------------
+     Dawn bridge. Dawn's own stylesheets reference --font-body-family and
+     --font-heading-family in dozens of places (buttons, inputs, cards).
+     Repointing the two variables converts every one of those rules to Archivo
+     at once, which is far less brittle than overriding each selector.
+     ------------------------------------------------------------------ */
+  --font-body-family: var(--bf-font);
+  --font-heading-family: var(--bf-font);
+}
+
+/*
+ * Themes are scoped to whatever element carries the attribute, not just <html>.
+ * The page theme goes on <html>; a drawer, overlay or band can carry its own and
+ * everything nested inside it re-resolves against the new pair. `bf-invert`
+ * swaps the pair in place — that is exactly what the nav drawer does, since the
+ * drawer is always the opposite of the page it covers.
+ */
+
+/*
+ * Anything that redefines --bf-ink must also re-derive the values computed from
+ * it, for the same inherit-as-a-fixed-value reason described on :root above.
+ * Keep this selector list in sync with every rule below that sets --bf-ink.
+ */
+[data-bf-theme],
+[data-bf-invert] {
+  --bf-ink-muted: color-mix(in srgb, var(--bf-ink) 55%, transparent);
+  --bf-hairline: color-mix(in srgb, var(--bf-ink) 35%, transparent);
+  --bf-border: var(--bf-border-width) solid var(--bf-ink);
+  --bf-border-hairline: var(--bf-border-width) solid var(--bf-hairline);
+}
+
+[data-bf-theme] {
+  background-color: var(--bf-surface);
+  color: var(--bf-ink);
+}
+
+[data-bf-theme="red"] {
+  --bf-surface: var(--bf-cream);
+  --bf-ink: var(--bf-red);
+  --bf-surface-invert: var(--bf-red);
+  --bf-ink-invert: var(--bf-cream);
+}
+
+[data-bf-theme="light"] {
+  --bf-surface: var(--bf-cream);
+  --bf-ink: var(--bf-black);
+  --bf-surface-invert: var(--bf-black);
+  --bf-ink-invert: var(--bf-cream);
+}
+
+[data-bf-theme="dark"] {
+  --bf-surface: var(--bf-black);
+  --bf-ink: var(--bf-cream);
+  --bf-surface-invert: var(--bf-cream);
+  --bf-ink-invert: var(--bf-black);
+}
+
+/*
+ * Put this on a DESCENDANT of the themed element (the drawer inside <html>, which
+ * is always the case). The -invert pair is resolved on the ancestor, so an element
+ * carrying both data-bf-theme and data-bf-invert would invert the parent's theme,
+ * not its own.
+ */
+[data-bf-invert] {
+  --bf-surface: var(--bf-surface-invert);
+  --bf-ink: var(--bf-ink-invert);
+
+  background-color: var(--bf-surface);
+  color: var(--bf-ink);
+}
+
+@media screen and (width >= 1024px) {
+  :root {
+    --bf-page-padding: var(--bf-space-24);
+  }
+}
+
+/* Page title is the one step that scales; the CTA and size selector never do. */
+@media screen and (width < 1024px) {
+  :root {
+    --bf-text-title-size: 3.6rem;
+  }
+}
+
+/* ==========================================================================
+   Element base
+   ========================================================================== */
+
+body {
+  background-color: var(--bf-surface);
+  color: var(--bf-ink);
+  font-family: var(--bf-font);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dawn sizes headings off its own scale settings. Reset them to the kit's
+   steps; sections opt into a specific role with the tokens above. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: inherit;
+  font-family: inherit;
+  letter-spacing: var(--bf-text-card-title-tracking);
+  line-height: var(--bf-leading-snug);
+}
+
+h1 {
+  font-size: var(--bf-text-title-size);
+  font-weight: var(--bf-text-title-weight);
+  letter-spacing: var(--bf-text-title-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+h2 {
+  font-size: var(--bf-text-subhead-size);
+  font-weight: var(--bf-text-subhead-weight);
+  letter-spacing: var(--bf-text-subhead-tracking);
+}
+
+h3 {
+  font-size: var(--bf-text-card-title-size);
+  font-weight: var(--bf-text-card-title-weight);
+}
+
+h4,
+h5,
+h6 {
+  font-size: var(--bf-text-group-title-size);
+  font-weight: var(--bf-text-group-title-weight);
+  letter-spacing: var(--bf-text-group-title-tracking);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Underline is reserved: the UI Kit calls it out as the only underlined style,
+   used for "Clear Filters" / "Clear All". Body copy links keep it too. */
+p a,
+li a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+hr {
+  border: 0;
+  border-top: var(--bf-border);
+  margin: 0;
+}
+
+::selection {
+  background-color: var(--bf-ink);
+  color: var(--bf-surface);
+}
+
+:focus-visible {
+  outline: var(--bf-border-width-section) solid var(--bf-ink);
+  outline-offset: var(--bf-space-4);
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Inputs and buttons do not inherit type by default. */
+button,
+input,
+optgroup,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
