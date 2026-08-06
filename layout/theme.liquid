@@ -12,6 +12,29 @@
     {%- endif -%}
 
     {%- comment -%}
+      Deliberately inline and render-blocking, and it must stay ahead of every
+      stylesheet. The theme is a data-attribute on <html> that the tokens in
+      bf-base.css resolve against, so if it were set from a deferred script the
+      page would paint the default cream first and a returning dark-theme
+      visitor would see it flash. Same reasoning as the preloader CSS below.
+    {%- endcomment -%}
+    <script>
+      (() => {
+        const themes = ['red', 'light', 'dark'];
+        let theme = 'red';
+
+        try {
+          const stored = localStorage.getItem('bf-theme');
+          if (themes.includes(stored)) theme = stored;
+        } catch {
+          /* Safari private mode throws on read; the default already applies. */
+        }
+
+        document.documentElement.setAttribute('data-bf-theme', theme);
+      })();
+    </script>
+
+    {%- comment -%}
       Archivo is vendored into assets/ and is the only face the design uses, so
       Dawn's Shopify-CDN font pipeline (preconnect + font_face + preload) is gone.
       Only the latin subset is preloaded: latin-ext carries ₹ and the rest of the
@@ -318,7 +341,16 @@
     </script>
   </head>
 
-  <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
+  {%- comment -%}
+    Dawn's `gradient` class is deliberately absent. It paints the page from the
+    colour-scheme settings at class specificity, which outranks the bare `body`
+    rule in bf-base.css, so the page background never followed --bf-surface and
+    the theme switcher appeared to change text only. The design has one flat
+    surface per theme and no gradients, so the class has nothing to contribute —
+    dropping it also loses its `background-attachment: fixed`, which is a known
+    scroll cost on mobile.
+  {%- endcomment -%}
+  <body class="{% if settings.animations_hover_elements != 'none' %}animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
     {%- comment -%} First in <body> so it covers the page before anything below can paint. {%- endcomment -%}
     {%- render 'bf-preloader' -%}
 

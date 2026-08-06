@@ -1,0 +1,131 @@
+/* @define nav-drawer */
+
+/*
+ * Full-screen mobile drawer. Block is `nav-drawer`: Dawn holds `.drawer` (3
+ * rules) and `.menu-drawer` (10).
+ *
+ * The drawer always inverts the page it covers — red page gets a red drawer
+ * with cream ink, light page a black drawer, dark page a cream drawer. That
+ * flip is `data-bf-invert` from bf-base.css, set on the root element here, so
+ * this file never names a colour: everything reads --bf-ink / --bf-surface and
+ * resolves to whichever pair the invert produced.
+ */
+
+.nav-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--bf-space-32);
+  padding-inline: var(--bf-page-padding);
+  justify-content: space-between;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+/* `.is-open` is the state class JS toggles; :where() keeps the selector anchored
+   on the block for BEM linting without adding specificity. */
+.nav-drawer:where(.is-open) {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-drawer {
+    transition: none;
+  }
+}
+
+.nav-drawer__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-drawer__close {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: var(--bf-text-subhead-size);
+  font-weight: var(--bf-text-subhead-weight);
+  letter-spacing: var(--bf-text-subhead-tracking);
+  line-height: 1.33;
+  cursor: pointer;
+}
+
+.nav-drawer__menu {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--bf-space-40);
+}
+
+.nav-drawer__links {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * 60px is a documented one-off, not a step in the UI Kit scale — it is OUTFIT's
+ * text-6xl, carried over deliberately. Same status as the 175px footer numeral.
+ * It does not scale at 390; that board is a straight copy at 358 content width.
+ */
+.nav-drawer__link {
+  --nav-drawer-link-size: 6rem;
+
+  display: block;
+  padding-block: var(--bf-space-8);
+  color: inherit;
+  font-size: var(--nav-drawer-link-size);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  text-decoration: none;
+}
+
+.nav-drawer__currency {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  padding-top: var(--bf-space-32);
+  font-size: var(--bf-text-subhead-size);
+  letter-spacing: var(--bf-text-subhead-tracking);
+}
+
+.nav-drawer__switcher {
+  padding-top: var(--bf-space-32);
+}
+
+.nav-drawer__footer {
+  display: flex;
+  gap: var(--bf-space-16);
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.nav-drawer__brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-10);
+}
+
+/* Copyright and address are 13/700 at 0.7 opacity in the design. */
+.nav-drawer__fine {
+  margin: 0;
+  opacity: 0.7;
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-caption-tracking);
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.nav-drawer__fine--address {
+  text-align: right;
+}

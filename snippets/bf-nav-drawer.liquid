@@ -1,0 +1,77 @@
+{%- comment -%}
+  Full-screen mobile navigation drawer.
+
+  Carries `data-bf-invert`, so its surface and ink are the page theme's pair
+  swapped — a red page opens a red drawer with cream ink, a light page opens a
+  black one, a dark page opens a cream one. No colour is named here.
+
+  Items mirror the desktop nav: Shop · Search · Login · Bag. Bag and Search are
+  deliberately not repeated in the top bar; only the logo and Close sit there.
+
+  Accepts:
+    menu    - a linklist, rendered ahead of the functional items
+    address - store address for the drawer footer
+
+  Usage:
+    {%- render 'bf-nav-drawer', menu: section.settings.menu, address: section.settings.address -%}
+{%- endcomment -%}
+
+<bf-nav-drawer id="BFNavDrawer" class="nav-drawer" data-bf-invert>
+  <div class="nav-drawer__top">
+    <a class="masthead__logo" href="{{ routes.root_url }}">
+      {%- render 'bf-logo', shape: 'mark', width: '44px', label: shop.name -%}
+    </a>
+
+    <button type="button" class="nav-drawer__close" data-bf-drawer-close>
+      {{ 'Close' }}
+    </button>
+  </div>
+
+  <div class="nav-drawer__menu">
+    <ul class="nav-drawer__links">
+      {%- for link in menu.links -%}
+        <li>
+          <a class="nav-drawer__link" href="{{ link.url }}">{{ link.title }}</a>
+        </li>
+      {%- endfor -%}
+
+      <li>
+        <a class="nav-drawer__link" href="{{ routes.search_url }}">{{ 'Search' }}</a>
+      </li>
+
+      {%- if shop.customer_accounts_enabled -%}
+        <li>
+          <a class="nav-drawer__link" href="{{ routes.account_url }}">
+            {%- if customer %}{{ 'Account' }}{% else %}{{ 'Login' }}{% endif -%}
+          </a>
+        </li>
+      {%- endif -%}
+
+      <li>
+        <a class="nav-drawer__link" href="{{ routes.cart_url }}">{{- 'Bag' }} ({{ cart.item_count }}) </a>
+      </li>
+    </ul>
+
+    {%- if localization.available_countries.size > 1 -%}
+      <div class="nav-drawer__currency">
+        {{ cart.currency.symbol }} · {{ cart.currency.iso_code }}
+        {%- render 'bf-icon', icon: 'chevron-down', size: 18 -%}
+      </div>
+    {%- endif -%}
+
+    <div class="nav-drawer__switcher">
+      {%- render 'bf-theme-switcher', size: 'lg' -%}
+    </div>
+  </div>
+
+  <div class="nav-drawer__footer">
+    <div class="nav-drawer__brand">
+      {%- render 'bf-logo', shape: 'wordmark', width: '150px', label: shop.name -%}
+      <p class="nav-drawer__fine">{{- 'All rights reserved' }} &copy; {{ 'now' | date: '%y' -}}</p>
+    </div>
+
+    {%- if address != blank -%}
+      <p class="nav-drawer__fine nav-drawer__fine--address">{{ address }}</p>
+    {%- endif -%}
+  </div>
+</bf-nav-drawer>

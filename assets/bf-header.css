@@ -1,0 +1,122 @@
+/* @define masthead */
+
+/*
+ * Block is `masthead`, not `header`: Dawn already defines 13 rules on `.header`
+ * and this theme loads both stylesheets. `masthead` has no collisions.
+ *
+ * Two clusters are rendered and swapped at 750px. The desktop set (Shop /
+ * Search / Login / Bag / Currency + switcher) and the mobile set (Menu / Bag /
+ * Search) differ in both membership and order, so reordering one with flex
+ * `order` would be less readable than rendering the two the design actually
+ * draws. 750px is Dawn's own breakpoint and falls inside the untested gap
+ * between the 448 and 834 boards.
+ */
+
+.masthead {
+  display: block;
+  background-color: var(--bf-surface);
+  color: var(--bf-ink);
+}
+
+/* Full-bleed by request: no --bf-page-max cap, so the nav spans the viewport at
+   any width and only the page padding holds it off the edges. */
+.masthead__inner {
+  display: flex;
+  padding-block: var(--bf-space-32);
+  padding-inline: var(--bf-page-padding);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.masthead__logo {
+  display: block;
+  flex: none;
+  color: inherit;
+}
+
+.masthead__cluster {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+}
+
+.masthead__links {
+  display: flex;
+  gap: var(--bf-space-32);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Nav labels are the 24px subhead step, not the 15px UI step the kit's blurb
+ * suggests — every label in both nav components is 24/400/-0.6.
+ */
+.masthead__link {
+  display: inline-flex;
+  gap: var(--bf-space-4);
+  align-items: center;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: var(--bf-text-subhead-size);
+  font-weight: var(--bf-text-subhead-weight);
+  letter-spacing: var(--bf-text-subhead-tracking);
+  line-height: 1.33;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.masthead__currency {
+  position: relative;
+  display: inline-flex;
+  gap: var(--bf-space-4);
+  align-items: center;
+}
+
+/*
+ * The native select sits invisibly over the label so the control keeps the
+ * platform's own picker and keyboard behaviour. Styling the label instead of
+ * the select is what keeps Dawn's disclosure CSS out of this header.
+ */
+.masthead__currency-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.masthead__cluster--mobile {
+  display: none;
+}
+
+@media screen and (width < 750px) {
+  .masthead__inner {
+    padding-inline: var(--bf-page-padding);
+  }
+
+  .masthead__cluster--desktop {
+    display: none;
+  }
+
+  .masthead__cluster--mobile {
+    display: flex;
+  }
+
+  .masthead__links {
+    gap: var(--bf-space-32);
+  }
+}
+
+@media screen and (width >= 1024px) {
+  .masthead__links {
+    gap: var(--bf-space-64);
+  }
+
+  .masthead__cluster {
+    gap: var(--bf-space-64);
+  }
+}

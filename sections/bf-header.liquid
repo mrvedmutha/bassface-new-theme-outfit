@@ -1,0 +1,150 @@
+{{ 'bf-header.css' | asset_url | stylesheet_tag }}
+{{ 'bf-nav-drawer.css' | asset_url | stylesheet_tag }}
+{{ 'bf-theme-switcher.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-theme-switcher.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-nav-drawer.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-header.js' | asset_url }}" defer="defer"></script>
+
+{%- comment -%}
+  Two clusters are rendered and swapped in CSS at 750px. The desktop set
+  (Shop / Search / Login / Bag / Currency + switcher) and the mobile set
+  (Menu / Bag / Search) differ in membership and in order, so rendering the two
+  the design actually draws is clearer than reordering one with flex `order`.
+
+  Only "Shop" comes from the menu — Search, Login and Bag are functional
+  destinations, not merchant-editable links, so they are not menu items.
+{%- endcomment -%}
+
+{%- liquid
+  assign menu = section.settings.menu
+  assign show_currency = false
+  if section.settings.show_currency and localization.available_countries.size > 1
+    assign show_currency = true
+  endif
+-%}
+
+<header class="masthead">
+  <div class="masthead__inner">
+    <a class="masthead__logo" href="{{ routes.root_url }}">
+      {%- render 'bf-logo', shape: 'mark', width: '44px', label: shop.name -%}
+    </a>
+
+    <div class="masthead__cluster masthead__cluster--desktop">
+      <ul class="masthead__links">
+        {%- for link in menu.links -%}
+          <li>
+            <a class="masthead__link" href="{{ link.url }}">{{ link.title }}</a>
+          </li>
+        {%- endfor -%}
+
+        <li>
+          <a class="masthead__link" href="{{ routes.search_url }}">{{ 'Search' }}</a>
+        </li>
+
+        {%- if shop.customer_accounts_enabled -%}
+          <li>
+            <a class="masthead__link" href="{{ routes.account_url }}">
+              {%- if customer %}{{ 'Account' }}{% else %}{{ 'Login' }}{% endif -%}
+            </a>
+          </li>
+        {%- endif -%}
+
+        <li>
+          <a class="masthead__link" href="{{ routes.cart_url }}">{{- 'Bag' }} ({{ cart.item_count }}) </a>
+        </li>
+
+        {%- if show_currency -%}
+          <li>
+            {%- form 'localization', class: 'masthead__currency' -%}
+              <span class="masthead__link">
+                {{ cart.currency.symbol }} · {{ cart.currency.iso_code }}
+                {%- render 'bf-icon', icon: 'chevron-down', size: 18 -%}
+              </span>
+
+              {%- comment -%}
+                A native select overlaid on the label keeps the platform picker
+                and its keyboard behaviour, and keeps Dawn's disclosure CSS out
+                of this header. bf-header.js submits the form on change.
+              {%- endcomment -%}
+              <select
+                class="masthead__currency-select"
+                name="country_code"
+                aria-label="{{ 'localization.country_label' | t }}"
+              >
+                {%- for country in localization.available_countries -%}
+                  <option
+                    value="{{ country.iso_code }}"
+                    {% if country.iso_code == localization.country.iso_code %}
+                      selected
+                    {% endif %}
+                  >
+                    {{ country.name }} · {{ country.currency.iso_code }}
+                  </option>
+                {%- endfor -%}
+              </select>
+            {%- endform -%}
+          </li>
+        {%- endif -%}
+      </ul>
+
+      {%- render 'bf-theme-switcher' -%}
+    </div>
+
+    <div class="masthead__cluster masthead__cluster--mobile">
+      <ul class="masthead__links">
+        <li>
+          <button
+            type="button"
+            class="masthead__link"
+            aria-controls="BFNavDrawer"
+            aria-expanded="false"
+          >
+            {{ 'Menu' }}
+          </button>
+        </li>
+
+        <li>
+          <a class="masthead__link" href="{{ routes.cart_url }}">{{- 'Bag' }} ({{ cart.item_count }}) </a>
+        </li>
+
+        <li>
+          <a class="masthead__link" href="{{ routes.search_url }}">{{ 'Search' }}</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+{%- render 'bf-nav-drawer', menu: menu, address: section.settings.address -%}
+
+{% schema %}
+{
+  "name": "Header",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "default": "main-menu",
+      "label": "Menu",
+      "info": "Only the menu's own links appear. Search, Login and Bag are always present."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_currency",
+      "default": true,
+      "label": "Show currency selector",
+      "info": "Only appears when the store sells in more than one country."
+    },
+    {
+      "type": "textarea",
+      "id": "address",
+      "default": "22/1, Kandappa Street\nSowcarpet, Parktown\nChennai 600001, India",
+      "label": "Drawer address"
+    }
+  ],
+  "enabled_on": {
+    "groups": ["header"]
+  }
+}
+{% endschema %}

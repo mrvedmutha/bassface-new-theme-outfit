@@ -1,0 +1,111 @@
+/* @define theme-switcher */
+
+/*
+ * Three circles — Dark, Light, Red, in that order — marking the page theme.
+ *
+ * Two rules from the design are easy to get backwards, and both are handled
+ * here rather than in JS:
+ *
+ * 1. A circle whose fill equals the surface it sits on would vanish, so it gets
+ *    a 1px ring in the ink colour. Every other circle has none. Inside the
+ *    drawer the surface flips, so the ring moves to a different circle.
+ * 2. The active dot marks the PAGE theme, not the colour of the surface it sits
+ *    on. On the black drawer the dot is on Light, on the cream drawer it is on
+ *    Dark. That looks inverted at a glance and is correct.
+ *
+ * The dot's own colour contrasts with the circle it sits on, not the surface.
+ */
+
+/*
+ * Circles are 24px, not the design's 18px. 18px buttons fail WCAG 2.5.8 Target
+ * Size (Minimum), which requires 24x24 CSS px, and at 18px they also read as
+ * undersized next to the 24px nav labels. 24px is the smallest value that is
+ * both conformant and visually balanced, so the deviation is the minimum one.
+ */
+.theme-switcher {
+  --theme-switcher-size: 24px;
+  --theme-switcher-gap: 6px;
+  --theme-switcher-dot: 6px;
+
+  display: flex;
+  gap: var(--theme-switcher-gap);
+  align-items: center;
+}
+
+/* Drawer size: 68px circles, gap 20, 8px dot — 244 wide in total. */
+.theme-switcher--lg {
+  --theme-switcher-size: 68px;
+  --theme-switcher-gap: 20px;
+  --theme-switcher-dot: 8px;
+}
+
+.theme-switcher__dot {
+  position: relative;
+  width: var(--theme-switcher-size);
+  height: var(--theme-switcher-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.theme-switcher__dot--dark {
+  background-color: var(--bf-black);
+}
+
+.theme-switcher__dot--light {
+  background-color: var(--bf-cream);
+}
+
+.theme-switcher__dot--red {
+  background-color: var(--bf-red);
+}
+
+.theme-switcher__dot[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--theme-switcher-dot);
+  height: var(--theme-switcher-dot);
+  margin: calc(var(--theme-switcher-dot) / -2);
+  border-radius: 50%;
+}
+
+.theme-switcher__dot--dark[aria-pressed="true"]::after,
+.theme-switcher__dot--red[aria-pressed="true"]::after {
+  background-color: var(--bf-cream);
+}
+
+.theme-switcher__dot--light[aria-pressed="true"]::after {
+  background-color: var(--bf-black);
+}
+
+/*
+ * The ring depends on the surrounding theme, which normally means an ancestor
+ * selector — but BEM linting requires every selector to start with the block.
+ * `:where()` carries the context as a zero-specificity suffix instead, so all
+ * three rules below land on (0,1,0) and plain source order decides: the page
+ * sets a ring, the drawer clears it, the drawer sets its own.
+ */
+
+/* On the page. Red and Light both sit on cream; Dark sits on black. */
+.theme-switcher__dot--light:where([data-bf-theme="red"] *, [data-bf-theme="light"] *),
+.theme-switcher__dot--dark:where([data-bf-theme="dark"] *) {
+  box-shadow: inset 0 0 0 var(--bf-border-width) var(--bf-ink);
+}
+
+/* Inside the drawer the surface is the page's ink, so that ring no longer applies. */
+.theme-switcher__dot--light:where(
+    [data-bf-theme="red"] [data-bf-invert] *,
+    [data-bf-theme="light"] [data-bf-invert] *
+  ),
+.theme-switcher__dot--dark:where([data-bf-theme="dark"] [data-bf-invert] *) {
+  box-shadow: none;
+}
+
+.theme-switcher__dot--red:where([data-bf-theme="red"] [data-bf-invert] *),
+.theme-switcher__dot--dark:where([data-bf-theme="light"] [data-bf-invert] *),
+.theme-switcher__dot--light:where([data-bf-theme="dark"] [data-bf-invert] *) {
+  box-shadow: inset 0 0 0 var(--bf-border-width) var(--bf-ink);
+}

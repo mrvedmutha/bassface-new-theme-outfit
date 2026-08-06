@@ -1,0 +1,34 @@
+{%- comment -%}
+  Renders the three-circle page theme control.
+
+  Appears in both the nav and the open drawer, so it lives in a snippet — the
+  two instances stay in sync through `data-bf-theme` on <html>, not through
+  markup. Order is fixed: Dark, Light, Red.
+
+  Accepts:
+    size - 'sm' (18px circles, the nav) or 'lg' (68px, the drawer). Default 'sm'.
+
+  Usage:
+    {%- render 'bf-theme-switcher', size: 'lg' -%}
+{%- endcomment -%}
+
+{%- liquid
+  assign size = size | default: 'sm'
+  assign themes = 'dark,light,red' | split: ','
+-%}
+<bf-theme-switcher
+  class="theme-switcher{% if size == 'lg' %} theme-switcher--lg{% endif %}"
+  role="group"
+  aria-label="{{ 'Colour theme' }}"
+>
+  {%- for theme in themes -%}
+    <button
+      type="button"
+      class="theme-switcher__dot theme-switcher__dot--{{ theme }}"
+      data-bf-theme-value="{{ theme }}"
+      aria-pressed="false"
+    >
+      <span class="visually-hidden">{{ theme | capitalize }}</span>
+    </button>
+  {%- endfor -%}
+</bf-theme-switcher>
