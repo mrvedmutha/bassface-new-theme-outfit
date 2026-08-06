@@ -56,7 +56,9 @@
               <p class="colophon__tagline">{{ section.settings.tagline_line_1 | escape }}</p>
             {%- endif -%}
             {%- if section.settings.tagline_line_2 != blank -%}
-              <p class="colophon__tagline">{{ section.settings.tagline_line_2 | escape }}</p>
+              <p class="colophon__tagline colophon__tagline--secondary">
+                {{- section.settings.tagline_line_2 | escape -}}
+              </p>
             {%- endif -%}
           </div>
 

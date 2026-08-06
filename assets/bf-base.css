@@ -44,7 +44,9 @@
      Colour — two tokens per theme, not a palette.
      Every surface in the system is one of three (surface, ink) pairs, and
      drawers/overlays are the same pair swapped. Nothing else is needed:
-     "muted" is the ink at reduced alpha, and there is no grey anywhere.
+     "muted" is the ink at reduced alpha. The one exception is --bf-grey,
+     a flat secondary ink the light and dark boards use for de-emphasised
+     display type; the red theme has no equivalent.
      ------------------------------------------------------------------ */
   --bf-red: #ff0001;
   --bf-cream: #ede4dd;
@@ -62,6 +64,17 @@
   --bf-ink-invert: var(--bf-cream);
   --bf-ink-muted: color-mix(in srgb, var(--bf-ink) 55%, transparent);
   --bf-hairline: color-mix(in srgb, var(--bf-ink) 35%, transparent);
+
+  /* A second, quieter ink for type that drops back from the primary — the
+     footer tagline's second line is the first user. NOT --bf-ink-muted: that is
+     the ink at 55% alpha, which over cream lands on #6B6763 and over black on
+     #827D7A, neither of which is the flat #5A5A5A the boards specify. It is a
+     colour in its own right, so each theme states it.
+
+     The red theme has no secondary: both tagline lines are the same red on the
+     boards, so it resolves to --bf-ink and the distinction disappears. */
+  --bf-ink-secondary: var(--bf-ink);
+  --bf-grey: #5a5a5a;
 
   /* Ink for a layer painted with `mix-blend-mode: difference` — the header.
      Difference gives `result = |backdrop - source|`, so a blended layer cannot
@@ -255,6 +268,10 @@
   --bf-hairline: color-mix(in srgb, var(--bf-ink) 35%, transparent);
   --bf-border: var(--bf-border-width) solid var(--bf-ink);
   --bf-border-hairline: var(--bf-border-width) solid var(--bf-hairline);
+
+  /* Defaults to the primary ink; light and dark override it below. Re-derived
+     here for the same reason as the others — it reads --bf-ink. */
+  --bf-ink-secondary: var(--bf-ink);
 }
 
 [data-bf-theme] {
@@ -276,6 +293,7 @@
   --bf-surface-invert: var(--bf-black);
   --bf-ink-invert: var(--bf-cream);
   --bf-ink-blend: var(--bf-cream);
+  --bf-ink-secondary: var(--bf-grey);
 }
 
 [data-bf-theme="dark"] {
@@ -284,6 +302,7 @@
   --bf-surface-invert: var(--bf-cream);
   --bf-ink-invert: var(--bf-black);
   --bf-ink-blend: var(--bf-cream);
+  --bf-ink-secondary: var(--bf-grey);
 }
 
 /*

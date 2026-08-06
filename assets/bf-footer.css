@@ -98,6 +98,16 @@
   line-height: var(--bf-leading-tight);
 }
 
+/*
+ * The tagline's second line drops back to the secondary ink. On the light and
+ * dark boards that is a flat grey; on red both lines are the same red, and
+ * --bf-ink-secondary resolves to --bf-ink there, so this rule is a no-op rather
+ * than something the red theme has to opt out of.
+ */
+.colophon__tagline--secondary {
+  color: var(--bf-ink-secondary);
+}
+
 .colophon__lockup {
   display: flex;
   gap: var(--bf-space-12);
@@ -238,9 +248,26 @@
  * mobile footer component at 448 and 390, and the desktop one from 834 up.
  */
 
+/*
+ * From here up the masthead is a row — tagline left, logo + numeral right — and
+ * the three sizes below interpolate between the board anchors instead of
+ * stepping at them. Stepping left a dead zone: a 1380px laptop got the 1024
+ * board's 58px tagline when the 1440 board wants 82.44px, so the row's centre
+ * opened into a 523px hole against the design's ~245px.
+ *
+ * Anchors, read off the boards: tagline 53 / 58 / 82.44 and numeral 123 / 123 /
+ * 175 and mark 105 / 105 / 150 at 834 / 1024 / 1440. Two segments, because the
+ * numeral and mark are flat to 1024 and only climb after it.
+ *
+ * Each clamp's floor and ceiling are the anchors themselves, so the boards are
+ * still hit exactly at 834, 1024 and 1440 — the interpolation only fills the
+ * gaps between them. Every preferred value keeps a rem term so the row still
+ * responds to the visitor's font-size setting rather than to vw alone.
+ */
+
 @media screen and (width >= 834px) {
   .colophon {
-    --colophon-tagline-size: 5.3rem;
+    --colophon-tagline-size: clamp(5.3rem, 3.105rem + 2.6316vw, 5.8rem);
     --colophon-numeral-size: 12.3rem;
     --colophon-mark-size: 105px;
     --colophon-wordmark-size: 105px;
@@ -271,9 +298,26 @@
 
 /* =============================================================== 1024 ==== */
 
+/*
+ * The steep segment. All three hit the 1440 board at 1440 and then keep
+ * climbing on the same slope, deliberately uncapped.
+ *
+ * Behaviour past 1440 is a decision the boards do not cover, and it follows
+ * from the footer being full-bleed: with the sizes frozen at their 1440 values,
+ * every extra pixel of viewport went straight into the centre gap — worst on
+ * exactly the large displays this composition should look best on. Holding the
+ * slope holds the 1440 board's proportions instead, so a 2545px screen reads
+ * like the board rather than like the board with a hole in it.
+ *
+ * `max()` rather than `clamp()`: the floor is the 1024 anchor, and there is no
+ * ceiling by design.
+ */
+
 @media screen and (width >= 1024px) {
   .colophon {
-    --colophon-tagline-size: 5.8rem;
+    --colophon-tagline-size: max(5.8rem, -0.216rem + 5.875vw);
+    --colophon-numeral-size: max(12.3rem, -0.5rem + 12.5vw);
+    --colophon-mark-size: max(105px, -5.77px + 10.8173vw);
   }
 }
 
@@ -281,9 +325,6 @@
 
 @media screen and (width >= 1440px) {
   .colophon {
-    --colophon-tagline-size: 8.244rem;
-    --colophon-numeral-size: var(--bf-text-hero-size);
-    --colophon-mark-size: 150px;
     --colophon-intro-top: 24.9rem;
     --colophon-intro-max: 89.4rem;
     --colophon-top: var(--bf-space-64);
