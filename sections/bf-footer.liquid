@@ -1,0 +1,229 @@
+{%- comment -%}
+  Bassface site footer.
+
+  One section, two variants. The design's "minimal" footer is exactly the full
+  footer's top rule plus its link row, so this renders the same block either way
+  and simply omits the masthead, intro and mid rule when minimal.
+
+  Variant selection is driven by `template` rather than by the section group.
+  Dawn renders a single {% sections 'footer-group' %} for the entire store, so
+  there is no per-template group to wire this into. The audited mapping is:
+
+    full     index, product, collection, list-collections, search, page
+    minimal  cart and the legal pages
+    none     404
+
+  Legal pages are ordinary Pages, not Shopify's /policies/* URLs — Shopify has no
+  policy template type, so those pages cannot carry this design. They are matched
+  by template suffix (page.legal) so a merchant can opt any page in.
+{%- endcomment -%}
+
+{{ 'bf-footer.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign variant = section.settings.variant
+
+  if variant == 'auto'
+    case template.name
+      when '404'
+        assign variant = 'none'
+      when 'cart'
+        assign variant = 'minimal'
+      when 'page'
+        if template.suffix == 'legal'
+          assign variant = 'minimal'
+        else
+          assign variant = 'full'
+        endif
+      else
+        assign variant = 'full'
+    endcase
+  endif
+
+  assign year_full = 'now' | date: '%Y'
+  assign year_short = 'now' | date: '%y'
+-%}
+
+{%- unless variant == 'none' -%}
+  <footer class="colophon colophon--{{ variant }}">
+    <div class="colophon__inner">
+      <div class="colophon__rule colophon__rule--top"></div>
+
+      {%- if variant == 'full' -%}
+        <div class="colophon__masthead">
+          <div>
+            {%- if section.settings.tagline_line_1 != blank -%}
+              <p class="colophon__tagline">{{ section.settings.tagline_line_1 | escape }}</p>
+            {%- endif -%}
+            {%- if section.settings.tagline_line_2 != blank -%}
+              <p class="colophon__tagline">{{ section.settings.tagline_line_2 | escape }}</p>
+            {%- endif -%}
+          </div>
+
+          <div class="colophon__lockup">
+            <span class="colophon__mark">
+              {%- render 'bf-logo', shape: 'mark', width: '100%' -%}
+            </span>
+            <span class="colophon__numeral">{{ year_short }}</span>
+          </div>
+        </div>
+
+        {%- if section.settings.intro != blank -%}
+          <p class="colophon__intro">{{ section.settings.intro | escape }}</p>
+        {%- endif -%}
+
+        <div class="colophon__rule colophon__rule--mid"></div>
+      {%- endif -%}
+
+      <div class="colophon__links">
+        <div class="colophon__brand">
+          <a href="{{ routes.root_url }}" class="colophon__link colophon__wordmark">
+            {%- render 'bf-logo', shape: 'wordmark', width: '100%', label: shop.name -%}
+          </a>
+          <p class="colophon__text">{{ section.settings.copyright | escape }} © {{ year_full }}</p>
+        </div>
+
+        {%- if section.settings.address != blank -%}
+          <address class="colophon__text colophon__address">{{ section.settings.address | escape }}</address>
+        {%- endif -%}
+
+        {%- assign policies = section.settings.menu_policies -%}
+        {%- if policies != blank and policies.links.size > 0 -%}
+          <ul class="colophon__col colophon__policies">
+            {%- for link in policies.links -%}
+              <li>
+                <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+              </li>
+            {%- endfor -%}
+          </ul>
+        {%- endif -%}
+
+        {%- comment -%}
+          The menus are unset until a merchant picks them — link_list settings
+          cannot carry an arbitrary handle as a schema default, only `main-menu`
+          or `footer`, and pointing the policy column at the wrong menu by
+          default would be worse than leaving it empty. So every group below is
+          guarded, and the wrapper itself only renders if it would have content.
+        {%- endcomment -%}
+        {%- assign social = section.settings.menu_social -%}
+        {%- assign secondary = section.settings.menu_secondary -%}
+        {%- assign has_social = false -%}
+        {%- if social != blank and social.links.size > 0 -%}
+          {%- assign has_social = true -%}
+        {%- endif -%}
+        {%- if secondary != blank and secondary.links.size > 0 -%}
+          {%- assign has_social = true -%}
+        {%- endif -%}
+
+        {%- if has_social -%}
+          <div class="colophon__group colophon__social">
+            {%- if social != blank and social.links.size > 0 -%}
+              <ul class="colophon__col">
+                {%- for link in social.links -%}
+                  <li>
+                    <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+                  </li>
+                {%- endfor -%}
+              </ul>
+            {%- endif -%}
+
+            {%- if secondary != blank and secondary.links.size > 0 -%}
+              <ul class="colophon__col colophon__col--row">
+                {%- for link in secondary.links -%}
+                  <li>
+                    <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+                  </li>
+                {%- endfor -%}
+              </ul>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  </footer>
+{%- endunless -%}
+
+{% schema %}
+{
+  "name": "Footer",
+  "settings": [
+    {
+      "type": "select",
+      "id": "variant",
+      "label": "Variant",
+      "info": "Auto follows the design: full on browse and content pages, minimal on cart and legal pages, hidden on 404.",
+      "options": [
+        { "value": "auto", "label": "Auto (by template)" },
+        { "value": "full", "label": "Full" },
+        { "value": "minimal", "label": "Minimal" },
+        { "value": "none", "label": "Hidden" }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "header",
+      "content": "Masthead"
+    },
+    {
+      "type": "text",
+      "id": "tagline_line_1",
+      "label": "Tagline line 1",
+      "default": "Made to be worn."
+    },
+    {
+      "type": "text",
+      "id": "tagline_line_2",
+      "label": "Tagline line 2",
+      "default": "Or raved in. Or both."
+    },
+    {
+      "type": "textarea",
+      "id": "intro",
+      "label": "Intro paragraph",
+      "default": "Bassface creates music-inspired apparel that lets you wear your passion. From iconic tracks to legendary DJs, our designs bring the energy of the music to your style."
+    },
+    {
+      "type": "header",
+      "content": "Contact"
+    },
+    {
+      "type": "textarea",
+      "id": "address",
+      "label": "Address",
+      "default": "22/1, Kandappa Street\nSowcarpet, Parktown\nChennai 600001, India"
+    },
+    {
+      "type": "text",
+      "id": "copyright",
+      "label": "Copyright text",
+      "info": "The current year is appended automatically.",
+      "default": "All rights reserved"
+    },
+    {
+      "type": "header",
+      "content": "Menus"
+    },
+    {
+      "type": "link_list",
+      "id": "menu_policies",
+      "label": "Policy links",
+      "info": "Point these at Pages, not /policies/ URLs — Shopify policy pages cannot use this theme's design. Suggested menu: footer-policies."
+    },
+    {
+      "type": "link_list",
+      "id": "menu_social",
+      "label": "Social links",
+      "info": "Suggested menu: footer-social."
+    },
+    {
+      "type": "link_list",
+      "id": "menu_secondary",
+      "label": "Secondary links",
+      "info": "Suggested menu: footer-secondary."
+    }
+  ],
+  "enabled_on": {
+    "groups": ["footer"]
+  }
+}
+{% endschema %}

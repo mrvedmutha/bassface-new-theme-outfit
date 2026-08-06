@@ -1,0 +1,266 @@
+/* @define colophon */
+
+/*
+ * The site footer. Block is `colophon`, not `footer` — Dawn's section-footer.css
+ * already owns `.footer`, `.footer-block`, `.copyright` and `.policies`, and the
+ * BEM convention forbids the `bf-` prefix on class names. "Colophon" is the
+ * typographic term for the end-matter block carrying publication, address and
+ * legal detail, which is exactly what this is.
+ *
+ * One block serves both variants. The minimal footer in the design is literally
+ * the full footer's top rule plus its link row, so `--minimal` just suppresses
+ * the masthead, intro and mid rule rather than being a separate component.
+ *
+ * Two off-scale values are deliberate and come straight from the boards:
+ *   - the tagline and numeral, which the UI Kit exempts as one-off footer sizes
+ *   - 14px link/intro text, which is NOT a step in the documented type scale
+ *     (the kit has 13 and 15). Kept faithful to the design and named below.
+ */
+
+.colophon {
+  /* Off-scale, see file header. */
+  --colophon-link-size: 1.4rem;
+
+  /* Tagline and numeral ramp. Anchors are the design boards at 390 / 448 /
+     834 / 1024 / 1440; the media queries below step them. */
+  --colophon-tagline-size: 3.8rem;
+  --colophon-numeral-size: 16.7rem;
+  --colophon-mark-size: 139px;
+  --colophon-wordmark-size: 74px;
+  --colophon-intro-size: var(--colophon-link-size);
+  --colophon-intro-top: 12.8rem;
+
+  display: block;
+  padding-bottom: var(--bf-space-40);
+}
+
+/* Full-bleed by request: no --bf-page-max cap, matching the masthead, so the
+   footer spans the viewport and only the page padding holds it off the edges. */
+.colophon__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  padding-inline: var(--bf-page-padding);
+}
+
+/*
+ * Rules are borders on an empty element rather than <hr>, because the design
+ * uses two different weights and bf-base.css already styles <hr> to one.
+ */
+.colophon__rule {
+  border-top: 5px solid var(--bf-ink);
+}
+
+.colophon__rule--mid {
+  border-top-width: var(--bf-border-width-section);
+}
+
+/* ---------------------------------------------------------------- masthead */
+
+.colophon__masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+}
+
+.colophon__tagline {
+  margin: 0;
+  font-size: var(--colophon-tagline-size);
+  font-weight: var(--bf-weight-black);
+
+  /* The boards pin tracking to a fixed -2.89px below 1440, which is an artefact
+     of it being set once at 58px. -0.05em matches 1440 and 1024 exactly and
+     holds the ratio at the smaller steps. */
+  letter-spacing: -0.05em;
+  line-height: var(--bf-leading-tight);
+}
+
+.colophon__lockup {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+}
+
+.colophon__mark {
+  width: var(--colophon-mark-size);
+  flex: none;
+}
+
+.colophon__numeral {
+  font-size: var(--colophon-numeral-size);
+  font-weight: var(--bf-weight-black);
+  letter-spacing: var(--bf-text-hero-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* ------------------------------------------------------------------- intro */
+
+.colophon__intro {
+  max-width: var(--colophon-intro-max, none);
+  margin: 0;
+  padding-top: var(--colophon-intro-top);
+  padding-bottom: var(--bf-space-12);
+  font-size: var(--colophon-intro-size);
+  letter-spacing: var(--bf-text-subhead-tracking);
+  line-height: 1.33;
+}
+
+/* ------------------------------------------------------------------- links */
+
+/*
+ * Grid rather than flex + order: the link groups regroup between breakpoints,
+ * not merely reorder. Below 834 the address and policy columns share a row and
+ * the brand drops to the bottom; from 834 up all four sit on one line. Named
+ * areas express that directly.
+ *
+ * DOM order is the desktop reading order. On the stacked layout the visual
+ * order differs from the DOM, which is an accepted trade-off for a block of
+ * footer links but is worth knowing.
+ */
+.colophon__links {
+  display: grid;
+  gap: var(--bf-space-40) var(--bf-space-32);
+  grid-template-areas:
+    "social social"
+    "address policies"
+    "brand brand";
+  grid-template-columns: auto auto;
+  justify-content: start;
+}
+
+.colophon__group {
+  display: flex;
+  gap: var(--bf-space-32);
+}
+
+.colophon__brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-6);
+  align-items: flex-start;
+  grid-area: brand;
+}
+
+.colophon__policies {
+  grid-area: policies;
+}
+
+.colophon__social {
+  grid-area: social;
+}
+
+.colophon__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * The secondary links sit as separate adjacent columns in the boards ("About
+ * Bassface" and "Let's talk" side by side at gap 32), not stacked like the
+ * social and policy lists.
+ */
+.colophon__col--row {
+  flex-direction: row;
+  gap: var(--bf-space-32);
+}
+
+.colophon__wordmark {
+  display: block;
+  width: var(--colophon-wordmark-size);
+}
+
+/*
+ * bf-base.css underlines `li a` and `p a`. The UI Kit reserves underline for
+ * "Clear Filters" only, so footer links opt out and take it back on hover.
+ */
+.colophon__link {
+  text-decoration: none;
+}
+
+.colophon__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.colophon__text {
+  margin: 0;
+  font-size: var(--colophon-link-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: 0;
+  line-height: 1.43;
+}
+
+.colophon__address {
+  font-style: normal;
+  white-space: pre-line;
+  grid-area: address;
+}
+
+/* ================================================================ 448 ==== */
+
+@media screen and (width >= 448px) {
+  .colophon {
+    --colophon-tagline-size: 4.4rem;
+    --colophon-numeral-size: 19rem;
+    --colophon-mark-size: 162px;
+  }
+}
+
+/* ================================================================ 834 ==== *
+ * The layout flips to the desktop composition here: the design serves the
+ * mobile footer component at 448 and 390, and the desktop one from 834 up.
+ */
+
+@media screen and (width >= 834px) {
+  .colophon {
+    --colophon-tagline-size: 5.3rem;
+    --colophon-numeral-size: 12.3rem;
+    --colophon-mark-size: 105px;
+    --colophon-wordmark-size: 105px;
+    --colophon-intro-size: var(--bf-text-subhead-size);
+    --colophon-intro-top: 15.5rem;
+    --colophon-intro-max: 62.7rem;
+  }
+
+  .colophon__inner {
+    gap: var(--bf-space-26);
+  }
+
+  .colophon__masthead {
+    flex-direction: row;
+    gap: var(--bf-space-32);
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .colophon__links {
+    gap: var(--bf-space-24);
+    grid-template-areas: "brand address policies social";
+    grid-template-columns: repeat(4, auto);
+    justify-content: space-between;
+  }
+}
+
+/* =============================================================== 1024 ==== */
+
+@media screen and (width >= 1024px) {
+  .colophon {
+    --colophon-tagline-size: 5.8rem;
+  }
+}
+
+/* =============================================================== 1440 ==== */
+
+@media screen and (width >= 1440px) {
+  .colophon {
+    --colophon-tagline-size: 8.244rem;
+    --colophon-numeral-size: var(--bf-text-hero-size);
+    --colophon-mark-size: 150px;
+    --colophon-intro-top: 24.9rem;
+    --colophon-intro-max: 89.4rem;
+  }
+}
