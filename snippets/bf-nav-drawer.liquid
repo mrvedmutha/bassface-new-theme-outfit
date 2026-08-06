@@ -9,11 +9,18 @@
   deliberately not repeated in the top bar; only the logo and Close sit there.
 
   Accepts:
-    menu    - a linklist, rendered ahead of the functional items
-    address - store address for the drawer footer
+    menu          - a linklist, rendered ahead of the functional items
+    address       - store address for the drawer footer
+    show_currency - whether to render the currency picker. Passed in rather than
+                    re-derived here, so the drawer and the nav cannot disagree
+                    about the merchant's setting.
 
   Usage:
-    {%- render 'bf-nav-drawer', menu: section.settings.menu, address: section.settings.address -%}
+    {%- render 'bf-nav-drawer',
+      menu: section.settings.menu,
+      address: section.settings.address,
+      show_currency: show_currency
+    -%}
 {%- endcomment -%}
 
 <bf-nav-drawer id="BFNavDrawer" class="nav-drawer" data-bf-invert>
@@ -52,11 +59,36 @@
       </li>
     </ul>
 
-    {%- if localization.available_countries.size > 1 -%}
-      <div class="nav-drawer__currency">
-        {{ cart.currency.symbol }} · {{ cart.currency.iso_code }}
-        {%- render 'bf-icon', icon: 'chevron-down', size: 18 -%}
-      </div>
+    {%- if show_currency -%}
+      {%- comment -%}
+        Same control as the nav: a native select laid invisibly over the label,
+        so the platform's own picker and keyboard behaviour are kept. The
+        `data-bf-currency-select` hook is what submits it — see bf-header.js.
+      {%- endcomment -%}
+      {%- form 'localization', class: 'nav-drawer__currency' -%}
+        <span class="nav-drawer__currency-label">
+          {{ cart.currency.symbol }} · {{ cart.currency.iso_code }}
+          {%- render 'bf-icon', icon: 'chevron-down', size: 18 -%}
+
+          <select
+            class="nav-drawer__currency-select"
+            name="country_code"
+            data-bf-currency-select
+            aria-label="{{ 'localization.country_label' | t }}"
+          >
+            {%- for country in localization.available_countries -%}
+              <option
+                value="{{ country.iso_code }}"
+                {% if country.iso_code == localization.country.iso_code %}
+                  selected
+                {% endif %}
+              >
+                {{ country.name }} · {{ country.currency.iso_code }}
+              </option>
+            {%- endfor -%}
+          </select>
+        </span>
+      {%- endform -%}
     {%- endif -%}
 
     <div class="nav-drawer__switcher">

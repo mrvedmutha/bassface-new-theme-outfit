@@ -124,11 +124,29 @@
 
 .nav-drawer__currency {
   display: flex;
-  gap: var(--bf-space-8);
-  align-items: center;
   padding-top: var(--nav-drawer-block-top);
   font-size: var(--bf-text-subhead-size);
   letter-spacing: var(--bf-text-subhead-tracking);
+}
+
+/*
+ * The select is absolutely positioned against the LABEL, not against the form,
+ * so the hit area is the text itself. Against the form it would also cover the
+ * block's top padding, making a 32px band of empty drawer open the picker.
+ */
+.nav-drawer__currency-label {
+  position: relative;
+  display: inline-flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+}
+
+.nav-drawer__currency-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .nav-drawer__switcher {

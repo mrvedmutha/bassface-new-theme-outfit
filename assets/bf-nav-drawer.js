@@ -15,6 +15,16 @@ const OPEN_CLASS = 'is-open';
 const EXPANDED = 'aria-expanded';
 
 /*
+ * Every name below is prefixed, and that is not decoration. These are classic
+ * scripts, so a top-level `const` goes into the ONE global lexical scope shared
+ * by every script on the page. bf-header.js runs the same fit algorithm and had
+ * the same three unprefixed constant names; the redeclaration threw a
+ * SyntaxError that took out the whole of bf-header.js — which loads last — so
+ * the header's own fit and its currency picker silently stopped working.
+ *
+ * Anything declared at the top level of a bf-*.js file must be unique across
+ * all of them.
+ *
  * Height-wise fit, the counterpart to the masthead's width-wise one. A long
  * menu makes this column taller than the viewport; rather than let it open
  * already-scrolled, the vertical rhythm scales down until it fits.
@@ -23,7 +33,7 @@ const EXPANDED = 'aria-expanded';
  * shrinking further would be illegible, and scrolling always keeps the footer
  * reachable, so there is no failure mode here, only a fallback.
  */
-const SCALE_PROPERTY = '--nav-drawer-scale';
+const DRAWER_SCALE_PROPERTY = '--nav-drawer-scale';
 
 /*
  * The 68px drawer switcher is ~100px of the column once its padding is counted,
@@ -34,8 +44,8 @@ const SCALE_PROPERTY = '--nav-drawer-scale';
  * the scale it mirrors.
  */
 const SWITCHER_SCALE_PROPERTY = '--theme-switcher-scale';
-const MIN_SCALE = 0.6;
-const SCALE_STEP = 0.05;
+const DRAWER_MIN_SCALE = 0.6;
+const DRAWER_SCALE_STEP = 0.05;
 
 class BFNavDrawer extends HTMLElement {
   connectedCallback() {
@@ -75,8 +85,8 @@ class BFNavDrawer extends HTMLElement {
   fit() {
     this.setScale(null);
 
-    for (let scale = 1; scale > MIN_SCALE && this.scrollHeight > this.clientHeight + 1; ) {
-      scale -= SCALE_STEP;
+    for (let scale = 1; scale > DRAWER_MIN_SCALE && this.scrollHeight > this.clientHeight + 1; ) {
+      scale -= DRAWER_SCALE_STEP;
       this.setScale(scale.toFixed(2));
     }
   }
@@ -88,7 +98,7 @@ class BFNavDrawer extends HTMLElement {
    * grows PAST it: 1 is the design, and bigger than the design is not better.
    */
   setScale(value) {
-    for (const property of [SCALE_PROPERTY, SWITCHER_SCALE_PROPERTY]) {
+    for (const property of [DRAWER_SCALE_PROPERTY, SWITCHER_SCALE_PROPERTY]) {
       if (value === null) this.style.removeProperty(property);
       else this.style.setProperty(property, value);
     }

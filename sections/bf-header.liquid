@@ -82,6 +82,7 @@
               <select
                 class="masthead__currency-select"
                 name="country_code"
+                data-bf-currency-select
                 aria-label="{{ 'localization.country_label' | t }}"
               >
                 {%- for country in localization.available_countries -%}
@@ -143,7 +144,7 @@
   </div>
 </div>
 
-{%- render 'bf-nav-drawer', menu: menu, address: section.settings.address -%}
+{%- render 'bf-nav-drawer', menu: menu, address: section.settings.address, show_currency: show_currency -%}
 
 {% schema %}
 {

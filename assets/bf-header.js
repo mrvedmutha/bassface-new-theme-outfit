@@ -3,11 +3,15 @@
  *
  * Two things:
  *
- * 1. The currency <select> is overlaid invisibly on its label (see
- *    bf-header.liquid), so it needs to submit its own form on change. Doing it
- *    here rather than with an inline onchange keeps the markup free of handler
- *    attributes and survives a Section Rendering API re-render, since the
- *    listener is delegated from the document.
+ * 1. The currency <select> is overlaid invisibly on its label, so it needs to
+ *    submit its own form on change. Doing it here rather than with an inline
+ *    onchange keeps the markup free of handler attributes and survives a
+ *    Section Rendering API re-render, since the listener is delegated from the
+ *    document.
+ *
+ *    The hook is an attribute, not a class, because the same control appears in
+ *    two different blocks — the nav and the drawer — and a class would have to
+ *    name one of them. One delegated listener serves both.
  *
  * 2. The header is fixed, so it occupies no space in the flow and nothing
  *    downstream can measure it in CSS. Its height is republished as
@@ -33,16 +37,16 @@ const MASTHEAD_SELECTOR = '.masthead';
 const BAR_SELECTOR = '.masthead__bar';
 const INNER_SELECTOR = '.masthead__inner';
 const HEIGHT_PROPERTY = '--bf-header-height';
-const SCALE_PROPERTY = '--masthead-scale';
+const ROW_SCALE_PROPERTY = '--masthead-scale';
 
 /* Floor, and step. 0.7 keeps the 24px labels at 16.8px — still comfortably
    legible; below that the header would be doing the menu a disservice and the
    merchant should shorten it. */
-const MIN_SCALE = 0.7;
-const SCALE_STEP = 0.05;
+const ROW_MIN_SCALE = 0.7;
+const ROW_SCALE_STEP = 0.05;
 
 document.addEventListener('change', (event) => {
-  const select = event.target.closest('.masthead__currency-select');
+  const select = event.target.closest('[data-bf-currency-select]');
 
   if (select) select.form?.submit();
 });
@@ -90,12 +94,12 @@ function fitRow(masthead) {
 
   if (!inner) return;
 
-  masthead.style.removeProperty(SCALE_PROPERTY);
+  masthead.style.removeProperty(ROW_SCALE_PROPERTY);
 
   /* 0.5 absorbs sub-pixel rounding, which would otherwise scale a row that fits. */
-  for (let scale = 1; scale > MIN_SCALE && rowOverflow(inner) > 0.5; ) {
-    scale -= SCALE_STEP;
-    masthead.style.setProperty(SCALE_PROPERTY, scale.toFixed(2));
+  for (let scale = 1; scale > ROW_MIN_SCALE && rowOverflow(inner) > 0.5; ) {
+    scale -= ROW_SCALE_STEP;
+    masthead.style.setProperty(ROW_SCALE_PROPERTY, scale.toFixed(2));
   }
 }
 
