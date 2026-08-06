@@ -30,7 +30,22 @@
   --colophon-intro-size: var(--colophon-link-size);
   --colophon-intro-top: 12.8rem;
 
+  /*
+   * Clearance above the top rule. The footer owns this rather than leaning on
+   * the last section's bottom padding, so it reads the same whatever template
+   * it ends up under — with nothing above it, the 5px rule butted straight
+   * against the content.
+   *
+   * Steps 32 / 40 / 64 across the boards — straight off the spacing scale, and
+   * deliberately restrained: this is clearance, not a gap, and the intro block
+   * below already carries the footer's large vertical rhythm. Worth confirming
+   * against the footer boards when the design file is open; it was picked from
+   * the scale, not read off them.
+   */
+  --colophon-top: var(--bf-space-32);
+
   display: block;
+  padding-top: var(--colophon-top);
   padding-bottom: var(--bf-space-40);
 }
 
@@ -44,10 +59,18 @@
 }
 
 /*
- * Rules are borders on an empty element rather than <hr>, because the design
- * uses two different weights and bf-base.css already styles <hr> to one.
+ * <hr>, and it has to be. These were empty <div>s carrying only a border, and
+ * Dawn's base.css hides `div:empty` outright — at (0,1,1), which outranks a
+ * single class, so no amount of source order rescues it. Both footer rules were
+ * silently invisible. <hr> is not in Dawn's :empty list.
+ *
+ * bf-base.css resets <hr> to one border-top at the hairline weight. The design
+ * uses two heavier weights, overridden here — a class (0,1,0) beats an element
+ * selector (0,0,1), so this needs no nesting.
  */
 .colophon__rule {
+  margin: 0;
+  border: 0;
   border-top: 5px solid var(--bf-ink);
 }
 
@@ -224,6 +247,7 @@
     --colophon-intro-size: var(--bf-text-subhead-size);
     --colophon-intro-top: 15.5rem;
     --colophon-intro-max: 62.7rem;
+    --colophon-top: var(--bf-space-40);
   }
 
   .colophon__inner {
@@ -262,5 +286,6 @@
     --colophon-mark-size: 150px;
     --colophon-intro-top: 24.9rem;
     --colophon-intro-max: 89.4rem;
+    --colophon-top: var(--bf-space-64);
   }
 }

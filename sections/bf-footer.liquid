@@ -47,7 +47,7 @@
 {%- unless variant == 'none' -%}
   <footer class="colophon colophon--{{ variant }}">
     <div class="colophon__inner">
-      <div class="colophon__rule colophon__rule--top"></div>
+      <hr class="colophon__rule colophon__rule--top">
 
       {%- if variant == 'full' -%}
         <div class="colophon__masthead">
@@ -72,7 +72,7 @@
           <p class="colophon__intro">{{ section.settings.intro | escape }}</p>
         {%- endif -%}
 
-        <div class="colophon__rule colophon__rule--mid"></div>
+        <hr class="colophon__rule colophon__rule--mid">
       {%- endif -%}
 
       <div class="colophon__links">
