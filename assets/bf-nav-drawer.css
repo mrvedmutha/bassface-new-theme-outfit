@@ -11,18 +11,56 @@
  * resolves to whichever pair the invert produced.
  */
 
+/*
+ * The drawer is the height-wise counterpart to the masthead's width-wise fit.
+ * The desktop bar must stay one line and scales down to absorb a long menu;
+ * here the links are already stacked, so a long menu makes the column taller
+ * and bf-nav-drawer.js scales the vertical rhythm down until it fits the
+ * viewport. Past the floor it scrolls, so the last links and the footer stay
+ * reachable no matter how long the menu gets. `overscroll-behavior: contain`
+ * keeps that scroll from chaining to the page underneath.
+ *
+ * Everything that contributes to the column's height hangs off one scale, so a
+ * shrunk drawer keeps the design's proportions rather than just smaller text in
+ * the original spacing.
+ */
 .nav-drawer {
+  --nav-drawer-scale: 1;
+
+  /* 60px is a documented one-off, not a step in the UI Kit scale — it is
+     OUTFIT's text-6xl, carried over deliberately. Same status as the 175px
+     footer numeral. */
+  --nav-drawer-link-size: calc(6rem * var(--nav-drawer-scale));
+  --nav-drawer-link-pad: calc(var(--bf-space-8) * var(--nav-drawer-scale));
+  --nav-drawer-menu-top: calc(var(--bf-space-40) * var(--nav-drawer-scale));
+  --nav-drawer-block-top: calc(var(--bf-space-32) * var(--nav-drawer-scale));
+  --nav-drawer-footer-gap: calc(var(--bf-space-32) * var(--nav-drawer-scale));
+
   position: fixed;
-  inset: 0;
+  inset: 0 0 auto;
   z-index: 20;
   display: flex;
   flex-direction: column;
+
+  /* Covers the viewport exactly. `inset: 0` alone would size the drawer to the
+     LAYOUT viewport, which on mobile is the tall one measured with the URL bar
+     collapsed — so the bottom of the drawer hides behind the browser chrome
+     until you scroll. dvh tracks the visible viewport as that chrome moves. */
+  height: 100vh;
   padding-block: var(--bf-space-32);
   padding-inline: var(--bf-page-padding);
   justify-content: space-between;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   visibility: hidden;
   opacity: 0;
   transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+@supports (height: 100dvh) {
+  .nav-drawer {
+    height: 100dvh;
+  }
 }
 
 /* `.is-open` is the state class JS toggles; :where() keeps the selector anchored
@@ -60,7 +98,7 @@
 .nav-drawer__menu {
   display: flex;
   flex-direction: column;
-  padding-top: var(--bf-space-40);
+  padding-top: var(--nav-drawer-menu-top);
 }
 
 .nav-drawer__links {
@@ -71,16 +109,11 @@
   list-style: none;
 }
 
-/*
- * 60px is a documented one-off, not a step in the UI Kit scale — it is OUTFIT's
- * text-6xl, carried over deliberately. Same status as the 175px footer numeral.
- * It does not scale at 390; that board is a straight copy at 358 content width.
- */
+/* Size and padding come from the drawer's scale — see the block comment there.
+   The step does not change at 390; that board is a straight copy at 358. */
 .nav-drawer__link {
-  --nav-drawer-link-size: 6rem;
-
   display: block;
-  padding-block: var(--bf-space-8);
+  padding-block: var(--nav-drawer-link-pad);
   color: inherit;
   font-size: var(--nav-drawer-link-size);
   font-weight: var(--bf-weight-regular);
@@ -93,17 +126,30 @@
   display: flex;
   gap: var(--bf-space-8);
   align-items: center;
-  padding-top: var(--bf-space-32);
+  padding-top: var(--nav-drawer-block-top);
   font-size: var(--bf-text-subhead-size);
   letter-spacing: var(--bf-text-subhead-tracking);
 }
 
 .nav-drawer__switcher {
-  padding-top: var(--bf-space-32);
+  padding-top: var(--nav-drawer-block-top);
 }
 
+/*
+ * The margin is a MINIMUM clearance, not fixed spacing. `space-between` on the
+ * drawer puts all spare height between the menu and this footer, so on a short
+ * menu they are already far apart — but once the column fills the viewport
+ * there is no spare height left, and the theme switcher's circles end up
+ * touching the wordmark. The fit routine cannot catch that on its own: it stops
+ * as soon as the content fits, and "fits" includes fitting with zero gap.
+ *
+ * Declaring it as a margin means the fit routine measures it as part of the
+ * column, so the drawer scales down to preserve this clearance rather than
+ * eating it. Scaled with everything else, so the proportion holds.
+ */
 .nav-drawer__footer {
   display: flex;
+  margin-top: var(--nav-drawer-footer-gap);
   gap: var(--bf-space-16);
   align-items: flex-end;
   justify-content: space-between;

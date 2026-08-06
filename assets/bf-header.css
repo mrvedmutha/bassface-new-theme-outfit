@@ -10,43 +10,151 @@
  * `order` would be less readable than rendering the two the design actually
  * draws. 750px is Dawn's own breakpoint and falls inside the untested gap
  * between the 448 and 834 boards.
+ *
+ * ---------------------------------------------------------------------------
+ * Why the header is two fixed layers instead of one
+ * ---------------------------------------------------------------------------
+ * The header is fixed, has no background, and inverts itself against whatever
+ * scrolls beneath it with `mix-blend-mode: difference`. Getting there runs into
+ * two hard constraints:
+ *
+ * 1. The blend has to be on the FIXED element itself. `position: fixed` creates
+ *    a stacking context, and the compositing spec makes every stacking context
+ *    an isolated group — so a blended child inside a fixed parent would blend
+ *    against the parent's own (transparent) backdrop and produce nothing. The
+ *    tempting "blend the children, keep the container clean" shape does not
+ *    work, and fails silently rather than erroring.
+ *
+ * 2. Because the blend is on the container, EVERYTHING inside it blends, and
+ *    the theme switcher must not. Its three circles are literal colour
+ *    swatches; over the cream surface difference turns the red one cyan
+ *    (#12E4DC) and makes the black one vanish. There is no way to opt a
+ *    descendant out of an ancestor's blend — `isolation` governs an element's
+ *    own descendants, not its participation in a parent's group.
+ *
+ * So: `__bar` is fixed and blended, `__overlay` is a fixed SIBLING that is not,
+ * and the switcher lives in the overlay. The overlay paints above the bar
+ * (z-index 4 vs 3), so it is not part of the bar's backdrop and is not blended
+ * into it.
+ *
+ * The reference site avoids all of this by having no switcher in its nav.
  */
 
+/*
+ * The block root is the Shopify section wrapper itself (schema `tag` + `class`),
+ * not an inner element, because of a trap that costs the whole effect:
+ *
+ *   Dawn sets `.shopify-section-group-header-group { z-index: 4 }` AND makes
+ *   <body> a flex column. z-index is normally inert on a static element — but
+ *   not on a flex ITEM, where it applies and creates a stacking context. Every
+ *   stacking context is an isolated group, so the blended bar inside it had a
+ *   transparent backdrop and rendered its raw source colour with no blending at
+ *   all. It fails silently: the property is honoured, it just has nothing to
+ *   blend against.
+ *
+ * Owning the wrapper is what lets us cancel that z-index. Nothing here — or
+ * between here and <html> — may create a stacking context: no transform,
+ * filter, opacity < 1, contain, will-change, clip-path, mask or z-index.
+ */
 .masthead {
+  /* The logo mark, and so the tallest thing in the row. */
+  --masthead-row: 44px;
+
+  /*
+   * The nav is ONE line, always. When a merchant's menu is too long for the
+   * width, the row scales down to fit rather than wrapping — wrapping makes the
+   * header grow downwards and eat the page, which is wrong for a fixed bar.
+   * Sizing down is the width-wise answer; the height-wise answer is the mobile
+   * drawer, which is what the nav becomes below 750.
+   *
+   * bf-header.js measures the row and lowers this until the line fits, so the
+   * design's own sizes are untouched whenever the menu is a normal length —
+   * nothing shrinks unless it actually has to.
+   *
+   * Both derived values are declared HERE, on the same element JS writes the
+   * scale to. A custom property resolves on the element that declares it, so
+   * deriving them here and setting the scale on a descendant would silently do
+   * nothing. Same trap documented in bf-base.css.
+   */
+  --masthead-scale: 1;
+  --masthead-link-size: calc(var(--bf-text-subhead-size) * var(--masthead-scale));
+  --masthead-gap: calc(var(--bf-space-32) * var(--masthead-scale));
+  --masthead-cluster-gap: calc(var(--bf-space-12) * var(--masthead-scale));
+
+  z-index: auto;
   display: block;
-  background-color: var(--bf-surface);
-  color: var(--bf-ink);
 }
 
-/* Full-bleed by request: no --bf-page-max cap, so the nav spans the viewport at
-   any width and only the page padding holds it off the edges. */
+/* ------------------------------------------------------------------- bar */
+
+.masthead__bar {
+  position: fixed;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  left: 0;
+
+  /* Not --bf-ink: this layer is blended, so it needs the pre-inverted source
+     that difference resolves TO the ink. Defined per theme in bf-base.css. */
+  color: var(--bf-ink-blend);
+  mix-blend-mode: difference;
+}
+
+/*
+ * Every browser this theme targets supports mix-blend-mode; this is for the
+ * long tail, where a transparent header would leave unreadable text over the
+ * page. Falls back to the opaque header the block started as.
+ */
+@supports not (mix-blend-mode: difference) {
+  .masthead__bar {
+    background-color: var(--bf-surface);
+    color: var(--bf-ink);
+  }
+}
+
+/*
+ * The bar spans the viewport and sits over the page, so its empty middle would
+ * swallow clicks on whatever is underneath. Only the controls take the pointer
+ * back. The ghost switcher is `visibility: hidden`, so it is already inert.
+ */
 .masthead__inner {
   display: flex;
+  min-height: var(--masthead-row);
   padding-block: var(--bf-space-32);
   padding-inline: var(--bf-page-padding);
   align-items: center;
   justify-content: space-between;
+  pointer-events: none;
 }
 
 .masthead__logo {
   display: block;
   flex: none;
   color: inherit;
+  pointer-events: auto;
 }
 
+/*
+ * Both keep the flex default `min-width: auto`, which is load-bearing: it makes
+ * an overlong nav OVERFLOW the row instead of squeezing, and overflow is the
+ * only thing the fit routine can measure. Adding `min-width: 0` here silently
+ * defeats the whole mechanism — the items shrink into each other, the labels
+ * collide, and scrollWidth still reports that everything fits.
+ */
 .masthead__cluster {
   display: flex;
-  gap: var(--bf-space-12);
+  gap: var(--masthead-cluster-gap);
   align-items: center;
 }
 
 .masthead__links {
   display: flex;
-  gap: var(--bf-space-32);
+  gap: var(--masthead-gap);
   align-items: center;
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: auto;
 }
 
 /*
@@ -61,11 +169,12 @@
   background: none;
   padding: 0;
   color: inherit;
-  font-size: var(--bf-text-subhead-size);
+  font-size: var(--masthead-link-size);
   font-weight: var(--bf-text-subhead-weight);
   letter-spacing: var(--bf-text-subhead-tracking);
   line-height: 1.33;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -89,15 +198,49 @@
   cursor: pointer;
 }
 
-.masthead__cluster--mobile {
-  display: none;
+/* --------------------------------------------------------------- overlay */
+
+/*
+ * Mirrors the bar's box exactly — same padding, same height — so `flex-end`
+ * puts the real switcher on the same pixel as the ghost that reserves its slot
+ * in the bar. Height comes from bf-header.js measuring the bar; the fallback
+ * in bf-base.css covers the frames before that lands.
+ */
+.masthead__overlay {
+  position: fixed;
+  z-index: 4;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: var(--bf-header-height);
+  padding-inline: var(--bf-page-padding);
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+/* `flex: none` matters on the ghost: if the row ever runs out of room, a ghost
+   that shrank would stop matching the live switcher's width and the two would
+   drift apart precisely when the nav is most crowded. */
+.masthead__switcher {
+  flex: none;
+  pointer-events: auto;
+}
+
+/*
+ * The ghost is a second, hidden switcher that holds the real one's slot open in
+ * the blended bar. Rendering the component again rather than a fixed-width box
+ * means the reserved width tracks the switcher's own metrics and cannot drift.
+ *
+ * `visibility: hidden` and not `opacity: 0` — it takes the buttons out of the
+ * tab order and out of the accessibility tree, which is the whole requirement.
+ */
+.masthead__switcher--ghost {
+  visibility: hidden;
 }
 
 @media screen and (width < 750px) {
-  .masthead__inner {
-    padding-inline: var(--bf-page-padding);
-  }
-
   .masthead__cluster--desktop {
     display: none;
   }
@@ -106,17 +249,23 @@
     display: flex;
   }
 
-  .masthead__links {
-    gap: var(--bf-space-32);
+  /* The switcher is a drawer control below 750; nothing to overlay. */
+  .masthead__overlay {
+    display: none;
   }
 }
 
-@media screen and (width >= 1024px) {
-  .masthead__links {
-    gap: var(--bf-space-64);
+@media screen and (width >= 750px) {
+  .masthead__cluster--mobile {
+    display: none;
   }
+}
 
-  .masthead__cluster {
-    gap: var(--bf-space-64);
+/* Both gaps step up together at the laptop board, and both stay scalable — the
+   fit routine pulls the wide gaps in first, before it touches the type. */
+@media screen and (width >= 1024px) {
+  .masthead {
+    --masthead-gap: calc(var(--bf-space-64) * var(--masthead-scale));
+    --masthead-cluster-gap: var(--masthead-gap);
   }
 }

@@ -63,6 +63,28 @@
   --bf-ink-muted: color-mix(in srgb, var(--bf-ink) 55%, transparent);
   --bf-hairline: color-mix(in srgb, var(--bf-ink) 35%, transparent);
 
+  /* Ink for a layer painted with `mix-blend-mode: difference` — the header.
+     Difference gives `result = |backdrop - source|`, so a blended layer cannot
+     just use --bf-ink: it would come out inverted. This is the source colour
+     that lands ON --bf-ink once blended over --bf-surface.
+
+       dark   cream over black  -> |0   - 237| = 237  = cream, exact
+       light  cream over cream  -> |237 - 237| = 0    = black, exact
+       red    ?     over cream  -> #FF0001 is unreachable: 237 - s can never
+              exceed 237, so red maxes out at #ED0001 with a source of
+              rgb(0 228 220). A ~7% darker red, and the closest the blend
+              allows. The reference site lands in the same place.
+
+     Over a photo the result is whatever difference produces — that is the
+     effect, not a defect. These values only govern the flat-surface case. */
+  --bf-ink-blend: rgb(0 228 220);
+
+  /* Height of the fixed header, republished by bf-header.js from a
+     ResizeObserver. The fallback is the design's own row: 32px padding, a 44px
+     logo, 32px padding. Anything reading this must tolerate the fallback being
+     a frame or two stale on first paint. */
+  --bf-header-height: 10.8rem;
+
   /* Overlay scrim. Only ever black, only ever behind a modal or drawer. */
   --bf-scrim: rgb(0 0 0 / 45%);
 
@@ -245,6 +267,7 @@
   --bf-ink: var(--bf-red);
   --bf-surface-invert: var(--bf-red);
   --bf-ink-invert: var(--bf-cream);
+  --bf-ink-blend: rgb(0 228 220);
 }
 
 [data-bf-theme="light"] {
@@ -252,6 +275,7 @@
   --bf-ink: var(--bf-black);
   --bf-surface-invert: var(--bf-black);
   --bf-ink-invert: var(--bf-cream);
+  --bf-ink-blend: var(--bf-cream);
 }
 
 [data-bf-theme="dark"] {
@@ -259,6 +283,7 @@
   --bf-ink: var(--bf-cream);
   --bf-surface-invert: var(--bf-cream);
   --bf-ink-invert: var(--bf-black);
+  --bf-ink-blend: var(--bf-cream);
 }
 
 /*
@@ -291,6 +316,26 @@
 /* ==========================================================================
    Element base
    ========================================================================== */
+
+/* The header is fixed, so an in-page anchor would otherwise land underneath it. */
+html {
+  scroll-padding-top: var(--bf-header-height);
+}
+
+/*
+ * The fixed header takes no space in the flow, so the page owes it that space
+ * back. Applied to Dawn's main wrapper rather than to each section, so every
+ * template gets it without opting in.
+ *
+ * A section that is MEANT to run under the transparent header — the hero, where
+ * the whole point is the artwork showing through the blend — cancels it from
+ * its own box, which needs no cooperation from this rule:
+ *
+ *   margin-top: calc(-1 * var(--bf-header-height));
+ */
+.content-for-layout {
+  padding-top: var(--bf-header-height);
+}
 
 body {
   background-color: var(--bf-surface);

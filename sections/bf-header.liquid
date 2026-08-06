@@ -13,6 +13,19 @@
 
   Only "Shop" comes from the menu — Search, Login and Bag are functional
   destinations, not merchant-editable links, so they are not menu items.
+
+  The header is two fixed sibling layers: `__bar` carries everything and is
+  blended against the page with mix-blend-mode, `__overlay` sits above it
+  unblended and carries the theme switcher, whose circles are literal colour
+  swatches and must not invert. The switcher is therefore rendered twice on
+  desktop — once hidden in the bar to hold its slot in the flex row, once for
+  real in the overlay. bf-header.css explains why it cannot be one layer.
+
+  There is no wrapper element for the `masthead` block: the schema's `tag` and
+  `class` put the block straight onto the Shopify section wrapper. That is
+  deliberate and load-bearing — Dawn puts `z-index: 4` on that wrapper, which
+  makes it a stacking context and silently kills the blend. Owning the element
+  is the only way to cancel it. See bf-header.css.
 {%- endcomment -%}
 
 {%- liquid
@@ -23,7 +36,7 @@
   endif
 -%}
 
-<header class="masthead">
+<div class="masthead__bar">
   <div class="masthead__inner">
     <a class="masthead__logo" href="{{ routes.root_url }}">
       {%- render 'bf-logo', shape: 'mark', width: '44px', label: shop.name -%}
@@ -87,7 +100,13 @@
         {%- endif -%}
       </ul>
 
-      {%- render 'bf-theme-switcher' -%}
+      {%- comment -%}
+        Holds the switcher's slot open in the blended row. Hidden, so it is out
+        of the tab order and the accessibility tree; the live one is below.
+      {%- endcomment -%}
+      <div class="masthead__switcher masthead__switcher--ghost">
+        {%- render 'bf-theme-switcher' -%}
+      </div>
     </div>
 
     <div class="masthead__cluster masthead__cluster--mobile">
@@ -113,14 +132,24 @@
       </ul>
     </div>
   </div>
-</header>
+</div>
+
+{%- comment -%}
+  Unblended sibling of the bar, painted above it, holding only the switcher.
+{%- endcomment -%}
+<div class="masthead__overlay">
+  <div class="masthead__switcher">
+    {%- render 'bf-theme-switcher' -%}
+  </div>
+</div>
 
 {%- render 'bf-nav-drawer', menu: menu, address: section.settings.address -%}
 
 {% schema %}
 {
   "name": "Header",
-  "tag": "section",
+  "tag": "header",
+  "class": "masthead",
   "settings": [
     {
       "type": "link_list",

@@ -32,11 +32,19 @@
   align-items: center;
 }
 
-/* Drawer size: 68px circles, gap 20, 8px dot — 244 wide in total. */
+/*
+ * Drawer size: 68px circles, gap 20, 8px dot — 244 wide in total.
+ *
+ * `--theme-switcher-scale` lets a container shrink this without reaching in and
+ * restyling the block: the drawer scales its whole column to fit the viewport
+ * height, and 100px of unscalable switcher would defeat that. It is read here,
+ * where the sizes are declared, so an ancestor merely has to set it — the
+ * derived values still resolve on this element and stay correct.
+ */
 .theme-switcher--lg {
-  --theme-switcher-size: 68px;
-  --theme-switcher-gap: 20px;
-  --theme-switcher-dot: 8px;
+  --theme-switcher-size: calc(68px * var(--theme-switcher-scale, 1));
+  --theme-switcher-gap: calc(20px * var(--theme-switcher-scale, 1));
+  --theme-switcher-dot: calc(8px * var(--theme-switcher-scale, 1));
 }
 
 .theme-switcher__dot {
