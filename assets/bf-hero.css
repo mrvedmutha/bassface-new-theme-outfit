@@ -1,0 +1,287 @@
+/* @define hero */
+
+/*
+ * Homepage hero — the full-bleed wordmark, its 5px rule, and the meta row
+ * beneath it (tagline · WHY statement · links · copyright).
+ *
+ * Block is `hero`, not `masthead`: bf-header.css already owns `masthead` for the
+ * fixed header bar. Dawn owns neither `hero` nor any of the elements below.
+ *
+ * Two off-scale type sizes are deliberate and come straight from the boards —
+ * 12px for the label row and 14px for the statement. Neither is a step in the UI
+ * Kit (which has 11 and 13, then 15 and 16), and both hold at every board width.
+ * The footer already carries the same exemption for its own 14px link text.
+ */
+
+.hero {
+  /* Off-scale, see file header. */
+  --hero-label-size: 1.2rem;
+  --hero-statement-size: 1.4rem;
+
+  /*
+   * A length, not a ratio, and that is the point: the boards set line-height
+   * 1.33 on the 12px row and 1.14 on the 14px statement, which are both 16px
+   * expressed as a ratio. One line box serves both sizes, so the tagline and the
+   * statement's first line sit on the same baseline without arithmetic.
+   */
+  --hero-line: 1.6rem;
+
+  /*
+   * The links column spreads its entries over this height rather than stacking
+   * them on a gap — that is what drops SHIPPING & RETURNS well below ABOUT
+   * BASSFACE and gives the row its shape. It is also the meta row's height on
+   * every board.
+   */
+  --hero-meta-height: 9.6rem;
+
+  /*
+   * Measure of the WHY statement. Below 834 it takes whatever the tagline leaves
+   * over; from there up it is pinned, and from 1024 it ramps. See the media
+   * queries at the foot of the file.
+   */
+  --hero-statement-width: auto;
+
+  /*
+   * Every value above is a board figure and holds to 1440. Past that the meta
+   * row scales with the viewport — see the note on the last media query.
+   */
+
+  display: block;
+  padding-bottom: var(--bf-space-40);
+}
+
+/*
+ * Full-bleed: no --bf-page-max cap, so only the page padding holds the content
+ * off the viewport edges. Same call as the footer, and here it is load-bearing
+ * rather than stylistic — capping the outer edge at 1440 would strand the
+ * wordmark mid-screen on a large display, which is the opposite of what this
+ * section is for.
+ */
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  padding-inline: var(--bf-page-padding);
+}
+
+/*
+ * The wordmark needs no size ramp at all, which is why there is not one.
+ *
+ * bf-logo paints it as a mask carrying `aspect-ratio: 240.89 / 37.06`, so
+ * `width: 100%` (set inline by the snippet) derives the height from the content
+ * width: 1392 → 214 at 1440 and 976 → 150 at 1024, which are the board figures
+ * exactly. Above 1440 it keeps climbing on the same ratio instead of freezing,
+ * so a 2560px screen reads like the board rather than like the board adrift in
+ * whitespace — the same reasoning behind the footer's uncapped `max()` ramp,
+ * arrived at here for free.
+ *
+ * The boards below 1024 pin this box to a flat 150 and let the artwork letterbox
+ * inside it — at 390 that draws a 55px wordmark in a 150px box and leaves ~95px
+ * of dead space above the rule. That is an artefact of the import, not a design
+ * decision, so it is not reproduced.
+ *
+ * It is the page's <h1>: the wordmark is the brand name set as artwork, and it
+ * is the first and largest thing on the page. The boards mark the tagline as h1
+ * instead, but those roles were scraped off the OUTFIT DOM along with the
+ * geometry and do not survive reading aloud.
+ */
+.hero__wordmark {
+  margin: 0;
+}
+
+/*
+ * <hr>, and it has to be — see the same note in bf-footer.css. An empty <div>
+ * carrying only a border is hidden outright by Dawn's base.css `div:empty` rule,
+ * at a specificity a single class cannot beat.
+ *
+ * bf-base.css resets <hr> to the 1px hairline; the boards use the heavy 5px
+ * weight here, matching the footer's top rule rather than the 1px/2px in the UI
+ * Kit. A class (0,1,0) beats an element selector (0,0,1), so no nesting needed.
+ */
+.hero__rule {
+  margin: 0;
+  border: 0;
+  border-top: 5px solid var(--bf-ink);
+}
+
+/* ---------------------------------------------------------------- meta row */
+
+/*
+ * Grid rather than flex, because the row genuinely restructures below 834: the
+ * four clusters go from one line to two, and the second line pairs the links
+ * with the copyright. Flex would need a wrapper element per line that the wide
+ * layout then has to undo.
+ *
+ * Stacked layout — tagline and statement share the top line, links and
+ * copyright the bottom:
+ *
+ *     tagline   statement
+ *     links     copyright
+ *
+ * `gap` is asymmetric on purpose: 16 between the columns (the board's row gap on
+ * the top line) and 24 between the two lines.
+ */
+.hero__meta {
+  display: grid;
+  gap: var(--bf-space-24) var(--bf-space-16);
+  grid-template-areas:
+    "tagline statement"
+    "links copyright";
+  grid-template-columns: auto 1fr;
+  align-items: start;
+}
+
+.hero__tagline {
+  grid-area: tagline;
+}
+
+.hero__statement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+  grid-area: statement;
+}
+
+.hero__links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+  justify-content: space-between;
+  min-height: var(--hero-meta-height);
+  margin: 0;
+  padding: 0;
+  grid-area: links;
+  list-style: none;
+}
+
+/*
+ * Pushed to the far edge of the 1fr track on the stacked layout, which puts it
+ * opposite the first link. Inert once the row is one line — the wide layout
+ * sizes this track to its content, so there is nothing left to justify against
+ * and no reset is needed.
+ */
+.hero__copyright {
+  grid-area: copyright;
+  justify-self: end;
+}
+
+/* ------------------------------------------------------------------- type */
+
+/*
+ * The label row: tagline, WHY, links and copyright are one style. Uppercase is
+ * applied here rather than baked into the settings, so a merchant types
+ * sentence case and the section presents it — the same split the footer uses for
+ * its column labels.
+ */
+.hero__tagline,
+.hero__label,
+.hero__link,
+.hero__copyright {
+  margin: 0;
+  font-size: var(--hero-label-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: 0;
+  line-height: var(--hero-line);
+  text-transform: uppercase;
+}
+
+.hero__copy {
+  margin: 0;
+  font-size: var(--hero-statement-size);
+  font-weight: var(--bf-weight-bold);
+
+  /* -0.35px at 14px on the boards, in em so it rides the size. */
+  letter-spacing: -0.025em;
+  line-height: var(--hero-line);
+}
+
+/* bf-base.css underlines `li a`. The UI Kit reserves underline for "Clear
+   Filters", so these opt out and take it back on hover — as the footer does. */
+.hero__link {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.hero__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* ================================================================ 834 ==== *
+ * The row flattens to one line. All four clusters are content-sized except the
+ * statement, so `space-between` distributes the slack between them and `gap`
+ * becomes the floor it may not close past — matching the boards, which set the
+ * row to space-between with a 24 gap at 834, 1024 and 1440 alike.
+ */
+
+@media screen and (width >= 834px) {
+  .hero {
+    --hero-statement-width: 33.7rem;
+  }
+
+  .hero__meta {
+    gap: var(--bf-space-24);
+    grid-template-areas: "tagline statement links copyright";
+    grid-template-columns: auto var(--hero-statement-width) auto auto;
+    justify-content: space-between;
+  }
+}
+
+/* =============================================================== 1024 ==== *
+ * The statement's measure interpolates between the board anchors — 337 at 1024
+ * and 410 at 1440 — rather than stepping at 1440. Stepping would leave a dead
+ * zone where a 1380px laptop got the 1024 column while the row around it had
+ * already grown, opening a hole in the middle of the composition.
+ *
+ * Floor and ceiling are the anchors themselves, so both boards are still hit
+ * exactly; the interpolation only fills between them. The rem term keeps the
+ * measure responsive to the visitor's font-size setting rather than to vw alone.
+ *
+ * The ceiling is where the next query picks it up, so the two are continuous.
+ */
+
+@media screen and (width >= 1024px) {
+  .hero {
+    --hero-statement-width: clamp(33.7rem, 15.731rem + 17.5481vw, 41rem);
+  }
+}
+
+/* =============================================================== 1440 ==== *
+ * Past the widest board the meta row scales with the viewport.
+ *
+ * It has to. The wordmark above it is tied to the content width and keeps
+ * growing — 214px tall at 1440, 386px at 2560 — while every figure in this row
+ * is a fixed board value. Frozen, a 12px label sits under a 386px wordmark and
+ * reads as fine print someone forgot to lay out. The boards do not cover this
+ * width, so the rule chosen is the one the footer already settled on: hold the
+ * 1440 board's proportions rather than the 1440 board's pixels.
+ *
+ * So each value below is its board figure as a fraction of 1440 — 12/1440,
+ * 14/1440, 16/1440, 96/1440, 410/1440 — which makes the row a strict
+ * proportional scale of the board at any width above it. At 1440 every vw term
+ * evaluates to exactly the value it replaces, so nothing jumps at the boundary.
+ *
+ * Unlike the ramps above, these lines pass through the origin: strict
+ * proportionality is the whole point, so there is no rem term to carry. The rem
+ * floor in each `max()` is what keeps the visitor's font-size setting effective
+ * — raise it and the floor wins further up, which is the behaviour worth having.
+ *
+ * The measure grows with the type rather than staying capped. A measure cap
+ * exists to hold characters-per-line down, and here the type scales at the same
+ * rate, so the character count is already constant — pinning the width would
+ * instead make the copy wrap to more and more lines as it grew.
+ *
+ * Deliberately NOT scaled: --bf-page-padding. The gutter is global, and the
+ * header, hero and footer must share one left edge. Proportional purity is not
+ * worth breaking that alignment for.
+ */
+
+@media screen and (width >= 1440px) {
+  .hero {
+    --hero-label-size: max(1.2rem, 0.8333vw);
+    --hero-statement-size: max(1.4rem, 0.9722vw);
+    --hero-line: max(1.6rem, 1.1111vw);
+    --hero-meta-height: max(9.6rem, 6.6667vw);
+    --hero-statement-width: 28.4722vw;
+  }
+}

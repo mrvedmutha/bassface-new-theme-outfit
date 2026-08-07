@@ -1,0 +1,99 @@
+{%- comment -%}
+  Bassface homepage hero.
+
+  The full-bleed wordmark, a 5px rule, and a meta row of four clusters:
+  tagline, the WHY statement, two standing links, and the copyright.
+
+  The wordmark carries no size setting and no size ramp — it spans the content
+  width at every viewport and derives its height from its own aspect ratio, so
+  it scales with the screen instead of stopping at the 1440 board. See the long
+  note on `.hero__wordmark` in bf-hero.css.
+
+  The links come from a menu rather than from a pair of text settings: the design
+  shows two, but nothing in the layout depends on there being exactly two — the
+  column spreads whatever it is given over a fixed height. The column is hidden
+  when no menu is set, as the footer's columns are.
+{%- endcomment -%}
+
+{{ 'bf-hero.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign menu = section.settings.menu
+  assign year = 'now' | date: '%Y'
+-%}
+
+<section class="hero">
+  <div class="hero__inner">
+    <h1 class="hero__wordmark">
+      {%- render 'bf-logo', shape: 'wordmark', width: '100%', label: shop.name -%}
+    </h1>
+
+    <hr class="hero__rule">
+
+    <div class="hero__meta">
+      {%- if section.settings.tagline != blank -%}
+        <p class="hero__tagline">{{ section.settings.tagline | escape }}</p>
+      {%- endif -%}
+
+      {%- if section.settings.statement != blank -%}
+        <div class="hero__statement">
+          {%- if section.settings.label != blank -%}
+            <h2 class="hero__label">{{ section.settings.label | escape }}</h2>
+          {%- endif -%}
+          <p class="hero__copy">{{ section.settings.statement | escape }}</p>
+        </div>
+      {%- endif -%}
+
+      {%- if menu != blank and menu.links.size > 0 -%}
+        <ul class="hero__links">
+          {%- for link in menu.links -%}
+            <li>
+              <a class="hero__link" href="{{ link.url }}">{{ link.title }}</a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      <p class="hero__copyright">&copy; {{ year }}</p>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Hero",
+  "settings": [
+    {
+      "type": "text",
+      "id": "tagline",
+      "label": "Tagline",
+      "info": "Shown in uppercase.",
+      "default": "One stop for all EDM lovers"
+    },
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Statement label",
+      "info": "Shown in uppercase.",
+      "default": "Why"
+    },
+    {
+      "type": "textarea",
+      "id": "statement",
+      "label": "Statement",
+      "default": "Bassface creates music-inspired apparel that lets you wear your passion. From iconic tracks to legendary DJs, our designs bring the energy of the music to your style."
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Links",
+      "info": "Shown in uppercase, spread top and bottom. The design uses two — About Bassface and Shipping & Returns. Suggested menu: hero-links."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero"
+    }
+  ]
+}
+{% endschema %}
