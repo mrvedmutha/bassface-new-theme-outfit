@@ -16,16 +16,29 @@
 {%- endcomment -%}
 
 {{ 'bf-hero.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-hero.js' | asset_url }}" defer="defer"></script>
 
 {%- liquid
   assign menu = section.settings.menu
   assign year = 'now' | date: '%Y'
 -%}
 
-<section class="hero">
+<bf-hero class="hero">
   <div class="hero__inner">
+    {%- comment -%}
+      bf-wordmark rather than bf-logo, and only here. bf-logo paints the mark as
+      a CSS mask, which is one box and cannot be taken apart; the entrance rises
+      the eight letters independently, so it needs them as real <path> elements.
+      Everywhere else in the theme keeps the mask and its 17KB saving.
+
+      letter_class is what bf-hero.js and bf-hero.css find the letters by —
+      without it the paths carry only bf-wordmark__letter, which belongs to the
+      snippet and must not be reached into from outside.
+    {%- endcomment -%}
     <h1 class="hero__wordmark">
-      {%- render 'bf-logo', shape: 'wordmark', width: '100%', label: shop.name -%}
+      <span class="hero__mark-mask">
+        {%- render 'bf-wordmark', class: 'hero__mark', letter_class: 'hero__mark-letter' -%}
+      </span>
     </h1>
 
     <hr class="hero__rule">
@@ -57,7 +70,7 @@
       <p class="hero__copyright">&copy; {{ year }}</p>
     </div>
   </div>
-</section>
+</bf-hero>
 
 {% schema %}
 {

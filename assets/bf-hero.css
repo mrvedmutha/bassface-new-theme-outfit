@@ -90,6 +90,117 @@
 }
 
 /*
+ * The wordmark is an inline <svg> here, not the bf-logo mask used everywhere
+ * else in the theme, and the reason is the entrance: the letters rise
+ * independently, which needs eight <path> elements in the DOM. A mask is one
+ * box and cannot be taken apart.
+ *
+ * Nothing about the sizing changes. A viewBox derives height from width exactly
+ * as the mask's aspect-ratio did, so the full-bleed scaling described above
+ * still holds — 1392 → 214 at 1440, and climbing past it.
+ */
+.hero__mark {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  /* The letters have to be free to sit below the baseline before they rise;
+     the wrapper below is what hides them while they are down there. */
+  overflow: visible;
+}
+
+/* Clips the letters in their starting position. On the wrapper rather than on
+   the <svg> because the SVG must stay `overflow: visible` for them to be
+   drawable outside the viewBox at all. Same split as the preloader's mark. */
+.hero__mark-mask {
+  display: block;
+  overflow: hidden;
+}
+
+/*
+ * transform-box: fill-box is what makes the percentage mean anything. Without
+ * it a percentage transform on an SVG child resolves against the nearest
+ * viewport rather than the element, so every letter would travel the height of
+ * the whole wordmark instead of its own — the same setup the preloader needs.
+ */
+.hero__mark-letter {
+  transform-box: fill-box;
+  transform-origin: center;
+
+  /* Stops the sub-pixel shimmer some GPUs produce on a transformed path. */
+  backface-visibility: hidden;
+}
+
+/* ------------------------------------------------------------- entrance --- */
+
+/*
+ * The starting pose. Applied by bf-hero.js, never at rest in the markup, so a
+ * hero whose script never arrives is simply a visible hero — the same failure
+ * reasoning as the product card's curtain. Getting this backwards would hide
+ * the brand name, the tagline and the statement on every page load that lost a
+ * request.
+ */
+.hero:where(.is-concealed) .hero__mark-letter {
+  transform: translateY(110%);
+}
+
+.hero:where(.is-concealed) .hero__rule {
+  transform: scaleX(0);
+}
+
+.hero:where(.is-concealed) .hero__tagline,
+.hero:where(.is-concealed) .hero__label,
+.hero:where(.is-concealed) .hero__copy,
+.hero:where(.is-concealed) .hero__link,
+.hero:where(.is-concealed) .hero__copyright {
+  opacity: 0;
+}
+
+/*
+ * One line of the statement, wrapped by bf-hero.js for the duration of the
+ * entrance and then unwrapped again. The outer element clips, the inner one is
+ * the transform target — a single element cannot do both, since it would clip
+ * against its own moving edge.
+ *
+ * The padding/margin pair is not decoration: a line box is only as tall as its
+ * line-height, so clipping to it shaves the descenders off g, p and y. The
+ * padding gives the overflow somewhere to happen and the negative margin takes
+ * the space back out of the layout.
+ */
+.hero__line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.hero__line-text {
+  display: block;
+}
+
+/*
+ * The entrance is removed outright rather than softened. Everything in it is
+ * travel — letters rising, a rule drawing, copy sliding up — and there is no
+ * reduced version of that worth showing. bf-hero.js never applies the starting
+ * pose under this setting, so these rules are a statement of the guarantee
+ * rather than the mechanism.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .hero:where(.is-concealed) .hero__mark-letter,
+  .hero:where(.is-concealed) .hero__rule {
+    transform: none;
+  }
+
+  .hero:where(.is-concealed) .hero__tagline,
+  .hero:where(.is-concealed) .hero__label,
+  .hero:where(.is-concealed) .hero__copy,
+  .hero:where(.is-concealed) .hero__link,
+  .hero:where(.is-concealed) .hero__copyright {
+    opacity: 1;
+  }
+}
+
+/*
  * <hr>, and it has to be — see the same note in bf-footer.css. An empty <div>
  * carrying only a border is hidden outright by Dawn's base.css `div:empty` rule,
  * at a specificity a single class cannot beat.
@@ -102,6 +213,11 @@
   margin: 0;
   border: 0;
   border-top: 5px solid var(--bf-ink);
+
+  /* Drawn from the left during the entrance, which is the only direction that
+     reads as a rule being ruled rather than a bar being stretched. Inert until
+     bf-hero.js animates scaleX. */
+  transform-origin: left center;
 }
 
 /* ---------------------------------------------------------------- meta row */
