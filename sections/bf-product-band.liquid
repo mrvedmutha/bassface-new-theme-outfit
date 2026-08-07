@@ -1,0 +1,194 @@
+{%- comment -%}
+  Bassface product band — the homepage's four card compositions.
+
+  One section rather than four, because the difference between the bands is
+  placement on a shared 16-column grid, not structure. See bf-product-band.css
+  for the column arithmetic and the slot ratios.
+
+    grid        Band A — four equal cards filling the row.
+    big-right   Band B — a pair on the left, a big square hard right.
+    split-left  Band C — one card bleeding off the left edge, a pair to its
+                right, and a deliberately empty right-hand third.
+    big-left    Band D — a big card left, a pair hard right.
+
+  Products come from a COLLECTION by default, not from hand-picked blocks. A
+  band is "four products from here", and making a merchant attach each card
+  individually is work the section can do itself. `offset` is what lets four
+  bands walk through one collection — 0, 4, 7, 10 — instead of needing four.
+
+  Manual mode exists for the editorial bands, where which product lands in the
+  684px square is a genuine curatorial call rather than whatever sorts first.
+
+  Card shapes are decided here, by slot index, and passed to the snippet — see
+  the `ratios` note below. They are not a merchant setting.
+{%- endcomment -%}
+
+{{ 'bf-product-card.css' | asset_url | stylesheet_tag }}
+{{ 'bf-product-band.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-product-card.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign layout = section.settings.layout
+
+  assign count = 3
+  assign card_sizes = '(min-width: 1024px) 30vw, 48vw'
+
+  comment
+    Slot ratios, keyed by position and owned by the LAYOUT — not by the product
+    and not by the merchant. Band B's third card is square because it is the
+    684px slot; putting the choice on a product setting let a merchant break the
+    composition from the editor, which is why there is no such setting.
+
+    They are passed to the snippet rather than set in bf-product-band.css: a
+    component may only declare custom properties under its own name, and
+    --product-card-ratio belongs to the card.
+
+    `grid` lists one value and relies on the default below for the rest, since
+    every card in Band A is the same shape however many there are.
+  endcomment
+
+  case layout
+    when 'big-right'
+      assign ratios = '2 / 3,1 / 1,1 / 1' | split: ','
+    when 'split-left'
+      assign ratios = '1 / 1,2 / 3,1 / 1' | split: ','
+    when 'big-left'
+      assign ratios = '4 / 5,1 / 1,2 / 3' | split: ','
+    else
+      assign ratios = '3 / 4' | split: ','
+      assign count = section.settings.products_to_show
+      assign card_sizes = '(min-width: 1024px) 23vw, 48vw'
+  endcase
+-%}
+
+<section class="product-band product-band--{{ layout }}">
+  <div class="product-band__inner">
+    {%- if section.settings.source == 'manual' -%}
+      {%- for block in section.blocks limit: count -%}
+        <div class="product-band__item" {{ block.shopify_attributes }}>
+          {%- assign slot_ratio = ratios[forloop.index0] | default: '3 / 4' -%}
+          {%- render 'bf-product-card', product: block.settings.product, ratio: slot_ratio, sizes: card_sizes -%}
+        </div>
+      {%- endfor -%}
+
+    {%- else -%}
+      {%- comment -%}
+        offset/limit on the for tag rather than a slice filter: collection
+        .products is capped at 50 by Shopify and the tag handles the paging
+        natively, so this stays correct past that cap.
+      {%- endcomment -%}
+      {%- for product in section.settings.collection.products offset: section.settings.offset limit: count -%}
+        <div class="product-band__item">
+          {%- assign slot_ratio = ratios[forloop.index0] | default: '3 / 4' -%}
+          {%- render 'bf-product-card', product: product, ratio: slot_ratio, sizes: card_sizes -%}
+        </div>
+      {%- endfor -%}
+
+      {%- comment -%}
+        With no collection chosen the section would render an empty grid and
+        read as broken in the editor. Placeholder cards keep the composition
+        visible while a merchant is still setting it up.
+      {%- endcomment -%}
+      {%- if section.settings.collection == blank -%}
+        {%- for i in (1..count) -%}
+          <div class="product-band__item">
+            {%- assign slot_ratio = ratios[forloop.index0] | default: '3 / 4' -%}
+            {%- render 'bf-product-card', ratio: slot_ratio, sizes: card_sizes -%}
+          </div>
+        {%- endfor -%}
+      {%- endif -%}
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Product band",
+  "settings": [
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "info": "Card shapes are set by the layout — Band B's big card is square because it is the big card. They are not per-product.",
+      "options": [
+        { "value": "grid", "label": "Grid — four equal cards" },
+        { "value": "big-right", "label": "Pair left, big card right" },
+        { "value": "split-left", "label": "Card bleeding left, pair right" },
+        { "value": "big-left", "label": "Big card left, pair right" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "select",
+      "id": "source",
+      "label": "Products from",
+      "options": [
+        { "value": "collection", "label": "A collection" },
+        { "value": "manual", "label": "Products I pick" }
+      ],
+      "default": "collection"
+    },
+    {
+      "type": "header",
+      "content": "From a collection"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "range",
+      "id": "offset",
+      "label": "Skip first",
+      "info": "Lets several bands walk through one collection instead of needing one collection each.",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "label": "Products",
+      "info": "Grid layout only. The other three always use three cards.",
+      "min": 2,
+      "max": 8,
+      "step": 1,
+      "default": 4
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Product",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Product"
+        }
+      ]
+    }
+  ],
+  "max_blocks": 8,
+  "presets": [
+    {
+      "name": "Product band — grid",
+      "settings": { "layout": "grid" }
+    },
+    {
+      "name": "Product band — pair left, big right",
+      "settings": { "layout": "big-right" }
+    },
+    {
+      "name": "Product band — bleeding left, pair right",
+      "settings": { "layout": "split-left" }
+    },
+    {
+      "name": "Product band — big left, pair right",
+      "settings": { "layout": "big-left" }
+    }
+  ]
+}
+{% endschema %}

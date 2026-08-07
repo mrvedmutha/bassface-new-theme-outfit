@@ -1,0 +1,192 @@
+/* @define product-band */
+
+/*
+ * The homepage product bands — four compositions of the same product card.
+ *
+ * Every band is a column grid with a 24px gutter, and every card is a span on
+ * it. Two things change across breakpoints: the number of columns, and the
+ * placements. Nothing else — no stacking rules, no per-breakpoint widths.
+ *
+ * COLUMN COUNT
+ *
+ *   editorial bands   16 columns down to 834, then 8
+ *   grid band         16 columns down to 1024, then 8 (so `span 4` is 4-up
+ *                     above and 2-up below, from one unchanged rule)
+ *
+ * GUTTER
+ *
+ *   editorial bands   24 at every width, including 390
+ *   grid band         24 above 1024, 16 below — the boards genuinely differ
+ *                     here, which is why it is a separate token
+ *
+ * These are not approximations. `width(n) = n·col + 24(n−1)` reproduces every
+ * card on every board exactly:
+ *
+ *   1440  col 64.5    3→241.5  4→330   5→418.5  8→684
+ *   1024  col 38.5    3→164    4→226   5→288.5  8→476
+ *    834  col 27.625  3→131    5→234   8→389
+ *    448  col 31      3→141    4→196   5→251    6→306    (8-column grid)
+ *    390  col 23.75   3→119    4→167   5→215    6→262.5  (8-column grid)
+ *
+ * Band A's grid uses the 16 gutter below 1024: col 86.25 at 834 → 4→393, and
+ * col 38 at 448 → 4→200. Also exact.
+ *
+ * Slot RATIOS are in bf-product-band.liquid, keyed by slot index. They belong
+ * to the layout (Band B's card is square because it is the big slot, not
+ * because of what is in it) but cannot live in this file: a component may only
+ * declare custom properties under its own name, and --product-card-ratio
+ * belongs to the card.
+ *
+ * The design file wraps each band's two small cards in a "Left Group" /
+ * "Right Group" frame. There is no wrapper here — on a column grid the pair is
+ * just two adjacent spans, and the frame only existed to give the design tool
+ * something to position.
+ *
+ * ROW BREAKS ARE NOT DECLARED. Below 834 the mobile placements overlap the
+ * columns already used on the first row, and grid auto-placement pushes the
+ * overlapping item to the next row on its own. That is why there is no
+ * `grid-row` anywhere in this file.
+ */
+
+.product-band {
+  --product-band-columns: 16;
+  --product-band-gap: var(--bf-space-24);
+
+  /* 136 on every board at every width. */
+  --product-band-bottom: 13.6rem;
+
+  display: block;
+  padding-bottom: var(--product-band-bottom);
+}
+
+.product-band__inner {
+  display: grid;
+  gap: var(--product-band-gap);
+  grid-template-columns: repeat(var(--product-band-columns), 1fr);
+  padding-inline: var(--bf-page-padding);
+  align-items: start;
+}
+
+/* ----------------------------------------------- layouts, 834 and above --- */
+
+/*
+ * Band A. Four 4-column cards fill the row exactly: 4×330 + 3×24 = 1392, the
+ * content width to the pixel. Auto-flow, so a fifth product wraps to a second
+ * row on the same rhythm rather than breaking the band.
+ */
+.product-band--grid .product-band__item {
+  grid-column: span 4;
+}
+
+/*
+ * Band B — pair left, big square right. The board reads as space-between; on
+ * the grid that is cards at 1-3 and 4-6 with the square at 9-16, leaving 2
+ * columns plus 3 gutters between them — 201px at 1440, which is exactly
+ * 1392 − 507 − 684.
+ */
+.product-band--big-right .product-band__item:first-child {
+  grid-column: 1 / span 3;
+}
+
+.product-band--big-right .product-band__item:nth-child(2) {
+  grid-column: 4 / span 3;
+}
+
+.product-band--big-right .product-band__item:nth-child(3) {
+  grid-column: 9 / span 8;
+}
+
+/*
+ * Band C — one card, a wide gap, then the pair, stopping at column 11 of 16.
+ * The empty right-hand third is the composition, not a gap to be filled.
+ *
+ * There is no left bleed. The design file's padding reads [0,0,136,24], which
+ * is top/right/bottom/left — so the zero is on the RIGHT, and the left gutter
+ * is the standard 24. It is a no-op either way, since the band stops well
+ * short of the right edge at this width.
+ */
+.product-band--split-left .product-band__item:first-child {
+  grid-column: 1 / span 3;
+}
+
+.product-band--split-left .product-band__item:nth-child(2) {
+  grid-column: 6 / span 3;
+}
+
+.product-band--split-left .product-band__item:nth-child(3) {
+  grid-column: 9 / span 3;
+}
+
+/*
+ * Band D — big card left, pair hard right. The 5 columns of slack between them
+ * (466.5 at 1440) is what the board's space-between produces.
+ */
+.product-band--big-left .product-band__item:first-child {
+  grid-column: 1 / span 5;
+}
+
+.product-band--big-left .product-band__item:nth-child(2) {
+  grid-column: 11 / span 3;
+}
+
+.product-band--big-left .product-band__item:nth-child(3) {
+  grid-column: 14 / span 3;
+}
+
+/* =============================================================== 1024 ==== *
+ * Only the grid band changes here, and only its column count and gutter: 8
+ * columns at a 16 gutter turns the unchanged `span 4` into a 2-up. The three
+ * editorial bands keep the 16-column composition all the way down to 834.
+ */
+
+@media screen and (width < 1024px) {
+  .product-band--grid {
+    --product-band-columns: 8;
+    --product-band-gap: var(--bf-space-16);
+  }
+}
+
+/* ================================================================ 834 ==== *
+ * The editorial bands halve to 8 columns and take their mobile placements.
+ * Each one becomes two rows, which the overlapping spans produce by themselves
+ * — see the note in the file header.
+ *
+ *   B   pair 1-3 / 4-6, then the square at 3-8, running to the right gutter
+ *   C   card 1-4, then the pair at 3-5 / 6-8
+ *   D   big card 1-5, then the pair at 2-4 / 5-8
+ *
+ * Every one of those spans reproduces its board width exactly at both 448 and
+ * 390 — see the table in the file header.
+ */
+
+@media screen and (width < 834px) {
+  .product-band--big-right,
+  .product-band--split-left,
+  .product-band--big-left {
+    --product-band-columns: 8;
+  }
+
+  .product-band--big-right .product-band__item:nth-child(3) {
+    grid-column: 3 / span 6;
+  }
+
+  .product-band--split-left .product-band__item:first-child {
+    grid-column: 1 / span 4;
+  }
+
+  .product-band--split-left .product-band__item:nth-child(2) {
+    grid-column: 3 / span 3;
+  }
+
+  .product-band--split-left .product-band__item:nth-child(3) {
+    grid-column: 6 / span 3;
+  }
+
+  .product-band--big-left .product-band__item:nth-child(2) {
+    grid-column: 2 / span 3;
+  }
+
+  .product-band--big-left .product-band__item:nth-child(3) {
+    grid-column: 5 / span 4;
+  }
+}
