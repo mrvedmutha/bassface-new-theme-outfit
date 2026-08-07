@@ -1,0 +1,37 @@
+{%- comment -%}
+  Trailing cursor dot — rendered from layout/theme.liquid.
+
+  A snippet configured from Theme settings -> Cursor, not a section: it belongs
+  to the layout rather than to any one template, exactly as the preloader does.
+  A static section rendered from theme.liquid would show up in the section list
+  of whichever template the merchant happened to be editing, reading as though
+  the cursor belonged to the home page.
+
+  Opting an element in is one attribute, anywhere in the theme:
+
+    <a data-cursor>...</a>                      the disc, with the label below
+    <a data-cursor data-cursor-label="Add">...  the disc, with its own wording
+
+  The element is rendered on every device. bf-cursor.js never activates it
+  without a pointer that can hover, so on a phone it stays at opacity 0 and
+  binds no listeners — cheaper than asking Liquid to guess at the device, which
+  it cannot do anyway.
+{%- endcomment -%}
+
+{%- if settings.cursor_enabled -%}
+  {{ 'bf-cursor.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'bf-cursor.js' | asset_url }}" defer="defer"></script>
+
+  {%- comment -%}
+    aria-hidden, and no live region. The dot is a visual echo of the pointer;
+    a screen reader user already knows what they are pointing at, and the label
+    duplicates the link text the card announces anyway.
+  {%- endcomment -%}
+  <bf-cursor class="cursor" aria-hidden="true">
+    <div class="cursor__follow">
+      <div class="cursor__dot">
+        <span class="cursor__label">{{ settings.cursor_label }}</span>
+      </div>
+    </div>
+  </bf-cursor>
+{%- endif -%}

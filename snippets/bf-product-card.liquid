@@ -59,7 +59,14 @@
     style="{{ card_style }}"
   {% endif %}
 >
-  <a class="product-card__link" href="{{ product.url | default: '#' }}">
+  {%- comment -%}
+    data-cursor opts this link into the trailing cursor's large labelled state —
+    see snippets/bf-cursor.liquid. On the link rather than on the card element
+    so the disc appears over exactly the region that is clickable, and no
+    wording here: the label is one theme setting rather than a string repeated
+    into every card's markup.
+  {%- endcomment -%}
+  <a class="product-card__link" href="{{ product.url | default: '#' }}" data-cursor>
     <div class="product-card__media">
       {%- if product.featured_image -%}
         {%- comment -%}

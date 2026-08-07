@@ -34,7 +34,22 @@
  * The sweep is Web Animations, not GSAP. It is one linear translate with a
  * cancel path; the theme vendors GSAP for work that earns it, and this does not.
  */
+/*
+ * Everything below is wrapped in an IIFE, and it is not decoration.
+ *
+ * The theme uses classic scripts by design — no bundler, no modules — which
+ * means every `const` at the top level of every asset lands in ONE shared
+ * global lexical scope. Two files declaring the same name is not a shadowing
+ * warning, it is a SyntaxError that kills whichever file parses second,
+ * outright and silently apart from a console entry.
+ *
+ * That is not hypothetical: this file and bf-cursor.js both wanted
+ * `reduceMotion` and `canHover`, and the collision took out the marquee, the
+ * entrance and the hover image all at once. An IIFE per file is what makes a
+ * new component safe to add without auditing every name already in the theme.
+ */
 
+(() => {
 /* Scroll is considered stopped after this long without a scroll event. Long
    enough not to fire mid-flick on momentum scrolling, short enough that a
    deliberate stop feels answered. */
@@ -452,3 +467,4 @@ settleTimer = setTimeout(() => {
 }, SETTLE_MS);
 
 customElements.define('bf-product-card', BFProductCard);
+})();

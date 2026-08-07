@@ -1,0 +1,135 @@
+/* @define cursor */
+
+/*
+ * The trailing cursor dot — port of the OUTFIT pointer.
+ *
+ * A small dot follows the pointer at a lag, and grows into a large labelled
+ * disc over anything that opts in with `data-cursor` (today: product cards).
+ *
+ * THE REAL POINTER IS NOT HIDDEN. `cursor: none` is the obvious move and it is
+ * the wrong one: the dot trails by design, so it is never under the hotspot,
+ * and if the script stalls or fails the visitor is left with nothing to aim
+ * with. The reference makes the same call — its body stays `cursor: auto` and
+ * its cards stay `cursor: pointer`. The dot is an accent riding alongside the
+ * arrow, not a replacement for it.
+ *
+ * THREE ELEMENTS, and each one owns exactly one job. They cannot be collapsed:
+ *
+ *   .cursor         opacity only. Fades in on the first move and out when the
+ *                   pointer leaves the window.
+ *   .cursor__follow the transform. Written every frame by JS, so it must not
+ *                   carry a transition — a transition here would fight the
+ *                   lerp, and the two easings would beat against each other.
+ *   .cursor__dot    the size. Transitions between the small and large states,
+ *                   which is only possible because nothing else on this element
+ *                   is being animated from script.
+ *
+ * Nothing here is scoped to a media query for touch. The element renders on
+ * every device but bf-cursor.js never activates it without a pointer that can
+ * hover, so it stays at opacity 0 and costs a phone nothing.
+ */
+
+.cursor {
+  --cursor-size: 0.8rem;
+  --cursor-size-active: 10rem;
+  --cursor-fade: 200ms;
+  --cursor-resize: 200ms;
+
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+
+  /* Never a hit target. Without this the dot would sit between the pointer and
+     the page and swallow every click on the card it is advertising. */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cursor-fade) ease-in-out;
+}
+
+.cursor:where(.is-visible) {
+  opacity: 1;
+}
+
+/*
+ * Promoted for the life of the component rather than only while moving, which
+ * is the opposite of the call made for the card marquee — and deliberately.
+ * There is exactly ONE of these on the page, so it is one layer, and it is
+ * repainted on almost every frame the visitor is active. The marquee's
+ * reasoning was about forty cards each claiming a layer for a rare animation.
+ */
+.cursor__follow {
+  will-change: transform;
+}
+
+/*
+ * The negative margins are what centre the dot on the pointer: the element is
+ * positioned at the pointer coordinate, then pulled back by half its own size.
+ * They are transitioned along with width and height so the disc grows from its
+ * middle instead of from its top-left corner.
+ */
+.cursor__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cursor-size);
+  height: var(--cursor-size);
+  margin-top: calc(var(--cursor-size) / -2);
+  margin-left: calc(var(--cursor-size) / -2);
+  border-radius: 50%;
+  background-color: var(--bf-ink);
+  transition:
+    width var(--cursor-resize) ease-in-out,
+    height var(--cursor-resize) ease-in-out,
+    margin var(--cursor-resize) ease-in-out;
+}
+
+.cursor:where(.is-active) .cursor__dot {
+  width: var(--cursor-size-active);
+  height: var(--cursor-size-active);
+  margin-top: calc(var(--cursor-size-active) / -2);
+  margin-left: calc(var(--cursor-size-active) / -2);
+}
+
+/*
+ * The label is laid out at its full size at all times and only faded, never
+ * scaled. Animating the type would make it illegible for the whole 200ms it
+ * was in flight, and it is the one part of this the visitor is meant to read.
+ *
+ * Surface colour on ink, so it reads against the filled disc in all three
+ * themes without a per-theme rule.
+ */
+.cursor__label {
+  opacity: 0;
+  color: var(--bf-surface);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-weight-medium);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  transition: opacity var(--cursor-resize) ease-in-out;
+}
+
+.cursor:where(.is-active) .cursor__label {
+  opacity: 1;
+}
+
+/*
+ * The lag is the effect, and the lag is motion — so under this setting the dot
+ * is pinned to the pointer instead. bf-cursor.js checks the same query and
+ * skips its interpolation entirely, which is the actual mechanism; what this
+ * block removes is the growth and the fades, so the remaining dot changes size
+ * instantly rather than easing.
+ *
+ * The dot itself stays. It carries the "this opens a product" affordance, and
+ * a stationary dot under the pointer triggers nothing that this setting exists
+ * to prevent.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cursor,
+  .cursor__dot,
+  .cursor__label {
+    transition: none;
+  }
+}

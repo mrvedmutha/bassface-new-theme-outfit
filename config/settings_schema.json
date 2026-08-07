@@ -8,6 +8,25 @@
     "theme_support_url": "https://support.shopify.com/"
   },
   {
+    "name": "Cursor",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "cursor_enabled",
+        "label": "Enable trailing cursor",
+        "info": "A dot follows the pointer and grows into a labelled disc over product cards. Shown only on devices with a mouse or trackpad; phones and tablets are unaffected.",
+        "default": true
+      },
+      {
+        "type": "text",
+        "id": "cursor_label",
+        "label": "Label over product cards",
+        "info": "Shown in uppercase. Keep it to two or three words — it has to fit inside the disc on one line.",
+        "default": "View More"
+      }
+    ]
+  },
+  {
     "name": "Preloader",
     "settings": [
       {
