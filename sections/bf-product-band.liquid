@@ -67,7 +67,12 @@
       {%- for block in section.blocks limit: count -%}
         <div class="product-band__item" {{ block.shopify_attributes }}>
           {%- assign slot_ratio = ratios[forloop.index0] | default: '3 / 4' -%}
-          {%- render 'bf-product-card', product: block.settings.product, ratio: slot_ratio, sizes: card_sizes -%}
+          {%- render 'bf-product-card',
+            product: block.settings.product,
+            ratio: slot_ratio,
+            sizes: card_sizes,
+            index: forloop.index0
+          -%}
         </div>
       {%- endfor -%}
 
@@ -80,7 +85,12 @@
       {%- for product in section.settings.collection.products offset: section.settings.offset limit: count -%}
         <div class="product-band__item">
           {%- assign slot_ratio = ratios[forloop.index0] | default: '3 / 4' -%}
-          {%- render 'bf-product-card', product: product, ratio: slot_ratio, sizes: card_sizes -%}
+          {%- render 'bf-product-card',
+            product: product,
+            ratio: slot_ratio,
+            sizes: card_sizes,
+            index: forloop.index0
+          -%}
         </div>
       {%- endfor -%}
 
@@ -93,7 +103,7 @@
         {%- for i in (1..count) -%}
           <div class="product-band__item">
             {%- assign slot_ratio = ratios[forloop.index0] | default: '3 / 4' -%}
-            {%- render 'bf-product-card', ratio: slot_ratio, sizes: card_sizes -%}
+            {%- render 'bf-product-card', ratio: slot_ratio, sizes: card_sizes, index: forloop.index0 -%}
           </div>
         {%- endfor -%}
       {%- endif -%}

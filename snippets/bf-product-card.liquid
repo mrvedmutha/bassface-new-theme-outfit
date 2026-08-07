@@ -17,23 +17,46 @@
     sizes    - the `sizes` attribute. Pass the band's real column width; the
                default assumes a 4-up grid.
     loading  - 'lazy' (default) or 'eager' for cards above the fold.
+    index    - 0-based position among the cards revealing together, which is
+               what staggers the entrance across a row. Optional; a lone card
+               passes nothing and starts immediately.
 
   Usage:
     {%- render 'bf-product-card', product: product, ratio: '1 / 1' -%}
 
   The category line is product.type, uppercased in CSS rather than in the data
   so the merchant's own casing survives in the admin.
+
+  A product's SECOND image, when it has one, is rendered as a hover layer that
+  wipes in over the first — see the note on `--alt` in bf-product-card.css. It
+  carries data-src rather than src on purpose: bf-product-card.js promotes it to
+  a real source only on a pointer that can hover, so a phone never downloads an
+  image it has no way to reveal. Cards with a single image simply omit it.
 {%- endcomment -%}
 
 {%- liquid
   assign loading = loading | default: 'lazy'
   assign sizes = sizes | default: '(min-width: 834px) 25vw, 50vw'
+  assign alt_image = product.images[1]
+
+  comment
+    235ms per slot. The reference staggers its row by 0.2s and then plays the
+    whole timeline at a timeScale of 0.85, which works out at 235ms of real
+    time — and that is what I measured between cards on the live site, so the
+    figure is the observed one rather than the arithmetic one.
+  endcomment
+  assign reveal_delay = index | default: 0 | times: 235
 -%}
+
+{%- capture card_style -%}
+  {%- if ratio != blank %}--product-card-ratio: {{ ratio }};{% endif -%}
+  {%- if reveal_delay > 0 %}--product-card-reveal-delay: {{ reveal_delay }}ms;{% endif -%}
+{%- endcapture -%}
 
 <bf-product-card
   class="product-card"
-  {% if ratio != blank %}
-    style="--product-card-ratio: {{ ratio }};"
+  {% if card_style != blank %}
+    style="{{ card_style }}"
   {% endif %}
 >
   <a class="product-card__link" href="{{ product.url | default: '#' }}">
@@ -45,7 +68,7 @@
           twice.
         {%- endcomment -%}
         <img
-          class="product-card__image"
+          class="product-card__image product-card__image--primary"
           src="{{ product.featured_image | image_url: width: 800 }}"
           srcset="
             {{ product.featured_image | image_url: width: 400 }} 400w,
@@ -60,9 +83,55 @@
           alt=""
           loading="{{ loading }}"
         >
+
+        {%- if alt_image -%}
+          {%- comment -%}
+            No src attribute at all until the script arms it. A src-less <img>
+            renders nothing and requests nothing, where an empty src would
+            resolve against the page URL and fetch the document itself.
+
+            Deliberately no loading="lazy". It looks like the obvious choice and
+            it does not work: Chrome never schedules the fetch for a lazy image
+            whose src is set from script after layout, so the image sat at
+            complete=false forever and the hover never armed. The script arms
+            this only when the card scrolls into view, which is what lazy was
+            being asked for anyway — so the attribute was buying nothing and
+            costing the whole effect.
+
+            fetchpriority stays low: this is never the LCP candidate, even in an
+            above-the-fold card.
+          {%- endcomment -%}
+          <img
+            class="product-card__image product-card__image--alt"
+            data-src="{{ alt_image | image_url: width: 800 }}"
+            data-srcset="
+              {{ alt_image | image_url: width: 400 }} 400w,
+              {{ alt_image | image_url: width: 600 }} 600w,
+              {{ alt_image | image_url: width: 800 }} 800w,
+              {{ alt_image | image_url: width: 1200 }} 1200w,
+              {{ alt_image | image_url: width: 1600 }} 1600w
+            "
+            sizes="{{ sizes }}"
+            width="{{ alt_image.width }}"
+            height="{{ alt_image.height }}"
+            alt=""
+            fetchpriority="low"
+          >
+        {%- endif -%}
       {%- else -%}
-        {{ 'product-1' | placeholder_svg_tag: 'product-card__image' }}
+        {{ 'product-1' | placeholder_svg_tag: 'product-card__image product-card__image--primary' }}
       {%- endif -%}
+
+      {%- comment -%}
+        The entrance curtain. Last in the media box so it paints over both
+        images without needing a z-index, and aria-hidden because it is a
+        moving rectangle with nothing to announce.
+
+        Rendered whether or not the script runs — it parks off to the right at
+        rest, so an unprimed card is simply a card. See the note in
+        bf-product-card.css.
+      {%- endcomment -%}
+      <span class="product-card__curtain" aria-hidden="true"></span>
     </div>
 
     <div class="product-card__info">

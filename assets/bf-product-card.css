@@ -21,6 +21,30 @@
   --product-card-dot-size: 0.8rem;
   --product-card-gap: 1.2rem;
   --product-card-category-gap: 0.6rem;
+  --product-card-hover-duration: 500ms;
+
+  /* Symmetric expo in-out. The wipe has to leave and arrive slowly for the
+     image to read as developing rather than as a panel sliding past. */
+  --product-card-hover-ease: cubic-bezier(0.87, 0, 0.13, 1);
+
+  /* 800ms played at a timeScale of 0.85 in the reference — the two are folded
+     together here, since a separate scale factor would be a number with nothing
+     to scale. Measured at 934ms on the live site, which is this to the frame. */
+  --product-card-reveal-duration: 940ms;
+
+  /* expo.out. One-directional, unlike the hover: the reveal has to leave hard
+     and coast to a stop, where the hover eases at both ends. */
+  --product-card-reveal-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Overridden per slot by the consumer — see the note on `index` in
+     bf-product-card.liquid. Zero on a lone card, which is correct: there is
+     nothing for it to be staggered against. */
+  --product-card-reveal-delay: 0ms;
+
+  /* The curtain reads as a shade of the surface rather than as a colour of its
+     own, so it tracks the theme instead of needing one value per theme. 12%
+     matches the reference's #d2cac3 over its cream almost exactly. */
+  --product-card-curtain: color-mix(in srgb, var(--bf-ink) 12%, var(--bf-surface));
 
   display: block;
 
@@ -52,6 +76,7 @@
  * pairs) and 4/5 (Band D's big card).
  */
 .product-card__media {
+  position: relative;
   overflow: hidden;
   aspect-ratio: var(--product-card-ratio, 3 / 4);
 }
@@ -65,6 +90,105 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ===================================================== the entrance ====== *
+ * The card uncovers itself when it first scrolls into view: a solid curtain
+ * slides off to the right while the image, which starts pushed half its width
+ * to the LEFT and scaled up, slides right to meet its final position. The two
+ * moving the same way at different rates is what gives it depth — the image
+ * looks like it is being uncovered rather than sliding in behind a panel.
+ *
+ * Deliberately NOT the hover treatment. There is no brightness/contrast ramp
+ * here: the entrance is about arrival, and blowing out every image on the page
+ * as it enters would read as a fault rather than as an effect. The hover keeps
+ * the exposure ramp because it is a deliberate act on ONE card.
+ *
+ * Both states are applied by classes from bf-product-card.js, and the resting
+ * state below is the SAFE one — curtain parked off to the right, image
+ * untransformed. If the script never runs, every card simply renders normally.
+ * Priming in CSS instead would leave the whole catalogue behind opaque panels
+ * the moment an asset request failed.
+ */
+.product-card__curtain {
+  position: absolute;
+  inset: 0;
+  transform: translateX(100%);
+  background-color: var(--product-card-curtain);
+}
+
+/* Primed. No transition on either of these — this is the starting pose being
+   set, and animating INTO it is exactly what must not happen. */
+.product-card:where(.is-concealed) .product-card__curtain {
+  transform: translateX(0);
+}
+
+.product-card:where(.is-concealed) .product-card__image--primary {
+  transform: translateX(-50%) scale(1.4);
+}
+
+/* Running. Same specificity as the primed rules above, so source order is what
+   makes these win once both classes are on. */
+.product-card:where(.is-revealed) .product-card__curtain {
+  transform: translateX(100%);
+  transition: transform var(--product-card-reveal-duration) var(--product-card-reveal-ease)
+    var(--product-card-reveal-delay);
+}
+
+.product-card:where(.is-revealed) .product-card__image--primary {
+  transform: none;
+  transition: transform var(--product-card-reveal-duration) var(--product-card-reveal-ease)
+    var(--product-card-reveal-delay);
+}
+
+/*
+ * The hover layer — the product's second image, sitting on top of the first.
+ *
+ * Three things move together, and the combination is the effect: a clip-path
+ * wipe left to right, a settle from 1.2, and a blown-out exposure resolving to
+ * normal. The image reads as DEVELOPING as it is uncovered, rather than as a
+ * second picture sliding in. Any one of the three alone looks like a stock
+ * transition.
+ *
+ * The clip-path is written as a four-point polygon rather than `inset()` so the
+ * two states interpolate: the collapsed state is the same four corners with the
+ * right-hand pair sitting on the left edge, which is what makes it a wipe and
+ * not a fade.
+ *
+ * There is deliberately NO `@media (hover: hover)` guard on the reveal below.
+ * The usual reason for one — a sticky :hover stranding the effect after a tap —
+ * cannot happen here, because bf-product-card.js only gives this element a src
+ * on a pointer that can hover. On a phone it stays an empty box with nothing to
+ * uncover, so the guard would be duplicating a decision already made in JS.
+ */
+.product-card__image--alt {
+  position: absolute;
+  inset: 0;
+  transform: scale(1.2);
+  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  filter: brightness(400%) contrast(150%);
+  transition:
+    clip-path var(--product-card-hover-duration) var(--product-card-hover-ease),
+    transform var(--product-card-hover-duration) var(--product-card-hover-ease),
+    filter var(--product-card-hover-duration) var(--product-card-hover-ease),
+    opacity var(--product-card-hover-duration) var(--product-card-hover-ease);
+}
+
+/*
+ * Keyboard users get the same reveal. The card is one link, so :focus-visible
+ * on it is the exact keyboard equivalent of hovering the card.
+ *
+ * `.is-ready` is set by bf-product-card.js once the image has DECODED, and
+ * gating on it is what stops the effect misfiring before then. Hover an
+ * unarmed card and the wipe would run over an empty box, complete, and only
+ * then have the image appear — fully revealed, in one frame, with no wipe.
+ * Waiting for the decode means the first reveal a visitor sees is the real one.
+ */
+.product-card__link:hover .product-card__image--alt:where(.is-ready),
+.product-card__link:focus-visible .product-card__image--alt:where(.is-ready) {
+  transform: scale(1);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  filter: brightness(100%) contrast(100%);
 }
 
 .product-card__info {
@@ -259,5 +383,49 @@
 @media (prefers-reduced-motion: reduce) {
   .product-card__title-text {
     transform: none !important;
+  }
+
+  /*
+   * The second image is still shown — it is information about the product, not
+   * decoration, and withholding it would make the card worse rather than
+   * calmer. What goes is the motion: no wipe, no scale, no exposure ramp. A
+   * cross-fade is the accepted substitution, since the trigger for this setting
+   * is movement across the field of view and a fade has none.
+   *
+   * These come after the hover rules above at equal specificity, so source
+   * order is what lets them win.
+   */
+  .product-card__image--alt {
+    transform: none;
+    clip-path: none;
+    opacity: 0;
+    filter: none;
+  }
+
+  .product-card__link:hover .product-card__image--alt:where(.is-ready),
+  .product-card__link:focus-visible .product-card__image--alt:where(.is-ready) {
+    transform: none;
+    opacity: 1;
+  }
+
+  /*
+   * The entrance goes entirely — not softened, removed. Unlike the hover image
+   * there is nothing here worth preserving: the curtain and the counter-move
+   * carry no information, they are pure motion, so the card just renders.
+   *
+   * bf-product-card.js also refuses to add these classes under this setting, so
+   * in practice these rules never match. They are here so that a reader of the
+   * stylesheet can see the guarantee without having to go and read the script.
+   */
+  .product-card:where(.is-concealed) .product-card__curtain,
+  .product-card:where(.is-revealed) .product-card__curtain {
+    transform: translateX(100%);
+    transition: none;
+  }
+
+  .product-card:where(.is-concealed) .product-card__image--primary,
+  .product-card:where(.is-revealed) .product-card__image--primary {
+    transform: none;
+    transition: none;
   }
 }
