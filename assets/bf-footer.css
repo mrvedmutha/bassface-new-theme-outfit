@@ -30,6 +30,21 @@
   --colophon-intro-size: var(--colophon-link-size);
   --colophon-intro-top: 12.8rem;
 
+  /* Signup column. Full width and stacked under the intro below 834; beside it
+     from there up at the board widths 320 / 380 / 420. */
+  --colophon-newsletter-width: 32rem;
+
+  /*
+   * Pinned rather than inherited so the label's box height is arithmetic, not a
+   * font-metric guess: the brand column has no label of its own and offsets
+   * itself by exactly one label plus the group gap to sit on the same line as
+   * the labelled columns beside it.
+   */
+  --colophon-label-leading: 1.1;
+  --colophon-label-offset: calc(
+    var(--bf-text-eyebrow-size) * var(--colophon-label-leading) + var(--bf-space-16)
+  );
+
   /*
    * Clearance above the top rule. The footer owns this rather than leaning on
    * the last section's bottom padding, so it reads the same whatever template
@@ -126,16 +141,103 @@
   line-height: var(--bf-leading-tight);
 }
 
-/* ------------------------------------------------------------------- intro */
+/* --------------------------------------------------- intro and newsletter */
+
+/*
+ * The band between the masthead and the mid rule. The intro's long top offset
+ * lives here rather than on the paragraph, so the signup column beside it starts
+ * on the same line instead of being pushed down twice.
+ */
+.colophon__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-32);
+  padding-top: var(--colophon-intro-top);
+  padding-bottom: var(--bf-space-12);
+}
 
 .colophon__intro {
   max-width: var(--colophon-intro-max, none);
   margin: 0;
-  padding-top: var(--colophon-intro-top);
-  padding-bottom: var(--bf-space-12);
   font-size: var(--colophon-intro-size);
   letter-spacing: var(--bf-text-subhead-tracking);
   line-height: 1.33;
+}
+
+.colophon__newsletter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-14);
+  flex: none;
+}
+
+.colophon__newsletter-copy {
+  margin: 0;
+  font-size: var(--colophon-link-size);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+.colophon__form {
+  margin: 0;
+}
+
+/*
+ * An underline, not a box. The boards draw the field as a rule because the
+ * footer is already a rule-driven composition — the bordered input used on the
+ * contact page would read as a foreign control here.
+ */
+.colophon__field {
+  display: flex;
+  gap: var(--bf-space-16);
+  align-items: center;
+  padding-block: var(--bf-space-8) var(--bf-space-12);
+  border-bottom: var(--bf-border-hairline);
+}
+
+.colophon__input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--bf-text-body-size);
+  letter-spacing: var(--bf-text-body-tracking);
+}
+
+.colophon__input::placeholder {
+  color: var(--bf-ink-muted);
+  opacity: 1;
+}
+
+.colophon__input:focus-visible {
+  outline: none;
+}
+
+/* The field is the visible control, so the ring belongs on it rather than on the
+   input, which has no border of its own to carry focus. */
+.colophon__field:focus-within {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: var(--bf-space-4);
+}
+
+.colophon__submit {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  flex: none;
+}
+
+.colophon__message {
+  margin: var(--bf-space-8) 0 0;
+  font-size: var(--bf-text-caption-size);
+  letter-spacing: var(--bf-text-caption-tracking);
+  line-height: var(--bf-leading-relaxed);
 }
 
 /* ------------------------------------------------------------------- links */
@@ -152,18 +254,62 @@
  */
 .colophon__links {
   display: grid;
-  gap: var(--bf-space-40) var(--bf-space-32);
+  gap: var(--bf-space-40) var(--bf-space-24);
   grid-template-areas:
-    "social social"
-    "address policies"
+    "social policies"
+    "secondary address"
+    "payments payments"
     "brand brand";
-  grid-template-columns: auto auto;
+  grid-template-columns: 1fr 1fr;
   justify-content: start;
+}
+
+/*
+ * Every column is label-over-content. `display: contents` on the menu wrapper is
+ * what lets one markup tree serve both layouts: stacked, the three menu columns
+ * are direct grid items and drop into their own areas; from 834 up the wrapper
+ * becomes a real flex box so space-between distributes the four clusters rather
+ * than the six columns.
+ */
+.colophon__cols {
+  display: contents;
 }
 
 .colophon__group {
   display: flex;
-  gap: var(--bf-space-32);
+  flex-direction: column;
+  gap: var(--bf-space-16);
+  align-items: flex-start;
+}
+
+.colophon__group--address {
+  grid-area: address;
+}
+
+.colophon__group--policies {
+  grid-area: policies;
+}
+
+.colophon__group--social {
+  grid-area: social;
+}
+
+.colophon__group--secondary {
+  grid-area: secondary;
+}
+
+.colophon__group--payments {
+  grid-area: payments;
+}
+
+.colophon__label {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--colophon-label-leading);
+  text-transform: uppercase;
 }
 
 .colophon__brand {
@@ -172,14 +318,6 @@
   gap: var(--bf-space-6);
   align-items: flex-start;
   grid-area: brand;
-}
-
-.colophon__policies {
-  grid-area: policies;
-}
-
-.colophon__social {
-  grid-area: social;
 }
 
 .colophon__col {
@@ -191,14 +329,26 @@
   list-style: none;
 }
 
+/* --------------------------------------------------------------- payments */
+
+.colophon__payments {
+  display: flex;
+  gap: var(--bf-space-16);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  list-style: none;
+}
+
 /*
- * The secondary links sit as separate adjacent columns in the boards ("About
- * Bassface" and "Let's talk" side by side at gap 32), not stacked like the
- * social and policy lists.
+ * The marks size themselves: bf-payment-mark sets each one's height inline
+ * because they are not optically equal at a single shared height, and the widths
+ * follow from their viewBoxes. Nothing here to set — the item is a flex box only
+ * so the mark sits on the row's centre line.
  */
-.colophon__col--row {
-  flex-direction: row;
-  gap: var(--bf-space-32);
+.colophon__payment {
+  display: flex;
 }
 
 .colophon__wordmark {
@@ -288,11 +438,50 @@
     align-items: flex-start;
   }
 
-  .colophon__links {
-    gap: var(--bf-space-24);
-    grid-template-areas: "brand address policies social";
-    grid-template-columns: repeat(4, auto);
+  /*
+   * Intro left, signup right. The intro keeps its board max-width rather than
+   * flexing, so space-between is what opens the gap between them — the `gap` is
+   * only the floor it may not close past. Past 1440 that also stops the
+   * paragraph, in a full-bleed footer, from stretching to an unreadable measure.
+   */
+  .colophon__body {
+    gap: var(--bf-space-40);
+    flex-direction: row;
     justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .colophon__newsletter {
+    width: var(--colophon-newsletter-width);
+  }
+
+  /*
+   * The payment marks take a line of their own between 834 and 1440. Four
+   * clusters plus three link columns do not fit the row until the 1440 board's
+   * width, and squeezing them would close the space-between gaps that give the
+   * row its shape. This is the wrap a flex layout would do on its own; grid has
+   * to be told.
+   */
+  .colophon__links {
+    gap: var(--bf-space-28) var(--bf-space-24);
+    grid-template-areas:
+      "brand address links"
+      "payments payments payments";
+    grid-template-columns: repeat(3, auto);
+    justify-content: space-between;
+  }
+
+  .colophon__cols {
+    display: flex;
+    gap: var(--bf-space-32);
+    align-items: flex-start;
+    grid-area: links;
+  }
+
+  /* No label of its own, so it buys one line of clearance to share the baseline
+     with the labelled columns beside it. */
+  .colophon__brand {
+    padding-top: var(--colophon-label-offset);
   }
 }
 
@@ -318,6 +507,7 @@
     --colophon-tagline-size: max(5.8rem, -0.216rem + 5.875vw);
     --colophon-numeral-size: max(12.3rem, -0.5rem + 12.5vw);
     --colophon-mark-size: max(105px, -5.77px + 10.8173vw);
+    --colophon-newsletter-width: 38rem;
   }
 }
 
@@ -328,5 +518,13 @@
     --colophon-intro-top: 24.9rem;
     --colophon-intro-max: 89.4rem;
     --colophon-top: var(--bf-space-64);
+    --colophon-newsletter-width: 42rem;
+  }
+
+  /* The row is wide enough for all four clusters here, so the payment marks
+     rejoin it instead of taking a line of their own. */
+  .colophon__links {
+    grid-template-areas: "brand address links payments";
+    grid-template-columns: repeat(4, auto);
   }
 }

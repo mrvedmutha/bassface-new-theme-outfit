@@ -42,6 +42,12 @@
 
   assign year_full = 'now' | date: '%Y'
   assign year_short = 'now' | date: '%y'
+
+  assign newsletter_id = 'ColophonNewsletter-' | append: section.id
+  assign has_newsletter = false
+  if section.settings.newsletter_enabled
+    assign has_newsletter = true
+  endif
 -%}
 
 {%- unless variant == 'none' -%}
@@ -70,8 +76,81 @@
           </div>
         </div>
 
-        {%- if section.settings.intro != blank -%}
-          <p class="colophon__intro">{{ section.settings.intro | escape }}</p>
+        {%- if section.settings.intro != blank or has_newsletter -%}
+          <div class="colophon__body">
+            {%- if section.settings.intro != blank -%}
+              <p class="colophon__intro">{{ section.settings.intro | escape }}</p>
+            {%- endif -%}
+
+            {%- comment -%}
+              The signup posts to Shopify's own customer form, so there is no
+              endpoint to configure and no JS: the browser submits, Shopify
+              redirects back with ?customer_posted=true, and the success branch
+              below renders. `contact[tags]` is what puts the subscriber in the
+              "newsletter" segment, exactly as Dawn's own newsletter section does.
+            {%- endcomment -%}
+            {%- if has_newsletter -%}
+              <div class="colophon__newsletter">
+                {%- if section.settings.newsletter_label != blank -%}
+                  <p class="colophon__label">{{ section.settings.newsletter_label | escape }}</p>
+                {%- endif -%}
+
+                {%- if section.settings.newsletter_copy != blank -%}
+                  <p class="colophon__newsletter-copy">{{ section.settings.newsletter_copy | escape }}</p>
+                {%- endif -%}
+
+                {%- form 'customer', id: newsletter_id, class: 'colophon__form' -%}
+                  <input type="hidden" name="contact[tags]" value="newsletter">
+
+                  <label class="visually-hidden" for="{{ newsletter_id }}-email">
+                    {{- 'newsletter.label' | t -}}
+                  </label>
+
+                  <div class="colophon__field">
+                    <input
+                      id="{{ newsletter_id }}-email"
+                      class="colophon__input"
+                      type="email"
+                      name="contact[email]"
+                      value="{{ form.email }}"
+                      placeholder="{{ section.settings.newsletter_placeholder | escape }}"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      autocomplete="email"
+                      aria-required="true"
+                      {% if form.errors %}
+                        autofocus
+                        aria-invalid="true"
+                        aria-describedby="{{ newsletter_id }}-error"
+                      {% elsif form.posted_successfully? %}
+                        aria-describedby="{{ newsletter_id }}-success"
+                      {% endif %}
+                      required
+                    >
+                    <button
+                      type="submit"
+                      name="commit"
+                      class="colophon__submit"
+                      aria-label="{{ 'newsletter.button_label' | t }}"
+                    >
+                      {%- render 'bf-icon', icon: 'arrow-right', size: 18 -%}
+                    </button>
+                  </div>
+
+                  {%- if form.errors -%}
+                    <p class="colophon__message" id="{{ newsletter_id }}-error">
+                      {{- form.errors.translated_fields.email | capitalize }}
+                      {{ form.errors.messages.email -}}
+                    </p>
+                  {%- elsif form.posted_successfully? -%}
+                    <p class="colophon__message" id="{{ newsletter_id }}-success" tabindex="-1">
+                      {{- 'newsletter.success' | t -}}
+                    </p>
+                  {%- endif -%}
+                {%- endform -%}
+              </div>
+            {%- endif -%}
+          </div>
         {%- endif -%}
 
         <hr class="colophon__rule colophon__rule--mid">
@@ -86,40 +165,50 @@
         </div>
 
         {%- if section.settings.address != blank -%}
-          <address class="colophon__text colophon__address">{{ section.settings.address | escape }}</address>
-        {%- endif -%}
-
-        {%- assign policies = section.settings.menu_policies -%}
-        {%- if policies != blank and policies.links.size > 0 -%}
-          <ul class="colophon__col colophon__policies">
-            {%- for link in policies.links -%}
-              <li>
-                <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
-              </li>
-            {%- endfor -%}
-          </ul>
+          <div class="colophon__group colophon__group--address">
+            {%- if section.settings.label_address != blank -%}
+              <p class="colophon__label">{{ section.settings.label_address | escape }}</p>
+            {%- endif -%}
+            <address class="colophon__text colophon__address">{{ section.settings.address | escape }}</address>
+          </div>
         {%- endif -%}
 
         {%- comment -%}
           The menus are unset until a merchant picks them — link_list settings
           cannot carry an arbitrary handle as a schema default, only `main-menu`
           or `footer`, and pointing the policy column at the wrong menu by
-          default would be worse than leaving it empty. So every group below is
-          guarded, and the wrapper itself only renders if it would have content.
-        {%- endcomment -%}
-        {%- assign social = section.settings.menu_social -%}
-        {%- assign secondary = section.settings.menu_secondary -%}
-        {%- assign has_social = false -%}
-        {%- if social != blank and social.links.size > 0 -%}
-          {%- assign has_social = true -%}
-        {%- endif -%}
-        {%- if secondary != blank and secondary.links.size > 0 -%}
-          {%- assign has_social = true -%}
-        {%- endif -%}
+          default would be worse than leaving it empty. So every group is
+          guarded, and each one carries its own label.
 
-        {%- if has_social -%}
-          <div class="colophon__group colophon__social">
-            {%- if social != blank and social.links.size > 0 -%}
+          The three menu columns share a wrapper because the design groups them:
+          space-between distributes the four clusters (brand, address, links,
+          payments) across the row, and without the wrapper it would spread the
+          link columns apart individually instead. On the stacked layout the
+          wrapper is display:contents so its columns rejoin the outer grid.
+        {%- endcomment -%}
+        <div class="colophon__cols">
+          {%- assign policies = section.settings.menu_policies -%}
+          {%- if policies != blank and policies.links.size > 0 -%}
+            <div class="colophon__group colophon__group--policies">
+              {%- if section.settings.label_policies != blank -%}
+                <p class="colophon__label">{{ section.settings.label_policies | escape }}</p>
+              {%- endif -%}
+              <ul class="colophon__col">
+                {%- for link in policies.links -%}
+                  <li>
+                    <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+                  </li>
+                {%- endfor -%}
+              </ul>
+            </div>
+          {%- endif -%}
+
+          {%- assign social = section.settings.menu_social -%}
+          {%- if social != blank and social.links.size > 0 -%}
+            <div class="colophon__group colophon__group--social">
+              {%- if section.settings.label_social != blank -%}
+                <p class="colophon__label">{{ section.settings.label_social | escape }}</p>
+              {%- endif -%}
               <ul class="colophon__col">
                 {%- for link in social.links -%}
                   <li>
@@ -127,17 +216,55 @@
                   </li>
                 {%- endfor -%}
               </ul>
-            {%- endif -%}
+            </div>
+          {%- endif -%}
 
-            {%- if secondary != blank and secondary.links.size > 0 -%}
-              <ul class="colophon__col colophon__col--row">
+          {%- assign secondary = section.settings.menu_secondary -%}
+          {%- if secondary != blank and secondary.links.size > 0 -%}
+            <div class="colophon__group colophon__group--secondary">
+              {%- if section.settings.label_secondary != blank -%}
+                <p class="colophon__label">{{ section.settings.label_secondary | escape }}</p>
+              {%- endif -%}
+              <ul class="colophon__col">
                 {%- for link in secondary.links -%}
                   <li>
                     <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
                   </li>
                 {%- endfor -%}
               </ul>
+            </div>
+          {%- endif -%}
+        </div>
+
+        {%- comment -%}
+          Not shop.enabled_payment_types: that returns the gateways Shopify has
+          configured and renders them via payment_type_svg_tag as fixed full
+          colour brand art, which cannot take the footer's ink and does not cover
+          the UPI and Paytm marks the design calls for. The list is a setting so
+          a merchant can still match it to what checkout actually offers.
+        {%- endcomment -%}
+        {%- comment -%}
+          The whitelist repeats bf-payment-mark's own case list so a typo in the
+          setting drops the item rather than emitting an empty <li> that would
+          open a gap in the row.
+        {%- endcomment -%}
+        {%- assign known_marks = 'visa,mastercard,amex,upi,gpay,paytm' | split: ',' -%}
+        {%- assign payment_marks = section.settings.payment_marks | split: ',' -%}
+        {%- if payment_marks.size > 0 -%}
+          <div class="colophon__group colophon__group--payments">
+            {%- if section.settings.label_payments != blank -%}
+              <p class="colophon__label">{{ section.settings.label_payments | escape }}</p>
             {%- endif -%}
+            <ul class="colophon__payments">
+              {%- for payment_mark in payment_marks -%}
+                {%- assign mark_key = payment_mark | strip | downcase -%}
+                {%- if known_marks contains mark_key -%}
+                  <li class="colophon__payment">
+                    {%- render 'bf-payment-mark', mark: mark_key -%}
+                  </li>
+                {%- endif -%}
+              {%- endfor -%}
+            </ul>
           </div>
         {%- endif -%}
       </div>
@@ -186,6 +313,35 @@
     },
     {
       "type": "header",
+      "content": "Newsletter"
+    },
+    {
+      "type": "checkbox",
+      "id": "newsletter_enabled",
+      "label": "Show newsletter signup",
+      "info": "Subscribers are tagged \"newsletter\" and appear under Customers.",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "newsletter_label",
+      "label": "Newsletter label",
+      "default": "Newsletter"
+    },
+    {
+      "type": "text",
+      "id": "newsletter_copy",
+      "label": "Newsletter copy",
+      "default": "Drops, restocks and the occasional bit of noise. No spam."
+    },
+    {
+      "type": "text",
+      "id": "newsletter_placeholder",
+      "label": "Email placeholder",
+      "default": "you@email.com"
+    },
+    {
+      "type": "header",
       "content": "Contact"
     },
     {
@@ -222,6 +378,52 @@
       "id": "menu_secondary",
       "label": "Secondary links",
       "info": "Suggested menu: footer-secondary."
+    },
+    {
+      "type": "header",
+      "content": "Column labels",
+      "info": "Leave a label blank to hide it. A column is hidden entirely when its menu is unset."
+    },
+    {
+      "type": "text",
+      "id": "label_address",
+      "label": "Address column",
+      "default": "Studio"
+    },
+    {
+      "type": "text",
+      "id": "label_policies",
+      "label": "Policy column",
+      "default": "Legal"
+    },
+    {
+      "type": "text",
+      "id": "label_social",
+      "label": "Social column",
+      "default": "Follow"
+    },
+    {
+      "type": "text",
+      "id": "label_secondary",
+      "label": "Secondary column",
+      "default": "Company"
+    },
+    {
+      "type": "header",
+      "content": "Payment marks"
+    },
+    {
+      "type": "text",
+      "id": "label_payments",
+      "label": "Payments label",
+      "default": "We accept"
+    },
+    {
+      "type": "text",
+      "id": "payment_marks",
+      "label": "Marks to show",
+      "info": "Comma-separated, in display order. Available: visa, mastercard, amex, upi, gpay, paytm. Clear the field to hide the row.",
+      "default": "visa, mastercard, amex, upi, gpay, paytm"
     }
   ],
   "enabled_on": {
