@@ -18,11 +18,11 @@
         "tagline_line_1": "Made to be worn.",
         "tagline_line_2": "Or raved in. Or both.",
         "intro": "Bassface creates music-inspired apparel that lets you wear your passion. From iconic tracks to legendary DJs, our designs bring the energy of the music to your style.",
-        "address": "22\/1, Kandappa Street\nSowcarpet, Parktown\nChennai 600001, India",
+        "address": "22/1, Kandappa Street\nSowcarpet, Parktown\nChennai 600001, India",
         "copyright": "All rights reserved",
-        "menu_policies": "footer-policies",
-        "menu_social": "footer-social",
-        "menu_secondary": "footer-secondary"
+        "menu_policies": "footer-policies-new",
+        "menu_social": "footer-social-new",
+        "menu_secondary": "footer-about-new"
       }
     }
   },

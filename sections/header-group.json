@@ -14,11 +14,13 @@
     "bf-header": {
       "type": "bf-header",
       "settings": {
-        "menu": "main-menu",
+        "menu": "header-menu-new",
         "show_currency": true,
-        "address": "22\/1, Kandappa Street\nSowcarpet, Parktown\nChennai 600001, India"
+        "address": "22/1, Kandappa Street\nSowcarpet, Parktown\nChennai 600001, India"
       }
     }
   },
-  "order": ["bf-header"]
+  "order": [
+    "bf-header"
+  ]
 }
