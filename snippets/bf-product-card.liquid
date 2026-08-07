@@ -1,0 +1,91 @@
+{%- comment -%}
+  Bassface product card — image, title/price row, category row.
+
+  A snippet, not a section: it is the atom the homepage bands are built from and
+  the collection, search and related grids will reuse. Dawn's own
+  snippets/card-product.liquid is left in place for the stock sections that
+  still render it; this does not replace it.
+
+  Accepts:
+    product  - a product object. Required. Renders a placeholder when blank, so
+               the theme editor still composes with no products assigned.
+    ratio    - image aspect ratio, e.g. '3 / 4'. Optional; falls back to 3/4.
+               Passed by the CONSUMER per slot, not chosen per product: a card's
+               shape belongs to the composition around it (Band B's card is
+               square because it is the big slot). The boards use '3 / 4',
+               '2 / 3', '1 / 1' and '4 / 5'.
+    sizes    - the `sizes` attribute. Pass the band's real column width; the
+               default assumes a 4-up grid.
+    loading  - 'lazy' (default) or 'eager' for cards above the fold.
+
+  Usage:
+    {%- render 'bf-product-card', product: product, ratio: '1 / 1' -%}
+
+  The category line is product.type, uppercased in CSS rather than in the data
+  so the merchant's own casing survives in the admin.
+{%- endcomment -%}
+
+{%- liquid
+  assign loading = loading | default: 'lazy'
+  assign sizes = sizes | default: '(min-width: 834px) 25vw, 50vw'
+-%}
+
+<bf-product-card
+  class="product-card"
+  {% if ratio != blank %}
+    style="--product-card-ratio: {{ ratio }};"
+  {% endif %}
+>
+  <a class="product-card__link" href="{{ product.url | default: '#' }}">
+    <div class="product-card__media">
+      {%- if product.featured_image -%}
+        {%- comment -%}
+          alt is empty on purpose: the card is one link whose accessible name is
+          the title below, so a described image would have the product read out
+          twice.
+        {%- endcomment -%}
+        <img
+          class="product-card__image"
+          src="{{ product.featured_image | image_url: width: 800 }}"
+          srcset="
+            {{ product.featured_image | image_url: width: 400 }} 400w,
+            {{ product.featured_image | image_url: width: 600 }} 600w,
+            {{ product.featured_image | image_url: width: 800 }} 800w,
+            {{ product.featured_image | image_url: width: 1200 }} 1200w,
+            {{ product.featured_image | image_url: width: 1600 }} 1600w
+          "
+          sizes="{{ sizes }}"
+          width="{{ product.featured_image.width }}"
+          height="{{ product.featured_image.height }}"
+          alt=""
+          loading="{{ loading }}"
+        >
+      {%- else -%}
+        {{ 'product-1' | placeholder_svg_tag: 'product-card__image' }}
+      {%- endif -%}
+    </div>
+
+    <div class="product-card__info">
+      {%- comment -%}
+        The inner span is the marquee's transform target — see
+        bf-product-card.js. It is always rendered, whether or not the title
+        overflows; the script measures and skips the ones that fit.
+      {%- endcomment -%}
+      <span class="product-card__title">
+        <span class="product-card__title-text">
+          {{- product.title | default: 'Product Title' -}}
+        </span>
+      </span>
+      <span class="product-card__price">
+        {{- product.price | default: 0 | money -}}
+      </span>
+    </div>
+
+    {%- if product.type != blank -%}
+      <div class="product-card__category">
+        <span class="product-card__dot" aria-hidden="true"></span>
+        <span class="product-card__type">{{ product.type }}</span>
+      </div>
+    {%- endif -%}
+  </a>
+</bf-product-card>

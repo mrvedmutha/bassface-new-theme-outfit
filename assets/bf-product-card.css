@@ -1,0 +1,263 @@
+/* @define product-card */
+
+/*
+ * The product card — image, title/price row, category row.
+ *
+ * Block is `product-card`, not `card`: Dawn's component-card.css already owns
+ * `.card`, `.card__content`, `.card__heading` and a dozen more, and its
+ * card-product.liquid snippet stays in place for the stock sections that still
+ * use it. This is a separate component, not a rewrite of that one.
+ *
+ * Every size below is a board figure and holds to 1440, where it starts scaling
+ * with the viewport — see the note on the media query at the foot of the file.
+ * The type does NOT step at the smaller breakpoints: the boards run 18/18/11 at
+ * every card width from 684 down to 171, which is why there is no ramp between
+ * 390 and 1440.
+ */
+
+.product-card {
+  --product-card-title-size: 1.8rem;
+  --product-card-category-size: 1.1rem;
+  --product-card-dot-size: 0.8rem;
+  --product-card-gap: 1.2rem;
+  --product-card-category-gap: 0.6rem;
+
+  display: block;
+
+  /* Queried at the foot of the file to decide whether title and price share a
+     line. The card is always sized by its grid track, never by its contents, so
+     inline-size containment costs nothing here. */
+  container: product-card / inline-size;
+}
+
+/*
+ * The whole card is one link. The title is not separately focusable, so there
+ * is a single tab stop per product and the accessible name is the title text —
+ * the image is decorative here and carries an empty alt.
+ */
+.product-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--product-card-gap);
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
+ * The ratio is set inline by the consumer per slot — a card's shape belongs to
+ * the composition around it, not to the product — so the default lives in this
+ * fallback rather than as a declaration on .product-card. Declared there it
+ * would shadow anything an ancestor set, leaving inheritance no way to win. The
+ * boards use four shapes: 3/4 (the grid card), 2/3 and 1/1 (the editorial
+ * pairs) and 4/5 (Band D's big card).
+ */
+.product-card__media {
+  overflow: hidden;
+  aspect-ratio: var(--product-card-ratio, 3 / 4);
+}
+
+/*
+ * `fill` in the design file is object-fit: cover. The ratio is set on the
+ * wrapper rather than the image so the box is reserved before the image loads
+ * and the band does not reflow as products come in.
+ */
+.product-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-card__info {
+  display: flex;
+  gap: var(--product-card-gap);
+  justify-content: space-between;
+  align-items: center;
+}
+
+/*
+ * min-width: 0 is what makes the truncation work at all. A flex item's default
+ * min-width is auto, which floors it at its content width — the title would
+ * push the price out of the card instead of truncating. `overflow: hidden` on
+ * its own is not enough.
+ */
+.product-card__title {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/*
+ * The ellipsis is drawn, not declared, and it has to be.
+ *
+ * `text-overflow: ellipsis` only renders for overflowing *text*. The marquee
+ * needs a transform target, transforms do not apply to non-replaced inline
+ * elements, so the title text has to sit in an inline-block — and an
+ * inline-block is an atomic inline, which the browser hard-clips with no
+ * ellipsis at all. Verified in Chrome: the declared version clipped mid-glyph
+ * ("Afrojack — |") on every overflowing card. The two features cannot coexist,
+ * so this is the half that gets built by hand.
+ *
+ * Opaque, and painted over the last glyph rather than beside it — exactly what
+ * the real ellipsis does. It tracks --bf-surface, so it stays invisible in all
+ * three themes without a per-theme rule.
+ */
+.product-card__title::after {
+  content: "…";
+  position: absolute;
+  display: none;
+  inset-block: 0;
+  right: 0;
+  padding-left: 0.15em;
+  background-color: var(--bf-surface);
+}
+
+/* Set by bf-product-card.js, which is already measuring the overflow to decide
+   whether to sweep at all — CSS cannot ask the question. */
+.product-card__title:where(.is-truncated)::after {
+  display: block;
+}
+
+/* The price never truncates; it is short and it is the one figure that must
+   always be readable in full. */
+.product-card__price {
+  flex: 0 0 auto;
+}
+
+.product-card__title,
+.product-card__price {
+  font-size: var(--product-card-title-size);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: 0;
+}
+
+/*
+ * The transform target for the marquee. Transforms do not apply to non-replaced
+ * inline elements, so this has to be inline-block — which is also what gives it
+ * a layout width to measure the overflow against.
+ */
+.product-card__title-text {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/*
+ * While sweeping, the ellipsis goes — it is pinned to the clip edge and would
+ * otherwise sit on top of the scrolling text the whole way across. This rule
+ * follows the .is-truncated one deliberately: both states are on at once during
+ * a sweep, both selectors have the same specificity, so source order is what
+ * decides, and hiding must win.
+ *
+ * :where() keeps the state classes from raising specificity, matching the
+ * `.nav-drawer:where(.is-open)` pattern.
+ */
+.product-card__title:where(.is-marqueeing)::after {
+  display: none;
+}
+
+/* Promoted only while it is actually moving. On a collection page this class is
+   on at most a handful of cards at a time; as a static rule it would hand every
+   card on the page its own compositor layer. */
+.product-card__title:where(.is-marqueeing) .product-card__title-text {
+  will-change: transform;
+}
+
+.product-card__category {
+  display: flex;
+  gap: var(--product-card-category-gap);
+  align-items: center;
+}
+
+.product-card__dot {
+  flex: 0 0 auto;
+  width: var(--product-card-dot-size);
+  height: var(--product-card-dot-size);
+  border-radius: 50%;
+  background-color: currentcolor;
+}
+
+/* The one uppercase tracked style in the kit, and the only place radius is not
+   0 — the dot above is a circle by definition, not a rounded corner. */
+.product-card__type {
+  overflow: hidden;
+  min-width: 0;
+  font-size: var(--product-card-category-size);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-normal);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+/* =============================================================== 1440 ==== *
+ * Past the widest board the card scales with the viewport, exactly as the hero
+ * meta row does and for the same reason: the bands are full-bleed, so the cards
+ * keep growing while every figure here is a fixed board value. An 18px title
+ * under a 1200px-wide image reads as a caption someone forgot to lay out.
+ *
+ * Each value is its board figure over 1440 — 18/1440, 11/1440, 8/1440, 12/1440,
+ * 6/1440 — so the card is a strict proportional scale of the board above that
+ * width, and every vw term evaluates to exactly the value it replaces at 1440.
+ *
+ * The rem floor in each max() is what keeps the visitor's font-size setting
+ * effective; the vw term alone would ignore it.
+ */
+
+@media screen and (width >= 1440px) {
+  .product-card {
+    --product-card-title-size: max(1.8rem, 1.25vw);
+    --product-card-category-size: max(1.1rem, 0.7639vw);
+    --product-card-dot-size: max(0.8rem, 0.5556vw);
+    --product-card-gap: max(1.2rem, 0.8333vw);
+    --product-card-category-gap: max(0.6rem, 0.4167vw);
+  }
+}
+
+/* ============================================================== <1024 ==== *
+ * Title on its own line, price beneath it.
+ *
+ * On a narrow card the price eats the row: at 448 a 141px card would leave the
+ * title about 36px, which is not a title. The design's answer is to override
+ * the info row to `{ layout: vertical, alignItems: start, gap: 4 }` — and the
+ * title then gets the full card width, so most of them stop truncating at all.
+ *
+ * It takes BOTH conditions, which is why this is a media query wrapping a
+ * container query rather than either one alone:
+ *
+ *   - Not card width alone. At 1024 a 164px card still shares the line, and at
+ *     448 a 306px one does not. Width does not separate those.
+ *   - Not the breakpoint alone. At 834 the boards keep the row for the two big
+ *     cards (Band A's 393 and Band B's 389) while stacking the 234 and the 131
+ *     beside them, so the same breakpoint does both things.
+ *
+ * The threshold sits between the widest card that stacks (306, at 448) and the
+ * narrowest that does not (389, at 834). 36rem is comfortably clear of both.
+ * Checked against every card on all five boards.
+ */
+
+@media screen and (width < 1024px) {
+  @container product-card (width < 36rem) {
+    .product-card__info {
+      flex-direction: column;
+      gap: var(--bf-space-4);
+      align-items: stretch;
+    }
+
+    /* `flex: 1 1 auto` from the row layout would grow the title along the main
+       axis, which is now vertical. Width comes from `align-items: stretch`. */
+    .product-card__title {
+      flex: 0 0 auto;
+    }
+  }
+}
+
+/* Honoured here rather than in JS alone so the rule is visible to anyone
+   reading the stylesheet. bf-product-card.js checks the same query and never
+   starts a cycle, so this is a belt-and-braces stop, not the mechanism. */
+@media (prefers-reduced-motion: reduce) {
+  .product-card__title-text {
+    transform: none !important;
+  }
+}
