@@ -1,0 +1,400 @@
+/* @define main-search */
+
+/*
+ * The search results page.
+ *
+ * Block is `main-search`, not `search` — that belongs to the overlay in
+ * bf-search.css, and the two are different surfaces that happen to share a
+ * subject. Dawn's own `main-search` section is superseded by this one but its
+ * CSS lives in template-collection.css and touches nothing here.
+ *
+ * EVERY COLOUR IS A TOKEN, and that is the point of the rewrite rather than a
+ * detail of it. The board draws the whole page as #FF0001 on #EDE4DD, which is
+ * ink on surface — one pair, no third colour anywhere, including the search
+ * box's 1px rule and every icon. Dawn's section paints itself from its own
+ * colour-scheme settings instead, which is why the stock page stayed black text
+ * on cream while the rest of the theme followed the switcher.
+ *
+ * Three type sizes here are off the UI Kit scale and are meant to be: the
+ * 96px empty-state lines, the 40px CTA beneath them, and the 20px control size
+ * below. The kit's nearest neighbours are 175/24/16, none of which are these.
+ * The hero and footer already carry the same kind of exemption.
+ */
+
+/*
+ * The page's control type — result count, sort label and Load More.
+ *
+ * The board sets the count and sort at 15 and Load More at 20. Fifteen is the
+ * UI Kit's nav size; next to a 48px title and cards this large it reads as a
+ * caption, so all three now share the board's own Load More figure instead.
+ *
+ * FIXED, NOT RAMPED, and that was the first attempt. Scaling it with the
+ * viewport the way the product card does looks right in isolation and is wrong
+ * here: --bf-text-title-size is a flat 4.8rem, so at 2560 the toolbar reached
+ * 35.6px against a title still at 48 and the hierarchy collapsed. Nothing else
+ * on this page ramps, so this must not either. Making the whole page scale on
+ * wide screens is a real option, but it is a theme-wide change to the title
+ * token and not something one control should decide unilaterally.
+ */
+.main-search {
+  --main-search-control-size: 2rem;
+
+  display: block;
+}
+
+/* --------------------------------------------------------- breadcrumb --- */
+
+.main-search__breadcrumb {
+  padding: var(--bf-space-56, 5.6rem) var(--bf-page-padding) var(--bf-space-32);
+}
+
+.main-search__crumbs {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  list-style: none;
+}
+
+.main-search__crumb-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.main-search__crumb-link:hover {
+  text-decoration: underline;
+}
+
+/* 900 on the current page — the board's one weight change in the row, and what
+   marks where you are without a colour or a rule doing it. */
+.main-search__crumb:where([aria-current]) {
+  font-weight: var(--bf-weight-black);
+}
+
+/* ------------------------------------------------------------- header --- */
+
+/* The board sets 16 between the title and the box. At 48px the title needs more
+   air under it than that before the field starts, so this is 24. */
+.main-search__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  padding: 0 var(--bf-page-padding) var(--bf-space-40);
+}
+
+.main-search__title {
+  margin: 0;
+  font-size: var(--bf-text-title-size);
+  font-weight: var(--bf-text-title-weight);
+  letter-spacing: var(--bf-text-title-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/*
+ * The search box. This is the control that was missing entirely from the stock
+ * page: the board puts the query back in front of the visitor so it can be
+ * edited in place rather than only re-opened through the overlay.
+ *
+ * A hairline of --bf-ink, no radius and no fill — the board's 1px stroke. It is
+ * the only bordered box on the page.
+ */
+.main-search__form {
+  display: flex;
+  gap: var(--bf-space-14);
+  align-items: center;
+  width: 64rem;
+  max-width: 100%;
+  padding: var(--bf-space-16) var(--bf-space-20);
+  border: var(--bf-border-width) solid var(--bf-ink);
+}
+
+.main-search__form-icon,
+.main-search__clear {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  color: inherit;
+}
+
+.main-search__clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.main-search__clear[hidden] {
+  display: none;
+}
+
+/* Declared outright rather than inherited, for the same reason as the overlay's
+   input: Dawn's `.field__input` and `.search__input` are bare classes at equal
+   specificity, so source order would otherwise decide. */
+.main-search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+
+  /* Shares the control size with the count, sort and Load More — the four
+     things on this page a visitor actually operates. The board draws it at 16,
+     which is the same call as the 15 on the toolbar and reads the same way. */
+  font-size: var(--main-search-control-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  appearance: none;
+}
+
+/*
+ * No focus ring on any control on this page — asked for, and worth recording
+ * what it costs. The ring is how a keyboard user knows where they are, and
+ * nothing replaces it here: tabbing through the breadcrumb, the field, the
+ * clear button, sort and Load More now moves an invisible cursor. Mouse and
+ * touch are unaffected either way, since :focus-visible never fired for them.
+ *
+ * If it should come back, one rule does it — an outline in --bf-ink with a 4px
+ * offset on :focus-visible reads as part of the design rather than as Chrome's
+ * default, which is what made the rings look wrong in the first place.
+ */
+.main-search__input:focus,
+.main-search__input:focus-visible,
+.main-search__clear:focus,
+.main-search__clear:focus-visible,
+.main-search__sort-select:focus,
+.main-search__sort-select:focus-visible,
+.main-search__more-button:focus,
+.main-search__more-button:focus-visible,
+.main-search__crumb-link:focus,
+.main-search__crumb-link:focus-visible,
+.main-search__cta:focus,
+.main-search__cta:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.main-search__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* ------------------------------------------------------------ content --- */
+
+.main-search__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-32);
+  padding: 0 var(--bf-page-padding) 12rem;
+}
+
+.main-search__toolbar {
+  display: flex;
+  gap: var(--bf-space-24);
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--bf-space-28);
+}
+
+.main-search__count,
+.main-search__sort-label {
+  font-size: var(--main-search-control-size);
+  font-weight: var(--bf-text-ui-weight);
+  letter-spacing: var(--bf-text-ui-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+.main-search__tools {
+  display: flex;
+  gap: var(--bf-space-28);
+  align-items: center;
+}
+
+/*
+ * A real <select> under the label, stretched over the whole control and made
+ * invisible. The board draws text plus a chevron, which no styling of a native
+ * select reproduces across browsers — but replacing it with a listbox means
+ * rebuilding keyboard support, screen-reader semantics and the mobile wheel
+ * picker that phones give this element for free. The select stays; only its
+ * painting is ours.
+ */
+.main-search__sort {
+  position: relative;
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+}
+
+.main-search__sort-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+}
+
+.main-search__sort-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/* --------------------------------------------------------------- grid --- */
+
+/*
+ * One grid, not the board's stack of row frames. 4 x 330 + 3 x 24 = 1392, the
+ * content width to the pixel, and the asymmetric gap is the board's own: 40
+ * between rows, 24 between columns.
+ */
+.main-search__grid {
+  display: grid;
+  gap: var(--bf-space-40) var(--bf-space-24);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
+.main-search__more {
+  display: flex;
+  justify-content: center;
+  padding-top: 4.8rem;
+}
+
+.main-search__more[hidden] {
+  display: none;
+}
+
+.main-search__more-button {
+  display: flex;
+  gap: var(--bf-space-10);
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--main-search-control-size);
+  font-weight: var(--bf-weight-regular);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+}
+
+.main-search__more-icon {
+  display: flex;
+  align-items: center;
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.main-search__more-button:where(.is-loading) .main-search__more-icon {
+  transform: rotate(180deg);
+}
+
+/* -------------------------------------------------------------- empty --- */
+
+.main-search__empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-40);
+  padding: 7.2rem 0 12rem;
+}
+
+.main-search__empty-lines {
+  margin: 0;
+}
+
+/*
+ * 96/800/-3.5 from the board — off-scale, and the largest type on any page
+ * outside the hero. It ramps down rather than wrapping, because two lines that
+ * became four would push the CTA off a laptop screen.
+ */
+.main-search__empty-line {
+  display: block;
+  font-size: clamp(3.6rem, 6.6667vw, 9.6rem);
+  font-weight: var(--bf-weight-extrabold);
+  letter-spacing: -0.0365em;
+  line-height: var(--bf-leading-snug);
+}
+
+.main-search__cta {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  align-self: start;
+  color: inherit;
+
+  /* Off-scale, see the file header. */
+  font-size: clamp(2.4rem, 2.7778vw, 4rem);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.025em;
+  line-height: var(--bf-leading-tight);
+  text-decoration: none;
+}
+
+.main-search__cta-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+@media (hover: hover) {
+  .main-search__cta-icon {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .main-search__cta:hover .main-search__cta-icon {
+    transform: translate(0.4rem, -0.4rem);
+  }
+}
+
+/* ============================================================= <1024 ==== *
+ * There is no mobile board for this page, so the grid steps on the same
+ * breakpoints the homepage bands use — 4 up, 3, then 2 — rather than inventing
+ * a second system for one template.
+ */
+
+@media screen and (width < 1024px) {
+  .main-search__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media screen and (width < 834px) {
+  .main-search__grid {
+    gap: var(--bf-space-32) var(--bf-space-16);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-search__breadcrumb {
+    padding-top: var(--bf-space-32);
+  }
+
+  .main-search__content {
+    padding-bottom: 6.4rem;
+  }
+
+  /* The toolbar's two clusters stop fitting one line once the count and both
+     controls are set at 15px on a 390px screen. */
+  .main-search__toolbar {
+    gap: var(--bf-space-12);
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-search__more-icon,
+  .main-search__cta-icon {
+    transition: none;
+  }
+
+  .main-search__cta:hover .main-search__cta-icon {
+    transform: none;
+  }
+}

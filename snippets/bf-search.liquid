@@ -42,6 +42,14 @@
         and the visitor gets the results page rather than nothing.
       {%- endcomment -%}
       <form class="search__row" action="{{ routes.search_url }}" method="get" role="search">
+        {%- comment -%}
+          Pins the result set to products. Without it, Enter lands on a search
+          page carrying pages and articles too — which is how the store's
+          "html sitemap products" page ended up in a grid of t-shirts.
+        {%- endcomment -%}
+        <input type="hidden" name="type" value="product">
+        <input type="hidden" name="options[prefix]" value="last">
+
         <span class="search__icon" aria-hidden="true">
           {%- render 'bf-icon', icon: 'search', size: 28 -%}
         </span>

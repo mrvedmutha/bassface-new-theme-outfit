@@ -1,0 +1,312 @@
+{%- comment -%}
+  Bassface search results page — replaces Dawn's main-search for templates/search.json.
+
+  Two things the stock page got wrong and this exists to fix:
+
+  1. NO SEARCH BOX. The board puts the query back in front of the visitor under
+     the title so it can be edited in place; Dawn's page shows the term only in
+     the heading, so refining a search means going back to the overlay.
+  2. IT DID NOT FOLLOW THE THEME. Dawn paints its sections from its own
+     colour-scheme settings, so the page stayed black-on-cream while the rest of
+     the theme followed the switcher. Every colour here is --bf-ink on
+     --bf-surface, which is what the board draws.
+
+  Products only. The board shows one grid and no article or page results, so the
+  form pins type=product rather than rendering Shopify's mixed result set and
+  then filtering it — a filtered list would disagree with results_count.
+
+  Its JS hooks are data-results-*, not data-search-*, because the overlay is
+  rendered on every page including this one — two elements answering to
+  data-search-input would sit in one document. Both components scope their
+  queries to their own element so nothing breaks today, but the first global
+  querySelector anyone writes would silently pick the overlay's.
+
+  Load More is the Section Rendering API: bf-main-search.js fetches the next
+  page of this same section and appends its cards. `paginate` is what makes that
+  honest — unlike the overlay's suggest endpoint, this page knows both the true
+  total and whether another page exists.
+{%- endcomment -%}
+
+{{ 'bf-product-card.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-search.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-product-card.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-main-search.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign terms = search.terms | default: ''
+  assign per_page = section.settings.products_per_page
+-%}
+
+{%- paginate search.results by per_page -%}
+  <bf-main-search class="main-search" data-section-id="{{ section.id }}">
+    {%- comment -%}
+      Both strings come from settings, not the locale file. Dawn 15.5 has no
+      `general.breadcrumbs` group at all, and adding one would mean editing
+      en.default.json plus the thirty translations beside it to name two words
+      the merchant can set here in seconds.
+    {%- endcomment -%}
+    <nav class="main-search__breadcrumb" aria-label="{{ section.settings.breadcrumb_label }}">
+      <ol class="main-search__crumbs">
+        <li class="main-search__crumb">
+          <a class="main-search__crumb-link" href="{{ routes.root_url }}">{{ section.settings.breadcrumb_home }}</a>
+        </li>
+        <li class="main-search__crumb" aria-hidden="true">/</li>
+        <li class="main-search__crumb" aria-current="page">{{ section.settings.heading }}</li>
+      </ol>
+    </nav>
+
+    <div class="main-search__header">
+      <h1 class="main-search__title">{{ section.settings.heading }}</h1>
+
+      {%- comment -%}
+        A plain GET form to the search route — it works with the script absent,
+        and Enter submits it exactly as the overlay's does.
+      {%- endcomment -%}
+      <form class="main-search__form" action="{{ routes.search_url }}" method="get" role="search">
+        <input type="hidden" name="type" value="product">
+        <input type="hidden" name="options[prefix]" value="last">
+
+        <span class="main-search__form-icon" aria-hidden="true">
+          {%- render 'bf-icon', icon: 'search', size: 20 -%}
+        </span>
+
+        <input
+          class="main-search__input"
+          type="search"
+          name="q"
+          value="{{ terms | escape }}"
+          autocomplete="off"
+          spellcheck="false"
+          enterkeyhint="search"
+          placeholder="{{ section.settings.placeholder }}"
+          aria-label="{{ 'general.search.search' | t }}"
+          data-results-input
+        >
+
+        <button
+          class="main-search__clear"
+          type="button"
+          data-results-clear
+          {% if terms == blank %}
+            hidden
+          {% endif %}
+        >
+          {%- render 'bf-icon', icon: 'circle-x', size: 20, label: 'Clear search' -%}
+        </button>
+      </form>
+    </div>
+
+    <div class="main-search__content">
+      <div class="main-search__toolbar">
+        <p class="main-search__count" data-results-count>
+          {%- comment -%}
+            Dawn's own pluralised key — "94 results" where the board reads
+            "94 Products". The wording loses to correctness: this string is
+            already translated into every locale the theme ships, and a
+            hardcoded "Products" would be English on a Spanish storefront and
+            would say "1 Products" besides.
+          {%- endcomment -%}
+          {{- 'templates.search.results_with_count' | t: count: search.results_count -}}
+        </p>
+
+        {%- comment -%}
+          Filter is deliberately absent, not forgotten. The board pairs it with
+          a Filter Drawer component that the collection page uses too, so it is
+          built once alongside that page rather than half-built here. Shipping
+          the trigger now would put a control on the page that does nothing.
+        {%- endcomment -%}
+        {%- if search.sort_options.size > 0 and search.results_count > 0 -%}
+          <div class="main-search__tools">
+            <div class="main-search__sort">
+              {%- assign current_sort = search.sort_by | default: search.default_sort_by -%}
+              <label class="visually-hidden" for="bf-search-sort">
+                {{ 'products.facets.sort_by_label' | t }}
+              </label>
+              <select class="main-search__sort-select" id="bf-search-sort" name="sort_by" data-results-sort>
+                {%- for option in search.sort_options -%}
+                  <option
+                    value="{{ option.value }}"
+                    {% if option.value == current_sort %}
+                      selected
+                    {% endif %}
+                  >
+                    {{ option.name }}
+                  </option>
+                {%- endfor -%}
+              </select>
+
+              {%- comment -%}
+                Mirrors the select's current option as text, because the board
+                draws a label and a chevron and a native select cannot be
+                painted that way across browsers. Updated by the script; the
+                server renders the correct value for a no-JS first paint.
+              {%- endcomment -%}
+              <span class="main-search__sort-label" data-results-sort-label>
+                {{ 'products.facets.sort_by_label' | t }}
+                {%- for option in search.sort_options -%}
+                  {%- if option.value == current_sort %} {{ option.name }}{% endif -%}
+                {%- endfor -%}
+              </span>
+              <span class="main-search__sort-icon" aria-hidden="true">
+                {%- render 'bf-icon', icon: 'chevron-down', size: 16 -%}
+              </span>
+            </div>
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- if search.performed and search.results_count > 0 -%}
+        {%- comment -%}
+          PRODUCTS ONLY, and the guard is not paranoia — it is the bug it was
+          written for. `search.results` returns every object type the store has
+          unless the URL pins `type`, so a plain /search?q=… serves pages and
+          articles alongside products. Rendered through a product card those
+          become cards priced "0.00" with a placeholder image: on this store,
+          "html sitemap products" and "html sitemap collections" sat in the grid
+          looking like two free items.
+
+          Every link we generate pins type=product, so this skip only catches
+          arrivals from outside — a bookmark, an external link, a rewritten URL.
+          Those pages can then render fewer than `products_per_page` cards,
+          because pagination happened before the filter. A short page is the
+          right failure: the alternative is a sitemap sold at zero.
+        {%- endcomment -%}
+        {%- assign slot = 0 -%}
+        <div class="main-search__grid" data-results-grid>
+          {%- for item in search.results -%}
+            {%- if item.object_type == 'product' -%}
+              {%- render 'bf-product-card',
+                product: item,
+                ratio: '3 / 4',
+                sizes: '(min-width: 1024px) 23vw, (min-width: 834px) 30vw, 45vw',
+                index: slot
+              -%}
+              {%- assign slot = slot | plus: 1 -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+
+        {%- comment -%}
+          The next page's URL, rendered by the server. The script reads it,
+          fetches that page of this section, appends its cards and replaces this
+          value with the one the fetched page carried — so paging forward needs
+          no arithmetic on the client.
+        {%- endcomment -%}
+        <div
+          class="main-search__more"
+          data-results-more
+          {% unless paginate.next %}
+            hidden
+          {% endunless %}
+        >
+          <button
+            class="main-search__more-button"
+            type="button"
+            data-results-more-button
+            data-next-url="{{ paginate.next.url }}"
+          >
+            <span>{{ section.settings.load_more_label }}</span>
+            <span class="main-search__more-icon" aria-hidden="true">
+              {%- render 'bf-icon', icon: 'plus', size: 18 -%}
+            </span>
+          </button>
+        </div>
+
+      {%- elsif search.performed -%}
+        <div class="main-search__empty">
+          <p class="main-search__empty-lines">
+            <span class="main-search__empty-line">{{ section.settings.empty_line_1 }}</span>
+            <span class="main-search__empty-line">{{ section.settings.empty_line_2 }}</span>
+          </p>
+
+          <a
+            class="main-search__cta"
+            href="{{ section.settings.empty_cta_url | default: routes.all_products_collection_url }}"
+          >
+            {{ section.settings.empty_cta_label }}
+            <span class="main-search__cta-icon" aria-hidden="true">
+              {%- render 'bf-icon', icon: 'arrow-up-right', size: 48 -%}
+            </span>
+          </a>
+        </div>
+      {%- endif -%}
+    </div>
+  </bf-main-search>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "Search results",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Search Results"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Breadcrumb home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Breadcrumb landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    },
+    {
+      "type": "text",
+      "id": "placeholder",
+      "label": "Search placeholder",
+      "default": "Search for products, artists, collections…"
+    },
+    {
+      "type": "range",
+      "id": "products_per_page",
+      "label": "Products per page",
+      "info": "The board shows three rows of four.",
+      "min": 4,
+      "max": 36,
+      "step": 4,
+      "default": 12
+    },
+    {
+      "type": "text",
+      "id": "load_more_label",
+      "label": "Load more button",
+      "default": "Load More"
+    },
+    {
+      "type": "header",
+      "content": "No results"
+    },
+    {
+      "type": "text",
+      "id": "empty_line_1",
+      "label": "First line",
+      "default": "No results for that search."
+    },
+    {
+      "type": "text",
+      "id": "empty_line_2",
+      "label": "Second line",
+      "default": "Try a different word."
+    },
+    {
+      "type": "text",
+      "id": "empty_cta_label",
+      "label": "Link label",
+      "default": "Explore the shop"
+    },
+    {
+      "type": "url",
+      "id": "empty_cta_url",
+      "label": "Link",
+      "info": "Defaults to all products."
+    }
+  ]
+}
+{% endschema %}

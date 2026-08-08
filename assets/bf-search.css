@@ -136,14 +136,21 @@
 }
 
 /*
- * No focus ring on the input. Normally removing one is a mistake, and here it
- * is not: the overlay focuses this input the moment it opens, so the ring would
- * be on screen every single time before the visitor has done anything, framing
- * a field that is already the only thing to type into. The caret is the
- * indicator. Every OTHER control in the panel keeps its ring.
+ * No focus ring on anything in the panel. The input's case makes itself — it is
+ * focused the moment the overlay opens, so the ring would be on screen every
+ * time before the visitor has done anything. The buttons are a deliberate
+ * choice on top of that, and the cost is the same one recorded in
+ * bf-main-search.css: keyboard focus moves through close, clear and the
+ * show-all link with nothing to mark it.
  */
 .search__input:focus,
-.search__input:focus-visible {
+.search__input:focus-visible,
+.search__clear:focus,
+.search__clear:focus-visible,
+.search__close:focus,
+.search__close:focus-visible,
+.search__all:focus,
+.search__all:focus-visible {
   outline: none;
   box-shadow: none;
 }

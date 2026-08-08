@@ -271,8 +271,10 @@
       this.footer.hidden = true;
       this.setStatus('Searching');
 
+      /* type=product for the same reason the form pins it: the results page
+         otherwise mixes in pages and articles. */
       if (this.allLink) {
-        this.allLink.href = `${this.searchUrl}?q=${encodeURIComponent(term)}`;
+        this.allLink.href = `${this.searchUrl}?q=${encodeURIComponent(term)}&type=product`;
       }
 
       try {
