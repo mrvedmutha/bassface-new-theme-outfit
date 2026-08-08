@@ -20,6 +20,9 @@
     index    - 0-based position among the cards revealing together, which is
                what staggers the entrance across a row. Optional; a lone card
                passes nothing and starts immediately.
+    stacked  - true to put the title on its own line with the price beneath it,
+               instead of sharing a line. For narrow contexts like the search
+               overlay where a shared line leaves the title unreadable.
 
   Usage:
     {%- render 'bf-product-card', product: product, ratio: '1 / 1' -%}
@@ -54,7 +57,7 @@
 {%- endcapture -%}
 
 <bf-product-card
-  class="product-card"
+  class="product-card{% if stacked %} product-card--stacked{% endif %}"
   {% if card_style != blank %}
     style="{{ card_style }}"
   {% endif %}

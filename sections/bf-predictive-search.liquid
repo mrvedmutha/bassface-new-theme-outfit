@@ -1,0 +1,129 @@
+{%- comment -%}
+  Bassface predictive search results — the fetch target for the search overlay.
+
+  This section is never placed in a template. It exists only to be requested by
+  URL, which is the Section Rendering API's contract:
+
+    /search/suggest?q=<term>&section_id=bf-predictive-search
+      &resources[type]=product,collection&resources[limit]=<n>
+
+  bf-search.js takes the returned document, lifts #shopify-section-<id> out of
+  it, and swaps the markup straight in. That is why this returns HTML and not
+  JSON: the cards are already Liquid snippets, and re-implementing them in
+  client-side templates would be two sources of truth for one card. Dawn's own
+  predictive-search.liquid works exactly this way and stays in place until the
+  stock header search is retired.
+
+  TWO LIMITS OF THIS ENDPOINT, both of which shape the design:
+
+  1. It returns NO total count. `search.results_count` exists on the search
+     page; there is no equivalent here, so the overlay cannot say "94 results".
+     What it CAN do is ask for more than it intends to show and compare — see
+     the note on `shown` below.
+  2. `resources[limit]` is capped at 10 per type by Shopify.
+{%- endcomment -%}
+
+{%- liquid
+  comment
+    Shown vs fetched, and they are deliberately different numbers.
+
+    The overlay displays one row — four of each by default — because a search
+    panel is a shortlist, not a results page. But it still asks for the full
+    ten, because "are there more than we are showing" cannot be answered from a
+    truncated set: request four, receive four, and a store with exactly four
+    matches is indistinguishable from one with forty. The surplus is counted
+    and discarded, and it is what lights the "show all" button.
+  endcomment
+  assign shown = settings.search_result_limit | default: 4
+
+  assign products = predictive_search.resources.products
+  assign collections = predictive_search.resources.collections
+
+  assign has_products = false
+  assign has_collections = false
+  if products.size > 0
+    assign has_products = true
+  endif
+  if collections.size > 0
+    assign has_collections = true
+  endif
+
+  assign has_more = false
+  if products.size > shown or collections.size > shown
+    assign has_more = true
+  endif
+-%}
+
+{%- comment -%}
+  data-results-empty is read by bf-search.js to decide between the results and
+  empty-state presentations. A data attribute rather than a class because it is
+  information the server is reporting, not a state the client is holding.
+{%- endcomment -%}
+<div
+  class="search__results"
+  data-search-results
+  data-results-empty="{% if has_products or has_collections %}false{% else %}true{% endif %}"
+  data-results-more="{{ has_more }}"
+>
+  {%- if has_products -%}
+    <section class="search__group">
+      {%- comment -%}
+        From theme settings rather than the locale file, so the results headings
+        and the idle ones the overlay already renders cannot drift apart. Adding
+        a `general.search.collections` key instead would mean editing a Dawn
+        locale file — and the 30-odd translations beside it — to name two
+        headings the merchant can already set.
+      {%- endcomment -%}
+      <h2 class="search__label">{{ settings.search_products_heading }}</h2>
+      <div class="search__grid search__grid--products">
+        {%- for product in products limit: shown -%}
+          <div class="search__cell">
+            {%- render 'bf-product-card',
+              product: product,
+              ratio: '3 / 4',
+              sizes: '(min-width: 1024px) 22vw, 45vw',
+              index: forloop.index0,
+              stacked: true
+            -%}
+          </div>
+        {%- endfor -%}
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- if has_collections -%}
+    <section class="search__group">
+      <h2 class="search__label">{{ settings.search_collections_heading }}</h2>
+      <div class="search__grid search__grid--collections">
+        {%- for collection in collections limit: shown -%}
+          <div class="search__cell">
+            {%- render 'bf-collection-card',
+              collection: collection,
+              ratio: '7 / 6',
+              sizes: '(min-width: 1024px) 20vw, 45vw'
+            -%}
+          </div>
+        {%- endfor -%}
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- unless has_products or has_collections -%}
+    {%- comment -%}
+      Rendered whether or not a search ran, because an empty resource set and a
+      search that was never performed look identical from here. bf-search.js
+      only ever mounts this markup after a real query, so the wording can assume
+      one.
+    {%- endcomment -%}
+    <p class="search__empty">
+      {{ 'templates.search.no_results' | t: terms: predictive_search.terms }}
+    </p>
+  {%- endunless -%}
+</div>
+
+{% schema %}
+{
+  "name": "Predictive search",
+  "settings": []
+}
+{% endschema %}

@@ -1,0 +1,104 @@
+/* @define collection-card */
+
+/*
+ * The collection card — image, then a title row with a corner arrow.
+ *
+ * Block is `collection-card`. Dawn's base.css owns `.collection-card-wrapper`
+ * and a family of `--collection-card-*` custom properties fed from theme
+ * settings, but it defines no `.collection-card` block and none of its property
+ * names overlap the one declared here. The two do not meet.
+ *
+ * Used by the search overlay today and by the All Collections page next. The
+ * boards size it three ways — 420x460, 330x360 and 280x240 — which is why the
+ * ratio is the consumer's to set, exactly as it is on the product card.
+ */
+
+.collection-card {
+  --collection-card-gap: var(--bf-space-14);
+  --collection-card-arrow: 2.2rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--collection-card-gap);
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
+ * The default lives in the fallback, not as a declaration, so an ancestor can
+ * still win — same reasoning as --product-card-ratio. 11/12 is the shape the
+ * component and the collections grid share (420/460 and 330/360 are within half
+ * a percent of each other); the search overlay overrides it to the 7/6 landscape
+ * its row uses.
+ */
+.collection-card__media {
+  overflow: hidden;
+  aspect-ratio: var(--collection-card-ratio, 11 / 12);
+}
+
+.collection-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * The arrow sits hard right, away from the title, which is what the boards show
+ * at every width. space-between rather than a gap: the row is the card's full
+ * width and the two ends are what matter, not the distance between them.
+ */
+.collection-card__row {
+  display: flex;
+  gap: var(--bf-space-12);
+  justify-content: space-between;
+  align-items: center;
+}
+
+/*
+ * Truncates rather than wraps. A second line would push the card taller than
+ * its neighbours in a grid row, and the collection title is short by nature —
+ * the boards' longest is "Armin Van Buuren".
+ */
+.collection-card__title {
+  overflow: hidden;
+  min-width: 0;
+  font-size: var(--bf-text-card-title-size);
+  font-weight: var(--bf-text-card-title-weight);
+  letter-spacing: var(--bf-text-card-title-tracking);
+  line-height: var(--bf-leading-tight);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Never shrinks, and never wraps under the title. */
+.collection-card__arrow {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/*
+ * The arrow leans out on hover — the same gesture the link makes, drawn small.
+ * Guarded on a pointer that can hover so it cannot stick after a tap.
+ */
+@media (hover: hover) {
+  .collection-card__arrow {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .collection-card:hover .collection-card__arrow,
+  .collection-card:focus-visible .collection-card__arrow {
+    transform: translate(0.3rem, -0.3rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection-card__arrow {
+    transition: none;
+  }
+
+  .collection-card:hover .collection-card__arrow,
+  .collection-card:focus-visible .collection-card__arrow {
+    transform: none;
+  }
+}

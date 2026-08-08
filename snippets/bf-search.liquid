@@ -1,0 +1,176 @@
+{%- comment -%}
+  Search overlay — rendered from layout/theme.liquid.
+
+  A snippet configured from Theme settings -> Search, not a section, for the
+  same reason as the preloader and the cursor: it belongs to the layout rather
+  than to any one template, and a static section rendered from theme.liquid
+  would appear in the section list of whichever template the merchant happened
+  to be editing.
+
+  Opened by anything carrying `aria-controls="bf-search"` — the header link and
+  the drawer link both do. That is the drawer's convention, reused rather than
+  reinvented.
+
+  THE IDLE STATE IS SERVER-RENDERED, the results are fetched. Collections are
+  emitted here in full and shuffled client-side on every open: Liquid has no
+  random filter, and even if it had one the markup is full-page cached, so
+  "random" decided on the server would be frozen for every visitor until the
+  cache turned over. Shuffling in JS is the only version that is actually random.
+{%- endcomment -%}
+
+{%- if settings.search_enabled -%}
+  {{ 'bf-product-card.css' | asset_url | stylesheet_tag }}
+  {{ 'bf-collection-card.css' | asset_url | stylesheet_tag }}
+  {{ 'bf-search.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'bf-product-card.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'bf-search.js' | asset_url }}" defer="defer"></script>
+
+  {%- liquid
+    assign popular = settings.search_popular_collection
+    if popular == blank
+      assign popular_products = collections.all.products
+    else
+      assign popular_products = popular.products
+    endif
+  -%}
+
+  <bf-search class="search" id="bf-search">
+    <div class="search__panel">
+      {%- comment -%}
+        A real <form> with a real action, so the overlay degrades to a plain
+        search submission if the script never loads: Enter reaches /search?q=…
+        and the visitor gets the results page rather than nothing.
+      {%- endcomment -%}
+      <form class="search__row" action="{{ routes.search_url }}" method="get" role="search">
+        <span class="search__icon" aria-hidden="true">
+          {%- render 'bf-icon', icon: 'search', size: 28 -%}
+        </span>
+
+        <input
+          class="search__input"
+          type="search"
+          name="q"
+          value=""
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          enterkeyhint="search"
+          placeholder="{{ settings.search_placeholder }}"
+          aria-label="{{ 'general.search.search' | t }}"
+          data-search-input
+        >
+
+        {%- comment -%} Hidden until there is something to clear. {%- endcomment -%}
+        <button class="search__clear" type="button" data-search-clear hidden>
+          {%- render 'bf-icon', icon: 'circle-x', size: 24, label: 'Clear search' -%}
+        </button>
+
+        <button class="search__close" type="button" data-search-close>
+          {%- render 'bf-icon', icon: 'x', size: 28, label: 'Close search' -%}
+        </button>
+      </form>
+
+      <hr class="search__rule">
+
+      <div class="search__content" data-search-content>
+        {%- comment -%}
+          Idle — what is on screen before a single character is typed.
+
+          Popular is hidden below 834 in CSS rather than skipped here: the
+          server cannot know the viewport, and rendering it means a phone that
+          rotates to landscape already has the markup.
+        {%- endcomment -%}
+        <div class="search__idle" data-search-idle>
+          {%- if popular_products.size > 0 -%}
+            <section class="search__group search__group--popular">
+              <h2 class="search__label">{{ settings.search_popular_heading }}</h2>
+              <div class="search__grid search__grid--products">
+                {%- for product in popular_products limit: settings.search_result_limit -%}
+                  <div class="search__cell">
+                    {%- render 'bf-product-card',
+                      product: product,
+                      ratio: '3 / 4',
+                      sizes: '(min-width: 1024px) 22vw, 45vw',
+                      index: forloop.index0,
+                      stacked: true
+                    -%}
+                  </div>
+                {%- endfor -%}
+              </div>
+            </section>
+          {%- endif -%}
+
+          {%- if collections.size > 0 -%}
+            <section class="search__group">
+              <h2 class="search__label">{{ settings.search_collections_heading }}</h2>
+              {%- comment -%}
+                Twelve is a pool, not a target. bf-search.js shuffles them and
+                then hides whatever does not fit the remaining height, so the
+                idle state fills the viewport instead of leaving the dead band
+                the board has under its Popular row.
+              {%- endcomment -%}
+              <div
+                class="search__grid search__grid--collections"
+                data-search-shuffle
+                data-idle-count="{{ settings.search_result_limit }}"
+              >
+                {%- for collection in collections limit: 12 -%}
+                  <div class="search__cell">
+                    {%- render 'bf-collection-card',
+                      collection: collection,
+                      ratio: '7 / 6',
+                      sizes: '(min-width: 1024px) 20vw, 45vw'
+                    -%}
+                  </div>
+                {%- endfor -%}
+              </div>
+            </section>
+          {%- endif -%}
+        </div>
+
+        {%- comment -%}
+          Where bf-predictive-search.liquid's markup is swapped in. Empty until
+          the first query resolves.
+        {%- endcomment -%}
+        <div data-search-mount></div>
+
+        {%- comment -%}
+          The skeleton. As many cells as results will be shown, on the same
+          grid at the same ratio, so the swap changes what is in the boxes and
+          not where the boxes are.
+
+          aria-hidden with the live region below carrying the actual status:
+          announcing four empty placeholders is noise, "Searching" is not.
+        {%- endcomment -%}
+        <div class="search__skeleton" data-search-skeleton hidden aria-hidden="true">
+          <div class="search__grid search__grid--products">
+            {%- for i in (1..settings.search_result_limit) -%}
+              <div class="search__cell">
+                <div class="search__skeleton-card">
+                  <div class="search__skeleton-media"></div>
+                  <div class="search__skeleton-line"></div>
+                  <div class="search__skeleton-line search__skeleton-line--short"></div>
+                </div>
+              </div>
+            {%- endfor -%}
+          </div>
+        </div>
+      </div>
+
+      {%- comment -%}
+        Pinned rather than sitting at the foot of the scrolling content, which
+        is a deliberate departure from the board. The button's job is to say
+        "there are more than these" — inside the scroller you would have to
+        reach the bottom to discover it, which is precisely the situation it
+        exists to report. Shown only when the section reports a surplus.
+      {%- endcomment -%}
+      <div class="search__footer" data-search-footer hidden>
+        <a class="search__all" href="{{ routes.search_url }}" data-search-all>
+          {{ settings.search_all_label }}
+        </a>
+      </div>
+    </div>
+
+    <p class="search__status" role="status" aria-live="polite" data-search-status></p>
+  </bf-search>
+{%- endif -%}

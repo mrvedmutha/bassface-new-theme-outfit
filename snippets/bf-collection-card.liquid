@@ -1,0 +1,77 @@
+{%- comment -%}
+  Bassface collection card — image, then a title row with a corner arrow.
+
+  A snippet, not a section: it is the atom the search overlay and the All
+  Collections page are both built from. Dawn's own card-collection.liquid is
+  left in place for the stock sections that still render it.
+
+  Accepts:
+    collection - a collection object. Required. Renders a placeholder when
+                 blank so the theme editor still composes with nothing chosen.
+    ratio      - image aspect ratio, e.g. '7 / 6'. Optional; falls back to
+                 11/12. Passed by the CONSUMER, not chosen per collection —
+                 the boards use 21/23, 11/12 and 7/6 for the same card in three
+                 different places, so the shape belongs to the composition.
+    sizes      - the `sizes` attribute. Pass the real column width.
+    loading    - 'lazy' (default) or 'eager'.
+
+  Usage:
+    {%- render 'bf-collection-card', collection: collection, ratio: '7 / 6' -%}
+
+  The image is collection.image when the merchant has set one, falling back to
+  the first product's featured image — which is what Shopify shows in the admin
+  and avoids an empty box on a collection nobody has given artwork to.
+{%- endcomment -%}
+
+{%- liquid
+  assign loading = loading | default: 'lazy'
+  assign sizes = sizes | default: '(min-width: 834px) 25vw, 50vw'
+
+  assign card_image = collection.image
+  if card_image == blank
+    assign card_image = collection.products.first.featured_image
+  endif
+-%}
+
+<a
+  class="collection-card"
+  href="{{ collection.url | default: '#' }}"
+  {% if ratio != blank %}
+    style="--collection-card-ratio: {{ ratio }};"
+  {% endif %}
+>
+  <span class="collection-card__media">
+    {%- if card_image -%}
+      {%- comment -%}
+        Empty alt: the card is one link whose accessible name is the title
+        below, so a described image would announce the collection twice.
+      {%- endcomment -%}
+      <img
+        class="collection-card__image"
+        src="{{ card_image | image_url: width: 800 }}"
+        srcset="
+          {{ card_image | image_url: width: 400 }} 400w,
+          {{ card_image | image_url: width: 600 }} 600w,
+          {{ card_image | image_url: width: 800 }} 800w,
+          {{ card_image | image_url: width: 1200 }} 1200w
+        "
+        sizes="{{ sizes }}"
+        width="{{ card_image.width }}"
+        height="{{ card_image.height }}"
+        alt=""
+        loading="{{ loading }}"
+      >
+    {%- else -%}
+      {{ 'collection-1' | placeholder_svg_tag: 'collection-card__image' }}
+    {%- endif -%}
+  </span>
+
+  <span class="collection-card__row">
+    <span class="collection-card__title">
+      {{- collection.title | default: 'Collection' -}}
+    </span>
+    <span class="collection-card__arrow">
+      {%- render 'bf-icon', icon: 'arrow-up-right', size: 22 -%}
+    </span>
+  </span>
+</a>

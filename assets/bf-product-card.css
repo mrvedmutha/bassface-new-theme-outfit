@@ -377,6 +377,30 @@
   }
 }
 
+/*
+ * The same stack, asked for outright rather than inferred from the width.
+ *
+ * The rules above decide it from the card's own size, which is right on a page
+ * whose grid the card can be measured against. The search overlay is not that:
+ * its cards are narrow at every viewport, so sharing a line means the title
+ * gets a third of an already-small card and truncates to two words. Reading
+ * "Afrojack — B.I.B. Ove…" tells a visitor nothing about which result they are
+ * looking at, which is the entire job of a search result.
+ *
+ * A modifier on the card rather than a rule in bf-search.css, because the card
+ * owns its own layout — one block per file, and a stylesheet that reached into
+ * .product-card__info from outside would be styling someone else's element.
+ */
+.product-card--stacked .product-card__info {
+  flex-direction: column;
+  gap: var(--bf-space-4);
+  align-items: stretch;
+}
+
+.product-card--stacked .product-card__title {
+  flex: 0 0 auto;
+}
+
 /* Honoured here rather than in JS alone so the rule is visible to anyone
    reading the stylesheet. bf-product-card.js checks the same query and never
    starts a cycle, so this is a belt-and-braces stop, not the mechanism. */

@@ -8,6 +8,70 @@
     "theme_support_url": "https://support.shopify.com/"
   },
   {
+    "name": "Search",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "search_enabled",
+        "label": "Enable the search overlay",
+        "info": "Off falls back to the plain search page. The header and drawer links keep working either way.",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "search_result_limit",
+        "label": "Results shown per type",
+        "info": "One row of each. More than this and the show-all button appears \u2014 the overlay always asks Shopify for ten so it can tell there are more.",
+        "min": 2,
+        "max": 8,
+        "step": 1,
+        "default": 4
+      },
+      {
+        "type": "text",
+        "id": "search_placeholder",
+        "label": "Placeholder",
+        "default": "Search for products, artists, collections…"
+      },
+      {
+        "type": "text",
+        "id": "search_all_label",
+        "label": "Show-all button",
+        "info": "Appears only when the results are taller than the screen.",
+        "default": "Show All Results"
+      },
+      {
+        "type": "text",
+        "id": "search_products_heading",
+        "label": "Products heading",
+        "info": "Shown above the product results.",
+        "default": "Products"
+      },
+      {
+        "type": "header",
+        "content": "Before anything is typed"
+      },
+      {
+        "type": "collection",
+        "id": "search_popular_collection",
+        "label": "Popular products",
+        "info": "The first four are shown on tablet and desktop. Leave empty to use all products. Hidden on phones, where collections fill the screen instead."
+      },
+      {
+        "type": "text",
+        "id": "search_popular_heading",
+        "label": "Popular heading",
+        "default": "Popular"
+      },
+      {
+        "type": "text",
+        "id": "search_collections_heading",
+        "label": "Collections heading",
+        "default": "Collections"
+      }
+    ]
+  },
+  {
     "name": "Cursor",
     "settings": [
       {

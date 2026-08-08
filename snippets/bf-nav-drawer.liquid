@@ -43,7 +43,15 @@
       {%- endfor -%}
 
       <li>
-        <a class="nav-drawer__link" href="{{ routes.search_url }}">{{ 'Search' }}</a>
+        <a
+          class="nav-drawer__link"
+          href="{{ routes.search_url }}"
+          {% if settings.search_enabled %}
+            aria-controls="bf-search" aria-haspopup="dialog"
+          {% endif %}
+        >
+          {{- 'Search' -}}
+        </a>
       </li>
 
       {%- if shop.customer_accounts_enabled -%}

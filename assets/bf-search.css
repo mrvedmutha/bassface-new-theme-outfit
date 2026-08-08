@@ -1,0 +1,347 @@
+/* @define search */
+
+/*
+ * The search overlay — a full-viewport panel over the page.
+ *
+ * Block is `search`. Dawn owns `.search-modal`, `.search__input` and
+ * `.predictive-search__*` in component-search.css and
+ * component-predictive-search.css, all of which are still loaded for the stock
+ * header search. `.search__input` is the one real overlap, and it is why this
+ * file sets every property it needs on that element outright rather than
+ * relying on inheritance — Dawn's rule is a bare class at the same specificity,
+ * so whichever stylesheet loads last would otherwise decide.
+ *
+ * THREE ROWS, and the middle one is the only one that scrolls:
+ *
+ *   search__row       the input. Fixed height, never moves.
+ *   search__rule      2px.
+ *   search__content   1fr, `overflow-y: auto`. This is what makes the panel
+ *                     exactly one viewport tall no matter how many results
+ *                     arrive.
+ *   search__footer    the "show all" bar, pinned. Height 0 when hidden.
+ *
+ * A grid rather than flex column because `1fr` on a grid row resolves against
+ * the panel height directly; a flex child needs `min-height: 0` to be allowed
+ * to shrink below its content, which is the classic overflow bug in this exact
+ * layout.
+ */
+
+.search {
+  --search-padding: var(--bf-space-24);
+  --search-row-gap: var(--bf-space-20);
+
+  /* Two-up on a phone, which is the 2x2 the idle collections want. */
+  --search-columns: 2;
+  --search-grid-gap: var(--bf-space-16);
+  --search-skeleton: color-mix(in srgb, var(--bf-ink) 10%, var(--bf-surface));
+
+
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+
+  /* Not display:none — the panel is measured on open, and a display:none
+     element has no dimensions to measure. Visibility keeps it out of the
+     accessibility tree and off the tab order while still being laid out. */
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--bf-surface);
+  transition:
+    opacity 250ms ease,
+    visibility 0s linear 250ms;
+}
+
+.search:where(.is-open) {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    opacity 250ms ease,
+    visibility 0s;
+}
+
+/*
+ * dvh, not vh. On mobile Safari and Chrome the URL bar is included in `vh`, so
+ * a 100vh panel is taller than the visible viewport until you scroll — and this
+ * one must never scroll as a whole. Same call, and the same fallback, as the
+ * nav drawer.
+ */
+.search__panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .search__panel {
+    height: 100dvh;
+  }
+}
+
+/* ------------------------------------------------------------------ row --- */
+
+.search__row {
+  display: flex;
+  gap: var(--search-row-gap);
+  align-items: center;
+  padding: var(--bf-space-20) var(--search-padding) var(--bf-space-16);
+}
+
+.search__icon,
+.search__clear,
+.search__close {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--bf-ink);
+}
+
+.search__clear,
+.search__close {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/*
+ * `hidden` is a UA `display: none`, and the flex rule above outranks it — an
+ * author declaration beats the UA sheet whatever the specificity. Without this
+ * the clear button sits beside the placeholder on an empty field, offering to
+ * clear nothing. The same trap is why .search__footer needs its own copy.
+ */
+.search__clear[hidden] {
+  display: none;
+}
+
+/*
+ * Every property is declared, none inherited. Dawn's `.search__input` is a bare
+ * class carrying its own font, border, padding and background at identical
+ * specificity, so source order alone decides between them — and section CSS
+ * order is not something this file can rely on.
+ */
+.search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bf-ink);
+  font-family: inherit;
+  font-size: var(--bf-text-search-size);
+  font-weight: var(--bf-text-search-weight);
+  letter-spacing: var(--bf-text-search-tracking);
+  line-height: var(--bf-leading-snug);
+  appearance: none;
+}
+
+/*
+ * No focus ring on the input. Normally removing one is a mistake, and here it
+ * is not: the overlay focuses this input the moment it opens, so the ring would
+ * be on screen every single time before the visitor has done anything, framing
+ * a field that is already the only thing to type into. The caret is the
+ * indicator. Every OTHER control in the panel keeps its ring.
+ */
+.search__input:focus,
+.search__input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.search__input::placeholder {
+  color: var(--bf-ink);
+  opacity: 0.4;
+}
+
+/* The UA's own clear button, which would sit beside ours and do the same job
+   with different artwork. */
+.search__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search__rule {
+  margin: 0 var(--search-padding);
+  border: 0;
+  border-top: 2px solid var(--bf-ink);
+}
+
+/* -------------------------------------------------------------- content --- */
+
+.search__content {
+  overflow-y: auto;
+
+  /* Stops a scroll that reaches the end of this list from chaining to the page
+     behind, which on iOS is what makes an overlay feel like it is leaking. */
+  overscroll-behavior: contain;
+  padding: var(--bf-space-24) var(--search-padding) var(--bf-space-32);
+}
+
+.search__group + .search__group {
+  margin-top: var(--bf-space-32);
+}
+
+/*
+ * 18/900, matching the UI Kit's group-title size and weight. The tracking is
+ * the one departure: the kit's group title is -0.3 where the search boards use
+ * +0.2, so it is set here rather than pulled from the token. Documented rather
+ * than silently rounded to the nearest kit value.
+ */
+.search__label {
+  margin: 0 0 var(--bf-space-14);
+  font-size: var(--bf-text-group-title-size);
+  font-weight: var(--bf-text-group-title-weight);
+  letter-spacing: 0.0111em;
+  line-height: var(--bf-leading-tight);
+}
+
+/*
+ * A fixed column count, and full-bleed — no max-width on this panel anywhere.
+ *
+ * auto-fill was tried and is wrong HERE, even though it is the better tool in
+ * general. It sizes columns to a target width and adds more as the screen
+ * grows, which is ideal when the item count is open-ended. This grid shows a
+ * fixed four: on a wide screen auto-fill lays out eight columns, fills the
+ * first four and leaves the row half empty, so the results huddle against the
+ * left edge with a void beside them.
+ *
+ * Four columns of 1fr always spans the full width, whatever the screen. The
+ * cost is honest and worth naming: the cards grow with the viewport, so on a
+ * wide-but-short window one row can be taller than the panel and the content
+ * scrolls. Scrolling a result list is ordinary; a half-empty row is not.
+ */
+.search__grid {
+  display: grid;
+  gap: var(--bf-space-24) var(--search-grid-gap);
+  grid-template-columns: repeat(var(--search-columns), minmax(0, 1fr));
+  align-items: start;
+}
+
+.search__empty {
+  margin: 0;
+  font-size: var(--bf-text-body-size);
+  letter-spacing: var(--bf-text-body-tracking);
+}
+
+/* ------------------------------------------------------------- skeleton --- */
+
+/*
+ * Sits on the same grid at the same ratio as the product card, so the swap to
+ * real results changes what is inside the boxes and not where the boxes are.
+ */
+.search__skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+}
+
+.search__skeleton-media {
+  aspect-ratio: 3 / 4;
+  background-color: var(--search-skeleton);
+}
+
+.search__skeleton-line {
+  height: 1.6rem;
+  background-color: var(--search-skeleton);
+}
+
+.search__skeleton-line--short {
+  width: 40%;
+}
+
+/*
+ * A slow breath rather than a travelling sheen. A sweeping gradient on four
+ * cards at once is four animated paint areas for a state that should last a few
+ * hundred milliseconds; opacity is compositor-only.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .search__skeleton-media,
+  .search__skeleton-line {
+    animation: search-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes search-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* --------------------------------------------------------------- footer --- */
+
+.search__footer {
+  display: flex;
+  justify-content: center;
+  padding: var(--bf-space-16) var(--search-padding) var(--bf-space-24);
+  border-top: 2px solid var(--bf-ink);
+}
+
+
+.search__footer[hidden] {
+  display: none;
+}
+
+.search__all {
+  padding: var(--bf-space-16) var(--bf-space-32);
+  background-color: var(--bf-ink);
+  color: var(--bf-surface);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  text-decoration: none;
+}
+
+/* The live region. Announced, never seen — the visible equivalent is the
+   skeleton, which is aria-hidden for the same reason. */
+.search__status {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ================================================================ 834 ==== *
+ * Below this the idle state is COLLECTIONS ONLY. A phone viewport barely fits
+ * one row of product cards, so keeping Popular would push the collections grid
+ * off screen and leave the idle overlay scrolling before a single character has
+ * been typed. Two columns, four cards, no scroll — which is the whole point of
+ * pinning the panel to the viewport.
+ *
+ * The Popular markup is still delivered; only its display is dropped, so a
+ * rotation to landscape needs no round trip.
+ */
+
+@media screen and (width < 834px) {
+  .search__group--popular {
+    display: none;
+  }
+}
+
+@media screen and (width >= 834px) {
+  .search {
+    --search-padding: var(--bf-space-32);
+    --search-columns: 3;
+    --search-grid-gap: var(--bf-space-20);
+  }
+}
+
+@media screen and (width >= 1024px) {
+  .search {
+    --search-padding: 4.8rem;
+    --search-columns: 4;
+    --search-grid-gap: var(--bf-space-24);
+  }
+
+  .search__row {
+    padding: var(--bf-space-32) var(--search-padding) var(--bf-space-28);
+  }
+
+  .search__content {
+    padding: var(--bf-space-40) var(--search-padding);
+  }
+}
