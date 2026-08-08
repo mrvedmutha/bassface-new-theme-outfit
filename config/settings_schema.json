@@ -8,6 +8,18 @@
     "theme_support_url": "https://support.shopify.com/"
   },
   {
+    "name": "Scrolling",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "smooth_scroll_enabled",
+        "label": "Smooth scrolling",
+        "info": "Adds momentum to the page scroll on mouse and trackpad. Touch devices keep the platform's own scrolling either way, and it is skipped entirely for visitors who ask for reduced motion.",
+        "default": true
+      }
+    ]
+  },
+  {
     "name": "Search",
     "settings": [
       {

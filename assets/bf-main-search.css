@@ -45,7 +45,9 @@
 /* --------------------------------------------------------- breadcrumb --- */
 
 .main-search__breadcrumb {
-  padding: var(--bf-space-56, 5.6rem) var(--bf-page-padding) var(--bf-space-32);
+  /* The board's 56 top. Off the 4px scale, so it is a literal rather than a
+     var() with a fallback standing in for a token that does not exist. */
+  padding: 5.6rem var(--bf-page-padding) var(--bf-space-32);
 }
 
 .main-search__crumbs {

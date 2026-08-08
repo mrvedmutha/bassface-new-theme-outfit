@@ -352,6 +352,7 @@
   {%- endcomment -%}
   <body class="{% if settings.animations_hover_elements != 'none' %}animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
     {%- comment -%} First in <body> so it covers the page before anything below can paint. {%- endcomment -%}
+    {%- render 'bf-scroll' -%}
     {%- render 'bf-preloader' -%}
     {%- render 'bf-cursor' -%}
     {%- render 'bf-search' -%}

@@ -36,6 +36,43 @@
   --nav-drawer-block-top: calc(var(--bf-space-32) * var(--nav-drawer-scale));
   --nav-drawer-footer-gap: calc(var(--bf-space-32) * var(--nav-drawer-scale));
 
+  /*
+   * Entrance. expo.out on both, so the panel leaves hard and coasts to a stop
+   * rather than easing at both ends — an opening surface should feel released,
+   * not steered.
+   *
+   * Paced against the rest of the theme rather than against what a drawer
+   * usually does. The card entrance runs 940ms and the hero's rule takes 1.6s;
+   * a 600ms drawer read as a snap next to them. These are slow on purpose.
+   */
+  --nav-drawer-wipe: 1200ms;
+  --nav-drawer-item: 1300ms;
+  --nav-drawer-stagger: 110ms;
+
+  /*
+   * Closing is its own timing, not the entrance played backwards at the same
+   * speed. Dismissing had felt abrupt because every link left at once while the
+   * panel swept up over them — an exit with no order to it reads as a cut.
+   *
+   * So the links leave BOTTOM-FIRST, at roughly half the entrance stagger, and
+   * the panel waits for them before it starts closing. Reversed rather than
+   * repeated: the last thing to arrive should be the first to go, or the drawer
+   * appears to fold from the wrong end.
+   *
+   * Shorter than the entrance on purpose, and not by accident of tuning. An
+   * opening panel is the thing you asked for and can be savoured; a closing one
+   * is between you and what you actually want next, so it should be unhurried
+   * without being in the way.
+   */
+  --nav-drawer-exit: 820ms;
+  --nav-drawer-exit-stagger: 60ms;
+  --nav-drawer-exit-lead: 180ms;
+
+  /* How long after the wipe starts the first link begins. Short enough that the
+     text is already moving while the panel is still filling. */
+  --nav-drawer-lead: 220ms;
+  --nav-drawer-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
   position: fixed;
   inset: 0 0 auto;
   z-index: 20;
@@ -53,8 +90,26 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+
+  /*
+   * The panel is UNCOVERED downward, not faded in. clip-path insets the bottom
+   * edge by 100% when closed — the drawer is fully laid out and painted, just
+   * clipped to nothing — and releases to 0, so the surface appears to pour down
+   * the screen from the top edge.
+   *
+   * clip-path rather than a translate or a scaleY: translating slides the whole
+   * drawer INCLUDING its contents, so the links arrive already in position and
+   * ride down with the background, and scaleY squashes the type on the way.
+   * Clipping moves nothing — it only changes how much of a stationary panel is
+   * visible, which is what lets the links run their own reveal underneath it.
+   *
+   * visibility is stepped rather than transitioned so the drawer leaves the tab
+   * order the instant it closes, but only after the wipe has finished playing.
+   */
+  clip-path: inset(0 0 100% 0);
+  transition:
+    clip-path var(--nav-drawer-exit) var(--nav-drawer-ease) var(--nav-drawer-exit-lead),
+    visibility 0s linear calc(var(--nav-drawer-exit) + var(--nav-drawer-exit-lead));
 }
 
 @supports (height: 100dvh) {
@@ -67,13 +122,94 @@
    on the block for BEM linting without adding specificity. */
 .nav-drawer:where(.is-open) {
   visibility: visible;
-  opacity: 1;
-  transition: opacity 0.3s ease;
+  clip-path: inset(0 0 0 0);
+  transition:
+    clip-path var(--nav-drawer-wipe) var(--nav-drawer-ease),
+    visibility 0s;
 }
 
+/* ------------------------------------------------------------- reveal --- */
+
+/*
+ * Each link rises out of its own row. The <li> does the clipping and the <a>
+ * does the moving — one element cannot do both, since it would be clipping
+ * against its own travelling edge.
+ *
+ * The link already carries `padding-block`, so the clip box is taller than the
+ * text and descenders survive it. That is the same problem the hero's split
+ * lines solve with a padding/negative-margin pair; here the padding was already
+ * there for layout reasons and does the job for free.
+ */
+.nav-drawer__item {
+  overflow: hidden;
+}
+
+/*
+ * The stagger lives on the OPEN rule only. Left on the base rule it would apply
+ * to closing too, so dismissing the drawer would hold the last link on screen
+ * for half a second after the panel had gone — the delays must exist on the way
+ * in and vanish on the way out.
+ *
+ * 105% rather than 100%: a fractional line-height can leave a hairline of glyph
+ * showing at exactly 100%, and the extra 5% costs nothing.
+ */
+.nav-drawer:where(.is-open) .nav-drawer__link {
+  transform: translateY(0);
+  transition-delay: calc(
+    var(--nav-drawer-lead) + var(--nav-drawer-index, 0) * var(--nav-drawer-stagger)
+  );
+}
+
+/*
+ * Everything that is not a menu link fades up instead of being clipped. These
+ * are small, boxed things — a logo, a Close button, a currency picker, three
+ * theme dots, an address — and a clip reveal on a 44px logo reads as a glitch
+ * rather than as a flourish. They follow the last link, using the count the
+ * drawer was rendered with.
+ */
+.nav-drawer__top,
+.nav-drawer__currency,
+.nav-drawer__switcher,
+.nav-drawer__footer {
+  opacity: 0;
+  transform: translateY(1.2rem);
+
+  /* These sit below the links, so on the way out they go first. */
+  transition:
+    opacity var(--nav-drawer-exit) var(--nav-drawer-ease),
+    transform var(--nav-drawer-exit) var(--nav-drawer-ease);
+}
+
+.nav-drawer:where(.is-open) .nav-drawer__top,
+.nav-drawer:where(.is-open) .nav-drawer__currency,
+.nav-drawer:where(.is-open) .nav-drawer__switcher,
+.nav-drawer:where(.is-open) .nav-drawer__footer {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(
+    var(--nav-drawer-lead) + var(--nav-drawer-count, 4) * var(--nav-drawer-stagger)
+  );
+}
+
+/*
+ * Removed outright, not softened. The whole entrance is travel — a surface
+ * sweeping down and text climbing into it — and there is no gentler version of
+ * that worth showing. The drawer simply appears.
+ */
 @media (prefers-reduced-motion: reduce) {
-  .nav-drawer {
+  .nav-drawer,
+  .nav-drawer__link,
+  .nav-drawer__top,
+  .nav-drawer__currency,
+  .nav-drawer__switcher,
+  .nav-drawer__footer {
+    transform: none;
+    opacity: 1;
     transition: none;
+  }
+
+  .nav-drawer:where(.is-open) {
+    clip-path: none;
   }
 }
 
@@ -120,6 +256,18 @@
   letter-spacing: -0.025em;
   line-height: 1.1;
   text-decoration: none;
+
+  /* Starting pose for the entrance — see the reveal block above. 105% rather
+     than 100% because a fractional line-height can leave a hairline of glyph
+     showing at exactly 100%. */
+  transform: translateY(105%);
+
+  /* Bottom-first on the way out — see --nav-drawer-exit. The count inherits
+     from the drawer root, so each link knows its distance from the end. */
+  transition: transform var(--nav-drawer-exit) var(--nav-drawer-ease);
+  transition-delay: calc(
+    (var(--nav-drawer-count, 4) - var(--nav-drawer-index, 0)) * var(--nav-drawer-exit-stagger)
+  );
 }
 
 .nav-drawer__currency {

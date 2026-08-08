@@ -80,7 +80,11 @@
 
       <hr class="search__rule">
 
-      <div class="search__content" data-search-content>
+      {%- comment -%}
+        data-lenis-prevent: this region scrolls itself, and Lenis must not
+        intercept the wheel over it — see the same note in bf-nav-drawer.liquid.
+      {%- endcomment -%}
+      <div class="search__content" data-search-content data-lenis-prevent>
         {%- comment -%}
           Idle — what is on screen before a single character is typed.
 

@@ -175,11 +175,26 @@ class BFNavDrawer extends HTMLElement {
   }
 
   lockScroll() {
-    document.body.style.overflow = 'hidden';
+    if (this.holdsScroll) return;
+
+    this.holdsScroll = true;
+    document.dispatchEvent(new CustomEvent('bf:scroll-lock'));
   }
 
+  /*
+   * Only releases a lock this drawer actually took.
+   *
+   * The page lock is counted, so an unmatched unlock decrements someone else's.
+   * Two paths here can fire one: disconnectedCallback runs whether or not the
+   * drawer was open, and close() has no open-check of its own. With the search
+   * overlay open above a closed drawer, either would hand scrolling back to the
+   * page while it was still covered.
+   */
   unlockScroll() {
-    document.body.style.overflow = '';
+    if (!this.holdsScroll) return;
+
+    this.holdsScroll = false;
+    document.dispatchEvent(new CustomEvent('bf:scroll-unlock'));
   }
 }
 

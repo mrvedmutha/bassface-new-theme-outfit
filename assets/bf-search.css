@@ -35,6 +35,21 @@
   --search-grid-gap: var(--bf-space-16);
   --search-skeleton: color-mix(in srgb, var(--bf-ink) 10%, var(--bf-surface));
 
+  /* Entrance, matching the nav drawer's figures so the two panels in this theme
+     open at the same pace — and paced against the card entrance and the hero
+     rather than against what an overlay usually does. */
+  --search-wipe: 1200ms;
+  --search-item: 1300ms;
+  --search-stagger: 150ms;
+  --search-lead: 220ms;
+
+  /* Closing is its own timing, matching the nav drawer's: the regions clear
+     first and the panel waits before sweeping up, so dismissing reads as a
+     decision rather than a cut. */
+  --search-exit: 820ms;
+  --search-exit-lead: 180ms;
+  --search-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
 
   position: fixed;
   z-index: 30;
@@ -44,19 +59,73 @@
      element has no dimensions to measure. Visibility keeps it out of the
      accessibility tree and off the tab order while still being laid out. */
   visibility: hidden;
-  opacity: 0;
   background-color: var(--bf-surface);
+
+  /*
+   * Uncovered downward, exactly as the nav drawer is — see the longer note
+   * there on why this is a clip and not a translate or a scale. It matters more
+   * here: the panel is measured on open (fitIdle reads scrollHeight), and a
+   * transform would have those reads happening against a moving box.
+   */
+  clip-path: inset(0 0 100% 0);
   transition:
-    opacity 250ms ease,
-    visibility 0s linear 250ms;
+    clip-path var(--search-exit) var(--search-ease) var(--search-exit-lead),
+    visibility 0s linear calc(var(--search-exit) + var(--search-exit-lead));
 }
 
 .search:where(.is-open) {
   visibility: visible;
-  opacity: 1;
+  clip-path: inset(0 0 0 0);
   transition:
-    opacity 250ms ease,
+    clip-path var(--search-wipe) var(--search-ease),
     visibility 0s;
+}
+
+/* ------------------------------------------------------------- reveal --- */
+
+/*
+ * Three steps down the panel: the search row, the rule, then the content.
+ *
+ * Per-item rather than per-card on purpose. The content holds results that are
+ * swapped in and out on every keystroke, and staggering those would replay an
+ * entrance each time a letter is typed. The entrance belongs to OPENING the
+ * panel, so it runs on the three fixed regions and leaves what is inside them
+ * alone.
+ */
+.search__row,
+.search__rule,
+.search__content {
+  opacity: 0;
+  transform: translateY(1.6rem);
+  transition:
+    opacity var(--search-exit) var(--search-ease),
+    transform var(--search-exit) var(--search-ease);
+}
+
+/* Delays on the open rule only — on the base they would apply to closing too,
+   holding the content on screen after the panel had gone. */
+
+/* The entrance is longer than the exit, so the open rules restate the duration
+   rather than inheriting the exit's from the base. */
+.search:where(.is-open) .search__row {
+  opacity: 1;
+  transform: translateY(0);
+  transition-duration: var(--search-item);
+  transition-delay: var(--search-lead);
+}
+
+.search:where(.is-open) .search__rule {
+  opacity: 1;
+  scale: 1 1;
+  transition-duration: var(--search-item);
+  transition-delay: calc(var(--search-lead) + var(--search-stagger));
+}
+
+.search:where(.is-open) .search__content {
+  opacity: 1;
+  transform: translateY(0);
+  transition-duration: var(--search-item);
+  transition-delay: calc(var(--search-lead) + var(--search-stagger) * 2);
 }
 
 /*
@@ -83,7 +152,11 @@
   display: flex;
   gap: var(--search-row-gap);
   align-items: center;
-  padding: var(--bf-space-20) var(--search-padding) var(--bf-space-16);
+
+  /* The top figure is deliberately larger than the bottom one. The board's row
+     sits under a browser chrome that is not there on a full-screen panel, so
+     matching it put the field hard against the top edge of the screen. */
+  padding: var(--bf-space-40) var(--search-padding) var(--bf-space-16);
 }
 
 .search__icon,
@@ -166,10 +239,25 @@
   display: none;
 }
 
+/*
+ * The rule DRAWS from the left rather than rising with its neighbours — the
+ * gesture the hero's 5px rule already makes, so the theme has one way of
+ * introducing a horizontal line rather than two.
+ *
+ * `scale` as its own property, not inside `transform`: the block above sets a
+ * translate on this element too, and a single transform declaration cannot be
+ * transitioned from two places without one overwriting the other.
+ */
 .search__rule {
   margin: 0 var(--search-padding);
   border: 0;
   border-top: 2px solid var(--bf-ink);
+  transform: none;
+  transform-origin: left center;
+  scale: 0 1;
+  transition:
+    opacity var(--search-exit) var(--search-ease),
+    scale var(--search-exit) var(--search-ease);
 }
 
 /* -------------------------------------------------------------- content --- */
@@ -267,6 +355,28 @@
   }
 }
 
+/*
+ * The entrance is removed outright under this setting — a surface sweeping down
+ * with three regions climbing into it is all travel, and there is no gentler
+ * version worth showing. The panel simply appears. The skeleton's pulse is
+ * already opt-in above, via no-preference.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .search,
+  .search__row,
+  .search__rule,
+  .search__content {
+    transform: none;
+    opacity: 1;
+    scale: 1 1;
+    transition: none;
+  }
+
+  .search:where(.is-open) {
+    clip-path: none;
+  }
+}
+
 @keyframes search-pulse {
   50% {
     opacity: 0.45;
@@ -345,7 +455,10 @@
   }
 
   .search__row {
-    padding: var(--bf-space-32) var(--search-padding) var(--bf-space-28);
+    /* 5.6rem is off the 4px scale, like the hero's numerals. Written as a
+       literal rather than var(--bf-space-56, …), which reads as a token the
+       kit has and silently falls back when it does not. */
+    padding: 5.6rem var(--search-padding) var(--bf-space-28);
   }
 
   .search__content {

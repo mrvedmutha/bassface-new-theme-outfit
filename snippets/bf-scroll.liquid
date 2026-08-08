@@ -1,0 +1,30 @@
+{%- comment -%}
+  Smooth scrolling — rendered from layout/theme.liquid.
+
+  Lenis is vendored into assets/ rather than pulled from a CDN, per the theme's
+  standing rule: a cross-origin request costs DNS, TCP and TLS before a byte
+  arrives, and cross-origin cache partitioning means a shared copy is never
+  reused across sites anyway.
+
+  Both deferred, and in this order — deferred scripts run in document order, so
+  Lenis is defined before bf-scroll.js looks for it.
+
+  Blocking was the first instinct, on the theory that Lenis should own the
+  scroll before anyone can scroll. It does not earn it: the worst case is a
+  visitor scrolling natively for a few hundred milliseconds before momentum
+  takes over, against 18KB of parser-blocking script on every page. The lock
+  half is needed only when a drawer opens, which is user-initiated and long
+  after load either way.
+
+  bf-scroll.js loads whether or not smooth scrolling is enabled, because it also
+  owns the lock the nav drawer and search overlay use. With the setting off it
+  falls back to clipping the root element, which is still a better lock than the
+  `body { overflow: hidden }` it replaced.
+{%- endcomment -%}
+
+{%- if settings.smooth_scroll_enabled -%}
+  {{ 'lenis.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'lenis.min.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+
+<script src="{{ 'bf-scroll.js' | asset_url }}" defer="defer"></script>

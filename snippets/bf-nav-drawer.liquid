@@ -5,8 +5,15 @@
   swapped — a red page opens a red drawer with cream ink, a light page opens a
   black one, a dark page opens a cream one. No colour is named here.
 
-  Items mirror the desktop nav: Shop · Search · Login · Bag. Bag and Search are
-  deliberately not repeated in the top bar; only the logo and Close sit there.
+  Items are Shop · Login · Bag. NOT Search: the mobile bar already carries it,
+  and since this drawer covers that bar rather than sitting beside it, the two
+  are never on screen together — a visitor sees Search in the bar, opens the
+  drawer, and finds it listed again for no reason. It is reachable in one tap
+  either way, so the drawer drops it.
+
+  Bag is still repeated, and that is different: the bar's Bag carries the item
+  count, which is worth having in front of someone mid-browse and again when
+  they open the menu to leave.
 
   Accepts:
     menu          - a linklist, rendered ahead of the functional items
@@ -23,7 +30,31 @@
     -%}
 {%- endcomment -%}
 
-<bf-nav-drawer id="BFNavDrawer" class="nav-drawer" data-bf-invert>
+{%- comment -%}
+  The count the blocks below the menu key their delay off. Computed here rather
+  than counted in CSS, which has no way to ask how many children a list has.
+{%- endcomment -%}
+{%- liquid
+  assign drawer_items = menu.links.size | plus: 1
+  if shop.customer_accounts_enabled
+    assign drawer_items = drawer_items | plus: 1
+  endif
+-%}
+
+{%- comment -%}
+  data-lenis-prevent hands this element's own scrolling back to the browser.
+  Lenis drives the PAGE, and without this it also swallows wheel events over any
+  scroller inside it — so a drawer taller than the screen would refuse to move
+  while the page behind it did. It is what makes the scroll happen at drawer
+  level rather than page level.
+{%- endcomment -%}
+<bf-nav-drawer
+  id="BFNavDrawer"
+  class="nav-drawer"
+  style="--nav-drawer-count: {{ drawer_items }};"
+  data-lenis-prevent
+  data-bf-invert
+>
   <div class="nav-drawer__top">
     <a class="masthead__logo" href="{{ routes.root_url }}">
       {%- render 'bf-logo', shape: 'mark', width: '44px', label: shop.name -%}
@@ -34,37 +65,38 @@
     </button>
   </div>
 
+  {%- comment -%}
+    `--nav-drawer-index` is what staggers the entrance, and it has to be a
+    running count across the whole list rather than forloop.index0: the menu
+    links come from a loop but Login and Bag do not, so the loop's counter stops
+    two items short and those two would open together with the last link.
+  {%- endcomment -%}
+  {%- liquid
+    assign item_index = 0
+  -%}
+
   <div class="nav-drawer__menu">
     <ul class="nav-drawer__links">
       {%- for link in menu.links -%}
-        <li>
+        <li class="nav-drawer__item" style="--nav-drawer-index: {{ item_index }};">
           <a class="nav-drawer__link" href="{{ link.url }}">{{ link.title }}</a>
         </li>
+        {%- assign item_index = item_index | plus: 1 -%}
       {%- endfor -%}
 
-      <li>
-        <a
-          class="nav-drawer__link"
-          href="{{ routes.search_url }}"
-          {% if settings.search_enabled %}
-            aria-controls="bf-search" aria-haspopup="dialog"
-          {% endif %}
-        >
-          {{- 'Search' -}}
-        </a>
-      </li>
-
       {%- if shop.customer_accounts_enabled -%}
-        <li>
+        <li class="nav-drawer__item" style="--nav-drawer-index: {{ item_index }};">
           <a class="nav-drawer__link" href="{{ routes.account_url }}">
             {%- if customer %}{{ 'Account' }}{% else %}{{ 'Login' }}{% endif -%}
           </a>
         </li>
+        {%- assign item_index = item_index | plus: 1 -%}
       {%- endif -%}
 
-      <li>
+      <li class="nav-drawer__item" style="--nav-drawer-index: {{ item_index }};">
         <a class="nav-drawer__link" href="{{ routes.cart_url }}">{{- 'Bag' }} ({{ cart.item_count }}) </a>
       </li>
+      {%- assign item_index = item_index | plus: 1 -%}
     </ul>
 
     {%- if show_currency -%}

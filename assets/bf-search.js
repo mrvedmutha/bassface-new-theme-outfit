@@ -119,7 +119,8 @@
 
       this.opener = opener;
       this.classList.add(OPEN_CLASS);
-      document.body.style.overflow = 'hidden';
+      this.holdsScroll = true;
+      document.dispatchEvent(new CustomEvent('bf:scroll-lock'));
       document.addEventListener('keydown', this.onKeydown);
       addEventListener('resize', this.onResize, { passive: true });
 
@@ -144,8 +145,21 @@
       this.opener = null;
     }
 
+    /*
+     * Only releases a lock this element actually took.
+     *
+     * disconnectedCallback calls this unconditionally, so a closed overlay
+     * removed by a section re-render would otherwise fire an unmatched unlock —
+     * and since the lock is counted, that would decrement someone else's. With
+     * the nav drawer open behind it, the page would start scrolling again while
+     * still covered.
+     */
     releaseDocument() {
-      document.body.style.overflow = '';
+      if (this.holdsScroll) {
+        this.holdsScroll = false;
+        document.dispatchEvent(new CustomEvent('bf:scroll-unlock'));
+      }
+
       document.removeEventListener('keydown', this.onKeydown);
       removeEventListener('resize', this.onResize);
     }
