@@ -1,0 +1,123 @@
+/* @define page-transition */
+
+/*
+ * The curtain the router hides the document swap behind.
+ *
+ * Loaded from <head> alongside bf-preloader.css and, like it, deliberately
+ * render-blocking. The panel must already be clipped away on the very first
+ * frame; a stylesheet that arrived late would flash a full-bleed black
+ * rectangle over the page before its own rules could hide it.
+ *
+ * ONE PROPERTY DOES THE WHOLE TRANSITION — clip-path. It is the reference's
+ * choice too, and it is the right one: clipping is a compositor operation, so
+ * a full-viewport panel wipes at 60fps without laying out or painting anything
+ * underneath it. Animating height or transform on the same panel would either
+ * reflow the page or drag a 100vh layer across it every frame.
+ *
+ * Colours arrive as custom properties set inline by the snippet, so this file
+ * stays static and cacheable — same arrangement as the preloader.
+ */
+
+.page-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* The intro preloader sits at 100 and must stay on top: on a hard load into
+     a page the two are briefly alive together, and the intro is the one that
+     owns the screen. */
+  background: var(--page-transition-bg, #000);
+  color: var(--page-transition-mark, #ede4dd);
+
+  /* Parked below the bottom edge. The router drives it from here and returns it
+     here, so the resting state in the stylesheet is always the hidden one. */
+  clip-path: inset(100% 0 0 0);
+
+  /* Never takes a click. The panel is over the page for ~2.4s per navigation
+     and a visitor who reaches a link in that window should still get it — the
+     router queues nothing, so swallowing the click would just lose it. */
+  pointer-events: none;
+
+  /* Isolates the panel's paint from the document scrolling underneath it, which
+     is what keeps the wipe off the main thread. */
+  contain: layout paint style;
+
+  /*
+   * Parked out of the render tree's way, and the router lifts it inline for the
+   * length of a transition — next to the clip-path it is already writing frame
+   * by frame, because the two belong to the same moment.
+   *
+   * visibility rather than `display: none`: display would drop the element
+   * entirely and the first clip-path frame would have nothing to animate from.
+   */
+  visibility: hidden;
+}
+
+/*
+ * Smaller than the intro's wordmark, but only by about a third — this is
+ * punctuation between two pages where the intro is an event, and it still has
+ * to read as the brand rather than as a caption.
+ *
+ * NOT the reference's 14rem. That number is right for the OUTFIT logotype at
+ * roughly 4.7:1, and wrong for ours: Bassface is 240.89 x 37, about 6.5:1, so
+ * the same width lands 30% shorter. Matching the cap height rather than the
+ * width is what makes the two read as the same size on screen.
+ *
+ * Widths are in px against the preloader's own min(46vw, 900px), because the
+ * theme puts <html> at 62.5% and a rem here is 10px — easy to misread as 16.
+ */
+.page-transition__mark {
+  display: block;
+  width: min(66vw, 420px);
+  height: auto;
+  fill: currentcolor;
+
+  /* Lets a letter sit outside the viewBox while it is below its slot. The mask
+     below is what actually hides it — the same pairing the preloader uses. */
+  overflow: visible;
+}
+
+/* The slot the letters climb out of and drop back into. */
+.page-transition__mark-mask {
+  overflow: hidden;
+}
+
+/*
+ * `transform-box: fill-box` is load-bearing: without it a percentage translate
+ * on an SVG path resolves against the whole viewBox, so every letter travels
+ * the width of the wordmark instead of its own height and they scatter rather
+ * than rise together.
+ */
+.page-transition__letter {
+  transform: translateY(110%);
+  transform-box: fill-box;
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+
+@media screen and (width >= 750px) {
+  .page-transition__mark {
+    width: min(30vw, 620px);
+  }
+}
+
+/* @end */
+
+/*
+ * State utility, outside the block definition above and so exempt from BEM: it
+ * is written to <html>, which this component does not own.
+ *
+ * Set from the first frame of the cover until the reveal finishes.
+ *
+ * It is what bf-reveal, bf-product-card and bf-hero read to hold their
+ * entrances back while the panel is over them — the same job `is-preloading`
+ * does on a hard load, for the same reason. Without it every above-the-fold
+ * animation on the incoming page plays out and finishes behind the curtain, and
+ * the page is already static by the time anyone sees it.
+ */
+.is-navigating {
+  cursor: progress;
+}

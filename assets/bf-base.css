@@ -339,6 +339,28 @@
 /* The header is fixed, so an in-page anchor would otherwise land underneath it. */
 html {
   scroll-padding-top: var(--bf-header-height);
+
+  /*
+   * Reserve the scrollbar's gutter permanently, whether or not a scrollbar is
+   * currently drawn.
+   *
+   * Every scroll lock in this theme takes the scrollbar away — lenis.css puts
+   * `overflow: clip` on this element, and the fallback sets `overflow: hidden`.
+   * Without a reserved gutter the viewport widens by the scrollbar's ~15px at
+   * that exact moment, and everything measured against the viewport jumps
+   * sideways: the fixed header's contents most visibly, because the theme
+   * switcher sits hard against the right edge.
+   *
+   * It shows up worst on a page transition, where the lock is held for the
+   * ~2.4s of the wipe and the jump happens twice — out at the start, back at
+   * the end — but the nav drawer and the search overlay were doing the same
+   * thing on open and close.
+   *
+   * `stable` and not `stable both-edges`: the gutter belongs on the side the
+   * scrollbar is on, and reserving the left as well would shift the page off
+   * centre for no benefit.
+   */
+  scrollbar-gutter: stable;
 }
 
 /*

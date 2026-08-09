@@ -68,18 +68,24 @@
         StandardEvents.createViewEventElement(HTMLElement, { defaultTrigger: 'intersect' }),
       );
 
-      document.addEventListener(
-        'DOMContentLoaded',
-        () => {
-          const template = document.querySelector('main[data-template]')?.dataset.template || '';
-          document.dispatchEvent(
-            new StandardEvents.PageViewEvent({
-              page: { template, title: document.title, url: window.location.href },
-            }),
-          );
-        },
-        { once: true },
-      );
+      const sendPageView = () => {
+        const template = document.querySelector('main[data-template]')?.dataset.template || '';
+        document.dispatchEvent(
+          new StandardEvents.PageViewEvent({
+            page: { template, title: document.title, url: window.location.href },
+          }),
+        );
+      };
+
+      document.addEventListener('DOMContentLoaded', sendPageView, { once: true });
+
+      /*
+        Fired by bf-page-transition.js after every swap. Without this, analytics
+        sees the first page a visitor lands on and nothing else for the rest of
+        the session — the router replaces <main> in place, so no document load
+        happens and DOMContentLoaded never comes round again.
+      */
+      document.addEventListener('bf:page-loaded', sendPageView);
     </script>
 
     <script src="{{ 'constants.js' | asset_url }}" defer="defer"></script>
@@ -102,6 +108,13 @@
       for a frame before the panel covers it.
     {%- endcomment -%}
     {{ 'bf-preloader.css' | asset_url | stylesheet_tag }}
+
+    {%- comment -%}
+      Render-blocking for the same reason as the preloader above: the transition
+      panel is full-bleed, and a stylesheet that arrived a frame late would show
+      it as a black rectangle over the page before clipping it away.
+    {%- endcomment -%}
+    {{ 'bf-page-transition.css' | asset_url | stylesheet_tag }}
 
     {{ content_for_header }}
 
@@ -354,6 +367,12 @@
     {%- comment -%} First in <body> so it covers the page before anything below can paint. {%- endcomment -%}
     {%- render 'bf-scroll' -%}
     {%- render 'bf-preloader' -%}
+    {%- comment -%}
+      After the preloader, so on a hard load the intro panel is later in the DOM
+      as well as higher in z-index. Both exist for a moment and the intro is the
+      one that owns the screen.
+    {%- endcomment -%}
+    {%- render 'bf-page-transition' -%}
     {%- render 'bf-cursor' -%}
     {%- render 'bf-search' -%}
 

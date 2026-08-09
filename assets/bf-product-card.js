@@ -105,12 +105,31 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
  * bf-preloader.js fires this halfway through its own wipe, so the cards start
  * arriving while the panel is still clearing — which is the handoff the
  * reference uses too, rather than waiting for a fully clean screen.
+ *
+ * The second cover is the router's. bf-page-transition puts `is-navigating` on
+ * <html> for the length of a transition and fires `bf:page-revealed` as its
+ * curtain clears — the same contract, for the same reason, one page later.
+ *
+ * IT IS A FUNCTION rather than the constant it used to be, because the router
+ * swaps <main> WITHOUT re-running this file. A promise captured once at load
+ * stays resolved from the first page forever, and every card fetched after that
+ * would reveal behind a curtain still on its way up.
  */
-const preloaderDone = document.documentElement.classList.contains('is-preloading')
-  ? new Promise((resolve) => {
+const pageReady = () => {
+  if (document.documentElement.classList.contains('is-preloading')) {
+    return new Promise((resolve) => {
       document.addEventListener('preloader:complete', resolve, { once: true });
-    })
-  : Promise.resolve();
+    });
+  }
+
+  if (document.documentElement.classList.contains('is-navigating')) {
+    return new Promise((resolve) => {
+      document.addEventListener('bf:page-revealed', resolve, { once: true });
+    });
+  }
+
+  return Promise.resolve();
+};
 
 /* Both halves matter. `hover: hover` alone is true for a stylus, which reports a
    hover it cannot sustain; `pointer: fine` alone is true for a phone paired with
@@ -303,7 +322,7 @@ class BFProductCard extends HTMLElement {
   reveal() {
     const painted = whenPainted(this.querySelector(PRIMARY_IMAGE_SELECTOR));
 
-    Promise.all([preloaderDone, painted]).then(() => {
+    Promise.all([pageReady(), painted]).then(() => {
       this.classList.add(REVEALED_CLASS);
     });
   }

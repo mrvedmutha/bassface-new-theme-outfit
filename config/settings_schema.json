@@ -198,6 +198,38 @@
     ]
   },
   {
+    "name": "Page transitions",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "page_transition_enabled",
+        "label": "Enable page transitions",
+        "info": "Links load in place behind a wipe instead of reloading the browser. The full preloader then plays only on a hard load or refresh.",
+        "default": true
+      },
+      {
+        "type": "paragraph",
+        "content": "Checkout, account and app pages always load normally. Turning this off restores standard browser navigation everywhere."
+      },
+      {
+        "type": "header",
+        "content": "Colours"
+      },
+      {
+        "type": "color",
+        "id": "page_transition_background_color",
+        "label": "Panel",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "page_transition_mark_color",
+        "label": "Wordmark",
+        "default": "#EDE4DD"
+      }
+    ]
+  },
+  {
     "name": "t:settings_schema.logo.name",
     "settings": [
       {

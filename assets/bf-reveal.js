@@ -45,10 +45,25 @@
    * the class test is there to prevent, and it fails SILENTLY — the promise
    * simply never settles. It cost a debugging pass here; check the name against
    * bf-preloader.js rather than against memory.
+   *
+   * A FUNCTION, NOT A CONSTANT, and that is what makes it survive the router.
+   * bf-page-transition swaps <main> without re-running this file, so a promise
+   * captured once at load would still be the resolved one from the first page
+   * and every element arriving on the second would reveal instantly — behind a
+   * curtain that has not lifted yet. Two covers, same shape, evaluated fresh
+   * each time an element asks.
    */
-  const preloaderDone = document.documentElement.classList.contains('is-preloading')
-    ? new Promise((resolve) => document.addEventListener('preloader:complete', resolve, { once: true }))
-    : Promise.resolve();
+  const pageReady = () => {
+    if (document.documentElement.classList.contains('is-preloading')) {
+      return new Promise((resolve) => document.addEventListener('preloader:complete', resolve, { once: true }));
+    }
+
+    if (document.documentElement.classList.contains('is-navigating')) {
+      return new Promise((resolve) => document.addEventListener('bf:page-revealed', resolve, { once: true }));
+    }
+
+    return Promise.resolve();
+  };
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -94,7 +109,7 @@
         }
 
         reveal() {
-          preloaderDone.then(() => {
+          pageReady().then(() => {
             this.classList.add(REVEALED);
           });
         }

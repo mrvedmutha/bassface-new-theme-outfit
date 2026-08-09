@@ -1,0 +1,42 @@
+{%- comment -%}
+  Page transitions — rendered from layout/theme.liquid, next to the preloader.
+
+  Configured from Theme settings -> Page transitions, not a section. It belongs
+  to the layout rather than to any one template, and a static section rendered
+  from theme.liquid would show up in the section list of whatever page the
+  merchant happened to be editing.
+
+  Ordered after bf-preloader in the layout so the intro panel is later in the
+  DOM as well as higher in z-index — on a hard load both exist for a moment and
+  the intro is the one that owns the screen.
+
+  Styles are in assets/bf-page-transition.css, pulled in from <head> where being
+  render-blocking is correct: the panel is full-bleed and must already be
+  clipped away on the first frame. Colours come in as custom properties set
+  inline here, so that file stays static and cacheable.
+
+  The script is NOT deferred behind the preloader's. It only needs to exist
+  before the first click, and a visitor can click during the intro.
+{%- endcomment -%}
+
+{%- if settings.page_transition_enabled -%}
+  <bf-page-transition>
+    <div
+      class="page-transition"
+      aria-hidden="true"
+      style="--page-transition-bg: {{ settings.page_transition_background_color }}; --page-transition-mark: {{ settings.page_transition_mark_color }};"
+    >
+      {%- comment -%}
+        The mask is what the letters rise out of and drop back into — same
+        arrangement as the preloader's, one size down. letter_class is what lets
+        the CSS and JS find the individual paths; without it they carry only
+        bf-wordmark__letter and nothing moves.
+      {%- endcomment -%}
+      <div class="page-transition__mark-mask">
+        {%- render 'bf-wordmark', class: 'page-transition__mark', letter_class: 'page-transition__letter' -%}
+      </div>
+    </div>
+  </bf-page-transition>
+
+  <script src="{{ 'bf-page-transition.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}

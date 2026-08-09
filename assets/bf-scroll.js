@@ -9,6 +9,14 @@
  *   bf:scroll-lock     stop scrolling the page. Fired by the nav drawer and the
  *   bf:scroll-unlock   search overlay when they open and close.
  *
+ *   bf:scroll-to       jump to detail.top with no animation. Fired by the page
+ *                      transition router after it swaps the document — a new
+ *                      page starts at the top, and a back navigation returns to
+ *                      where the visitor left.
+ *   bf:scroll-refresh  remeasure. The router fires this after the same swap:
+ *                      Lenis caches the document height and would otherwise
+ *                      clamp scrolling to the length of the page it replaced.
+ *
  * WHY EVENTS AND NOT A GLOBAL. Every asset here is a classic script sharing one
  * global scope, so exporting `window.bfScroll` would be one more name for the
  * next component to collide with — which has already happened once in this
@@ -91,4 +99,19 @@
 
   document.addEventListener(LOCK, lock);
   document.addEventListener(UNLOCK, unlock);
+
+  /*
+   * `force` is load-bearing. The router swaps the document while the page is
+   * locked — that is the entire point of the curtain — and lenis.scrollTo is a
+   * no-op against a stopped instance without it. Dropping it leaves every
+   * transition landing on the new page at the old page's scroll offset.
+   */
+  document.addEventListener('bf:scroll-to', (event) => {
+    const top = event.detail?.top || 0;
+
+    if (lenis) lenis.scrollTo(top, { immediate: true, force: true });
+    else window.scrollTo(0, top);
+  });
+
+  document.addEventListener('bf:scroll-refresh', () => lenis?.resize());
 })();

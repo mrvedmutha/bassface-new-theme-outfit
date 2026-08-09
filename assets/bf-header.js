@@ -117,8 +117,25 @@ function fitRow(masthead) {
  * the page fills takes ~15px off the viewport AFTER the first fit has run. The
  * old code measured the pre-scrollbar width, concluded the row fitted, and left
  * the nav overlapping the switcher by precisely the scrollbar's width.
+ *
+ * IT IS RE-ENTRANT, and the disconnect below is the whole reason. Whoever
+ * replaces the header — the theme editor, or bf-page-transition on every
+ * navigation — leaves this observer holding the OLD bar, and a ResizeObserver
+ * fires as its target detaches, reporting a height of zero. publishHeight then
+ * writes `--bf-header-height: 0px`, the page content that is offset by that
+ * property jumps up underneath the fixed bar, and the row refits against the
+ * broken layout and collapses to its 0.7 floor — which is the header appearing
+ * to clip and the theme switcher appearing to fall out of the row. Meanwhile
+ * nothing observes the header that is actually on screen.
  */
+let observer = null;
+
 function observeHeader() {
+  /* Before anything else, and before the early return: a header that has gone
+     away must stop being measured whether or not a new one has arrived. */
+  observer?.disconnect();
+  observer = null;
+
   const masthead = document.querySelector(MASTHEAD_SELECTOR);
   const bar = masthead?.querySelector(BAR_SELECTOR);
 
@@ -126,14 +143,18 @@ function observeHeader() {
 
   let lastWidth = 0;
 
-  new ResizeObserver(() => {
+  /* Assigned before observing, not chained off it — `observe` returns undefined,
+     and chaining would leave nothing to disconnect on the next navigation. */
+  observer = new ResizeObserver(() => {
     publishHeight(bar);
 
     if (bar.offsetWidth === lastWidth) return;
 
     lastWidth = bar.offsetWidth;
     refit();
-  }).observe(bar);
+  });
+
+  observer.observe(bar);
 }
 
 /*
@@ -181,3 +202,16 @@ document.fonts?.ready.then(refit);
 document.addEventListener('shopify:section:load', (event) => {
   if (event.target.querySelector(BAR_SELECTOR)) observeHeader();
 });
+
+/*
+ * And so does bf-page-transition, for the same reason and far more often — the
+ * header carries the cart count and the current-page state, so it is genuinely
+ * replaced whenever those differ.
+ *
+ * This file has top-level side effects and a `src` the router deliberately does
+ * NOT re-execute, so re-running the script is not the recovery path; rebinding
+ * from an event is. The router fires this under the curtain, ~400ms before the
+ * reveal starts, so the corrected height and fit are in place before anyone
+ * sees the new page.
+ */
+document.addEventListener('bf:page-loaded', observeHeader);

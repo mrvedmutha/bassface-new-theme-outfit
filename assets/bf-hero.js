@@ -70,12 +70,28 @@
    * Deliberately recomputed rather than shared with the card. The two files are
    * separately scoped by design, and a shared global would be one more name to
    * collide on for the sake of reading one class.
+   *
+   * The second branch is the router's curtain — `is-navigating` on <html> and
+   * `bf:page-revealed` when it clears — and it is a FUNCTION for the reason
+   * bf-product-card spells out: bf-page-transition swaps <main> without
+   * re-running this file, so a promise captured at load would be permanently
+   * resolved by the time a hero arrived on any page but the first.
    */
-  const preloaderDone = document.documentElement.classList.contains('is-preloading')
-    ? new Promise((resolve) => {
+  const pageReady = () => {
+    if (document.documentElement.classList.contains('is-preloading')) {
+      return new Promise((resolve) => {
         document.addEventListener('preloader:complete', resolve, { once: true });
-      })
-    : Promise.resolve();
+      });
+    }
+
+    if (document.documentElement.classList.contains('is-navigating')) {
+      return new Promise((resolve) => {
+        document.addEventListener('bf:page-revealed', resolve, { once: true });
+      });
+    }
+
+    return Promise.resolve();
+  };
 
   /* Fisher-Yates. GSAP's `from: "random"` shuffles which element gets which
      stagger slot, not the spacing between slots — so the letters land in a
@@ -161,7 +177,7 @@
       if (reduceMotion.matches) return;
 
       this.classList.add(CONCEALED_CLASS);
-      preloaderDone.then(() => this.play());
+      pageReady().then(() => this.play());
     }
 
     play() {
