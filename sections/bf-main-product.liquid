@@ -161,248 +161,260 @@
       note there — it is the second attempt, and the first two CSS-only ones are
       written up because they look right and are not.
     {%- endcomment -%}
-    <bf-sticky-column class="main-product__info">
-      <bf-reveal class="reveal reveal--rise">
-        <h1 class="main-product__title">{{ product.title }}</h1>
-      </bf-reveal>
-
+    <bf-sticky-column class="main-product__aside">
       {%- comment -%}
-        The id is the contract: product-info.js copies innerHTML from the
-        re-rendered section into `#price-{{ section.id }}` on every variant
-        change, so everything price-related has to live INSIDE this element,
-        including the compare-at and the tax note. Anything outside it keeps
-        the first variant's values forever.
-
-        role="status" so the change is announced — the price moving silently is
-        the failure mode of an AJAX variant picker.
+        Title and price are their own box because the boards MOVE them. Below
+        the two-column breakpoint they sit above the gallery strip rather than
+        at the top of the info column, and the only way to reorder them without
+        a second copy in the markup is for them to be a grid item in their own
+        right. `display: contents` on this wrapper is what promotes them to one
+        — see bf-main-product.css.
       {%- endcomment -%}
-      <div class="main-product__price-row" id="price-{{ section.id }}" role="status">
-        <bf-price-roll class="price-roll main-product__price" data-key="price">
-          {{- variant.price | money -}}
-        </bf-price-roll>
+      <div class="main-product__header">
+        <bf-reveal class="reveal reveal--rise">
+          <h1 class="main-product__title">{{ product.title }}</h1>
+        </bf-reveal>
 
-        {%- if variant.compare_at_price > variant.price -%}
-          <s class="main-product__compare">
-            <bf-price-roll class="price-roll price-roll--strike" data-key="compare">
-              {{- variant.compare_at_price | money -}}
-            </bf-price-roll>
-          </s>
-        {%- endif -%}
-
-        {%- if section.settings.tax_note != blank -%}
-          <span class="main-product__tax-note">{{ section.settings.tax_note }}</span>
-        {%- endif -%}
-      </div>
-
-      {%- if pointers != blank -%}
-        <ul class="main-product__pointers">
-          {%- for pointer in pointers -%}
-            <li class="main-product__pointer">{{ pointer }}</li>
-          {%- endfor -%}
-        </ul>
-      {%- endif -%}
-
-      {%- comment -%}
-        Every variant's formatted price, so a size click can repaint the figure
-        from data already on the page instead of waiting for the server.
-
-        product-info re-fetches this whole section on every option change and
-        swaps the price in from the response — correct, and several hundred
-        milliseconds of network before the customer sees the number they just
-        asked for. This map is what closes that gap; the server render still
-        arrives and still wins, it just confirms what is already on screen.
-
-        Keyed by variant.title, which Shopify builds by joining the option
-        values with " / " — exactly what bf-price-roll.js reconstructs from the
-        checked radios, so no variant matching is reimplemented here.
-
-        `| json` rather than bare interpolation: it quotes and escapes, so a
-        currency format containing a quote cannot break the document.
-      {%- endcomment -%}
-      <script type="application/json" data-bf-price-map>
-        {
-          {%- for option_variant in product.variants -%}
-            {{ option_variant.title | json }}: {
-              "price": {{ option_variant.price | money | json }}
-              {%- if option_variant.compare_at_price > option_variant.price -%}
-                , "compare": {{ option_variant.compare_at_price | money | json }}
-              {%- endif -%}
-            }{% unless forloop.last %},{% endunless %}
-          {%- endfor -%}
-        }
-      </script>
-
-      {%- render 'bf-size-selector', product: product -%}
-
-      <bf-product-form
-        class="main-product__form"
-        data-section="{{ section.id }}"
         {%- comment -%}
-          The section that draws the bag counter. Passed from Liquid so
-          bf-product-form.js holds no theme knowledge — see the note there.
+          The id is the contract: product-info.js copies innerHTML from the
+          re-rendered section into `#price-{{ section.id }}` on every variant
+          change, so everything price-related has to live INSIDE this element,
+          including the compare-at and the tax note. Anything outside it keeps
+          the first variant's values forever.
+
+          role="status" so the change is announced — the price moving silently is
+          the failure mode of an AJAX variant picker.
         {%- endcomment -%}
-        data-cart-section="bf-header"
-      >
-        <form
-          id="product-form-{{ section.id }}"
-          action="{{ routes.cart_add_url }}"
-          method="post"
-          enctype="multipart/form-data"
-        >
-          {%- comment -%}
-            Updated in place by product-info's updateVariantInputs, which finds
-            it by the form's id. Nothing in bf-product-form.js writes to it.
-          {%- endcomment -%}
-          <input type="hidden" name="id" value="{{ variant.id }}">
+        <div class="main-product__price-row" id="price-{{ section.id }}" role="status">
+          <bf-price-roll class="price-roll main-product__price" data-key="price">
+            {{- variant.price | money -}}
+          </bf-price-roll>
 
-          {%- comment -%}
-            <bf-quantity>, not Dawn's <quantity-input> — see the note at the top
-            of bf-quantity.js. The short version: Dawn's stepper is styled
-            through the same three classes its script needs, and those classes
-            paint it from Dawn's colour scheme rather than from --bf-ink, so it
-            stayed #121212 in every Bassface theme.
-
-            The label is on the button, not on the icon: bf-icon's `label`
-            makes the SVG role="img", which would put a second accessible name
-            inside the one the button already has.
-          {%- endcomment -%}
-          <div class="main-product__quantity">
-            <bf-quantity class="main-product__stepper">
-              <button
-                class="main-product__stepper-button"
-                type="button"
-                data-step="down"
-                aria-label="Decrease quantity"
-              >
-                {%- render 'bf-icon', icon: 'minus', size: 28 -%}
-              </button>
-
-              <input
-                class="main-product__stepper-input"
-                type="number"
-                name="quantity"
-                id="Quantity-{{ section.id }}"
-                value="1"
-                min="1"
-                step="1"
-                aria-label="Quantity"
-              >
-
-              <button
-                class="main-product__stepper-button"
-                type="button"
-                data-step="up"
-                aria-label="Increase quantity"
-              >
-                {%- render 'bf-icon', icon: 'plus', size: 28 -%}
-              </button>
-            </bf-quantity>
-          </div>
-
-          {%- comment -%}
-            data-cta is the swap target. product-info re-renders this whole
-            section on every option change but only copies a fixed list of ids
-            into the live page, and the button is not on it — bf-product-form.js
-            reads the server's new button out of here instead of deciding
-            availability for itself.
-          {%- endcomment -%}
-          <div class="main-product__cta-row" data-cta>
-            {%- if variant.available -%}
-              {%- comment -%}
-                Three moving parts, from the reference: a second arrow parked
-                off the left edge slides in while the label and the trailing
-                arrow both shift right by their own arrow's width. The button
-                clips, so the incoming arrow appears from nowhere and the
-                outgoing one is not seen leaving.
-              {%- endcomment -%}
-              <button class="main-product__cta" type="submit" name="add">
-                <span class="main-product__cta-arrow main-product__cta-arrow--lead" aria-hidden="true">
-                  {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
-                </span>
-                <span class="main-product__cta-label">{{ section.settings.cta_label }}</span>
-                <span class="main-product__cta-arrow" aria-hidden="true">
-                  {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
-                </span>
-              </button>
-            {%- else -%}
-              {%- comment -%}
-                The reference strikes the label and drops the arrow rather than
-                greying anything — there is no grey in this palette. Disabled
-                rather than a bare <span> so the state reaches assistive tech
-                as unavailability instead of as decoration on some text.
-              {%- endcomment -%}
-              <button class="main-product__cta" type="submit" disabled>
-                <span class="main-product__cta-label main-product__cta-label--sold-out">
-                  {{- section.settings.sold_out_label -}}
-                </span>
-              </button>
-            {%- endif -%}
-          </div>
-
-          <p class="main-product__error" data-cart-error role="alert" hidden></p>
-        </form>
-      </bf-product-form>
-
-      <div class="main-product__delivery">
-        <p class="main-product__delivery-line">
-          {%- comment -%}
-            The dates are computed in bf-delivery-estimate.js, not here. The
-            model is two stacked business-day windows — processing, then
-            region-dependent shipping — and Liquid has no weekday arithmetic
-            without a counting loop. Ported from the live theme, where the same
-            code sat in a custom_liquid block in templates/product.json.
-
-            The element renders its fallback region synchronously, so the line
-            is never blank and never shifts; the IP lookup only refines it.
-          {%- endcomment -%}
-          <span>
-            {{- section.settings.delivery_prefix }}
-            <bf-delivery-estimate
-              data-region="{{ section.settings.default_region }}"
-              data-detect="{{ section.settings.detect_region }}"
-              >&nbsp;</bf-delivery-estimate
-            >.
-          </span>
-
-          {%- if section.settings.shipping_policy_page != blank -%}
-            {%- render 'bf-icon', icon: 'arrow-right', size: 14 -%}
-            <a class="main-product__delivery-link" href="{{ section.settings.shipping_policy_page.url }}">
-              {{- section.settings.shipping_policy_page.title -}}
-            </a>
+          {%- if variant.compare_at_price > variant.price -%}
+            <s class="main-product__compare">
+              <bf-price-roll class="price-roll price-roll--strike" data-key="compare">
+                {{- variant.compare_at_price | money -}}
+              </bf-price-roll>
+            </s>
           {%- endif -%}
-        </p>
 
-        {%- for offer in offers -%}
-          {%- assign offer_text = offer | strip_html | strip -%}
-          {%- if offer_text != blank -%}
-            <p class="main-product__offer">{{ offer_text }}</p>
+          {%- if section.settings.tax_note != blank -%}
+            <span class="main-product__tax-note">{{ section.settings.tax_note }}</span>
           {%- endif -%}
-        {%- endfor -%}
+        </div>
       </div>
 
-      {%- if payments != blank -%}
-        <ul class="main-product__payments">
-          {%- for method in payments -%}
-            <li class="main-product__payment">{{ method | strip }}</li>
+      <div class="main-product__info">
+        {%- if pointers != blank -%}
+          <ul class="main-product__pointers">
+            {%- for pointer in pointers -%}
+              <li class="main-product__pointer">{{ pointer }}</li>
+            {%- endfor -%}
+          </ul>
+        {%- endif -%}
+
+        {%- comment -%}
+          Every variant's formatted price, so a size click can repaint the figure
+          from data already on the page instead of waiting for the server.
+
+          product-info re-fetches this whole section on every option change and
+          swaps the price in from the response — correct, and several hundred
+          milliseconds of network before the customer sees the number they just
+          asked for. This map is what closes that gap; the server render still
+          arrives and still wins, it just confirms what is already on screen.
+
+          Keyed by variant.title, which Shopify builds by joining the option
+          values with " / " — exactly what bf-price-roll.js reconstructs from the
+          checked radios, so no variant matching is reimplemented here.
+
+          `| json` rather than bare interpolation: it quotes and escapes, so a
+          currency format containing a quote cannot break the document.
+        {%- endcomment -%}
+        <script type="application/json" data-bf-price-map>
+          {
+            {%- for option_variant in product.variants -%}
+              {{ option_variant.title | json }}: {
+                "price": {{ option_variant.price | money | json }}
+                {%- if option_variant.compare_at_price > option_variant.price -%}
+                  , "compare": {{ option_variant.compare_at_price | money | json }}
+                {%- endif -%}
+              }{% unless forloop.last %},{% endunless %}
+            {%- endfor -%}
+          }
+        </script>
+
+        {%- render 'bf-size-selector', product: product -%}
+
+        <bf-product-form
+          class="main-product__form"
+          data-section="{{ section.id }}"
+          {%- comment -%}
+            The section that draws the bag counter. Passed from Liquid so
+            bf-product-form.js holds no theme knowledge — see the note there.
+          {%- endcomment -%}
+          data-cart-section="bf-header"
+        >
+          <form
+            id="product-form-{{ section.id }}"
+            action="{{ routes.cart_add_url }}"
+            method="post"
+            enctype="multipart/form-data"
+          >
+            {%- comment -%}
+              Updated in place by product-info's updateVariantInputs, which finds
+              it by the form's id. Nothing in bf-product-form.js writes to it.
+            {%- endcomment -%}
+            <input type="hidden" name="id" value="{{ variant.id }}">
+
+            {%- comment -%}
+              <bf-quantity>, not Dawn's <quantity-input> — see the note at the top
+              of bf-quantity.js. The short version: Dawn's stepper is styled
+              through the same three classes its script needs, and those classes
+              paint it from Dawn's colour scheme rather than from --bf-ink, so it
+              stayed #121212 in every Bassface theme.
+
+              The label is on the button, not on the icon: bf-icon's `label`
+              makes the SVG role="img", which would put a second accessible name
+              inside the one the button already has.
+            {%- endcomment -%}
+            <div class="main-product__quantity">
+              <bf-quantity class="main-product__stepper">
+                <button
+                  class="main-product__stepper-button"
+                  type="button"
+                  data-step="down"
+                  aria-label="Decrease quantity"
+                >
+                  {%- render 'bf-icon', icon: 'minus', size: 28 -%}
+                </button>
+
+                <input
+                  class="main-product__stepper-input"
+                  type="number"
+                  name="quantity"
+                  id="Quantity-{{ section.id }}"
+                  value="1"
+                  min="1"
+                  step="1"
+                  aria-label="Quantity"
+                >
+
+                <button
+                  class="main-product__stepper-button"
+                  type="button"
+                  data-step="up"
+                  aria-label="Increase quantity"
+                >
+                  {%- render 'bf-icon', icon: 'plus', size: 28 -%}
+                </button>
+              </bf-quantity>
+            </div>
+
+            {%- comment -%}
+              data-cta is the swap target. product-info re-renders this whole
+              section on every option change but only copies a fixed list of ids
+              into the live page, and the button is not on it — bf-product-form.js
+              reads the server's new button out of here instead of deciding
+              availability for itself.
+            {%- endcomment -%}
+            <div class="main-product__cta-row" data-cta>
+              {%- if variant.available -%}
+                {%- comment -%}
+                  Three moving parts, from the reference: a second arrow parked
+                  off the left edge slides in while the label and the trailing
+                  arrow both shift right by their own arrow's width. The button
+                  clips, so the incoming arrow appears from nowhere and the
+                  outgoing one is not seen leaving.
+                {%- endcomment -%}
+                <button class="main-product__cta" type="submit" name="add">
+                  <span class="main-product__cta-arrow main-product__cta-arrow--lead" aria-hidden="true">
+                    {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                  </span>
+                  <span class="main-product__cta-label">{{ section.settings.cta_label }}</span>
+                  <span class="main-product__cta-arrow" aria-hidden="true">
+                    {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                  </span>
+                </button>
+              {%- else -%}
+                {%- comment -%}
+                  The reference strikes the label and drops the arrow rather than
+                  greying anything — there is no grey in this palette. Disabled
+                  rather than a bare <span> so the state reaches assistive tech
+                  as unavailability instead of as decoration on some text.
+                {%- endcomment -%}
+                <button class="main-product__cta" type="submit" disabled>
+                  <span class="main-product__cta-label main-product__cta-label--sold-out">
+                    {{- section.settings.sold_out_label -}}
+                  </span>
+                </button>
+              {%- endif -%}
+            </div>
+
+            <p class="main-product__error" data-cart-error role="alert" hidden></p>
+          </form>
+        </bf-product-form>
+
+        <div class="main-product__delivery">
+          <p class="main-product__delivery-line">
+            {%- comment -%}
+              The dates are computed in bf-delivery-estimate.js, not here. The
+              model is two stacked business-day windows — processing, then
+              region-dependent shipping — and Liquid has no weekday arithmetic
+              without a counting loop. Ported from the live theme, where the same
+              code sat in a custom_liquid block in templates/product.json.
+
+              The element renders its fallback region synchronously, so the line
+              is never blank and never shifts; the IP lookup only refines it.
+            {%- endcomment -%}
+            <span>
+              {{- section.settings.delivery_prefix }}
+              <bf-delivery-estimate
+                data-region="{{ section.settings.default_region }}"
+                data-detect="{{ section.settings.detect_region }}"
+                >&nbsp;</bf-delivery-estimate
+              >.
+            </span>
+
+            {%- if section.settings.shipping_policy_page != blank -%}
+              {%- render 'bf-icon', icon: 'arrow-right', size: 14 -%}
+              <a class="main-product__delivery-link" href="{{ section.settings.shipping_policy_page.url }}">
+                {{- section.settings.shipping_policy_page.title -}}
+              </a>
+            {%- endif -%}
+          </p>
+
+          {%- for offer in offers -%}
+            {%- assign offer_text = offer | strip_html | strip -%}
+            {%- if offer_text != blank -%}
+              <p class="main-product__offer">{{ offer_text }}</p>
+            {%- endif -%}
           {%- endfor -%}
-        </ul>
-      {%- endif -%}
+        </div>
 
-      <div class="main-product__accordion">
-        {%- render 'bf-accordion',
-          label: section.settings.description_label,
-          content: product.description,
-          id: 'description'
-        -%}
+        {%- if payments != blank -%}
+          <ul class="main-product__payments">
+            {%- for method in payments -%}
+              <li class="main-product__payment">{{ method | strip }}</li>
+            {%- endfor -%}
+          </ul>
+        {%- endif -%}
 
-        {%- capture size_chart -%}{%- render 'bf-size-chart', product: product -%}{%- endcapture -%}
-        {%- render 'bf-accordion', label: section.settings.size_chart_label, content: size_chart, id: 'size-chart' -%}
+        <div class="main-product__accordion">
+          {%- render 'bf-accordion',
+            label: section.settings.description_label,
+            content: product.description,
+            id: 'description'
+          -%}
 
-        {%- render 'bf-accordion',
-          label: section.settings.shipping_label,
-          content: section.settings.shipping_content,
-          id: 'shipping'
-        -%}
+          {%- capture size_chart -%}{%- render 'bf-size-chart', product: product -%}{%- endcapture -%}
+          {%- render 'bf-accordion', label: section.settings.size_chart_label, content: size_chart, id: 'size-chart' -%}
+
+          {%- render 'bf-accordion',
+            label: section.settings.shipping_label,
+            content: section.settings.shipping_content,
+            id: 'shipping'
+          -%}
+        </div>
       </div>
     </bf-sticky-column>
   </product-info>

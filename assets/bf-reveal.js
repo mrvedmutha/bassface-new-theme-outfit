@@ -59,9 +59,20 @@
         observer.unobserve(entry.target);
       }
     },
-    /* Low, like the cards': the entrance should already be running by the time
-       the element is properly in view, not starting as you watch. */
-    { threshold: 0.1 }
+    /*
+     * ANY pixel, where the cards use 0.1 — and the horizontal strip is why.
+     *
+     * Below 1024 the gallery turns into a row of 85vw images, so the next one
+     * is deliberately left peeking at the right edge; that sliver is the only
+     * thing telling anyone the row scrolls. At 0.1 the sliver is too small to
+     * count as intersecting, so it sat behind its curtain and read as a flat
+     * pink panel — a design element rather than a photograph.
+     *
+     * Zero suits the vertical gallery too. The card's own note argues for the
+     * entrance already being under way by the time the image is properly in
+     * view rather than starting as you watch it, and this is more of that.
+     */
+    { threshold: 0 }
   );
 
   if (!customElements.get('bf-reveal')) {

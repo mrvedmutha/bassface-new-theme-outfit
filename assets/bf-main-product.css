@@ -79,7 +79,7 @@
 
 /* The column is a custom element, and an unknown element is inline by default —
    an inline box cannot be a grid item that sticks, or take a height to measure. */
-.main-product__info {
+.main-product__aside {
   display: block;
 }
 
@@ -109,7 +109,7 @@
  * and the script reads `top: auto` there and does nothing, by design.
  */
 @media screen and (width >= 1024px) {
-  .main-product__info {
+  .main-product__aside {
     position: sticky;
     top: var(--main-product-sticky-top, calc(var(--bf-header-height) + var(--bf-space-24)));
     align-self: start;
@@ -425,4 +425,116 @@
 
 .main-product__accordion {
   padding-top: var(--bf-space-64);
+}
+
+
+/* ======================================================== stacked ======= *
+ * Below the two-column breakpoint the boards do not narrow the desktop
+ * layout, they REBUILD it: title and price come out of the info column and
+ * sit above a gallery that turns on its side and runs off both edges of the
+ * screen.
+ *
+ * `display: contents` is what makes that a reordering rather than a second
+ * copy of the markup. The aside stops generating a box, so the header and the
+ * info column become grid items in their own right and `order` can place them
+ * around the gallery. It also switches the sticky behaviour off for free —
+ * with no box there is nothing to stick, and bf-sticky-column.js reads
+ * `top: auto` and returns without doing anything.
+ *
+ * The grid loses its side padding here because the strip is full-bleed. Every
+ * child that is not the strip puts the gutter back on itself.
+ */
+@media screen and (width < 1024px) {
+  .main-product__grid {
+    padding: 0 0 16rem;
+  }
+
+  .main-product__aside {
+    display: contents;
+  }
+
+  .main-product__header {
+    order: 1;
+    padding: 0 var(--bf-page-padding) var(--bf-space-20);
+  }
+
+  .main-product__info {
+    order: 3;
+    padding: 0 var(--bf-page-padding) var(--bf-space-32);
+  }
+
+  /*
+   * The strip. 85vw is not a guess: the boards draw 709 at 834 and 381 at 448,
+   * and both are 0.85 of the viewport — the same figure the reference uses. It
+   * is what leaves the next image showing at the right edge, which is the only
+   * thing telling anyone the row scrolls.
+   */
+  .main-product__gallery {
+    order: 2;
+    flex-direction: row;
+    gap: var(--bf-space-24);
+    overflow-x: auto;
+    padding: var(--bf-space-8) var(--bf-page-padding);
+
+    /* No visible scrollbar — the boards have none, and the peeking image is
+       the affordance. The row stays keyboard and touch scrollable. */
+    scrollbar-width: none;
+  }
+
+  .main-product__gallery::-webkit-scrollbar {
+    display: none;
+  }
+
+  .main-product__media {
+    flex: none;
+    width: 85vw;
+  }
+}
+
+/*
+ * The title steps down at 834, not at 1024 where the global token does. The
+ * boards set 48 at 1440, 1024 AND 834, dropping to 36 only at 448. This
+ * restores it across the gap; at 1024 and up the token is already 4.8rem and
+ * this changes nothing.
+ */
+@media screen and (width >= 834px) {
+  .main-product__title {
+    font-size: 4.8rem;
+  }
+}
+
+/*
+ * The small-screen type and spacing, all from the 448 board. Only the figures
+ * that actually change are here — the size chips, the CTA label and the
+ * payment row are the same at every width, which is a decision the boards make
+ * and not an omission.
+ */
+@media screen and (width < 834px) {
+  /* 26 and 16, against 32 and 20. Both off the ramp, like their desktop
+     counterparts, so both are literals. */
+  .main-product__price {
+    font-size: 2.6rem;
+  }
+
+  .main-product__compare {
+    font-size: var(--bf-text-body-size);
+  }
+
+  /* The stepper shrinks where the CTA below it does not: 20 against 28, and a
+     40 top against 48. */
+  .main-product__quantity {
+    padding: 4rem 0 var(--bf-space-16);
+  }
+
+  .main-product__stepper {
+    gap: var(--bf-space-10);
+  }
+
+  .main-product__stepper-input {
+    font-size: 2rem;
+  }
+
+  .main-product__cta-row {
+    padding: var(--bf-space-16) 0 var(--bf-space-32);
+  }
 }
