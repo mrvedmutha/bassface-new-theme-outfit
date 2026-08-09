@@ -453,9 +453,23 @@
     display: contents;
   }
 
+  /*
+   * DELIBERATELY NOT WHAT THE BOARDS DRAW, and the reason is worth keeping so
+   * this is not "corrected" back later.
+   *
+   * The boards put the title and price above the gallery. Below the breakpoint
+   * that pushes the price roughly a screen away from the size selector, so
+   * choosing a size means scrolling back up to see what it now costs, then down
+   * again to buy — on the one control where the number is the whole point of
+   * the interaction. The order here is breadcrumb, gallery, title, price, then
+   * the rest, which puts the price directly above the sizes that change it.
+   *
+   * On desktop the question does not arise: both are in the same column and
+   * visible together, so that layout still follows the board exactly.
+   */
   .main-product__header {
-    order: 1;
-    padding: 0 var(--bf-page-padding) var(--bf-space-20);
+    order: 2;
+    padding: var(--bf-space-24) var(--bf-page-padding) var(--bf-space-20);
   }
 
   .main-product__info {
@@ -470,7 +484,7 @@
    * thing telling anyone the row scrolls.
    */
   .main-product__gallery {
-    order: 2;
+    order: 1;
     flex-direction: row;
     gap: var(--bf-space-24);
     overflow-x: auto;
