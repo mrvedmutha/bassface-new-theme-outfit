@@ -48,6 +48,14 @@
  * The chip. The board draws the selected one with 14px side padding against the
  * others' 10, which would make the row twitch sideways on every selection, so
  * the extra 4 is dropped and all chips keep one width.
+ *
+ * THE BORDER IS ALWAYS THERE, it is only ever transparent — which is the whole
+ * trick. Adding a border on hover would grow the box by two pixels and shove
+ * every chip after it along the row; holding the box and fading the colour
+ * costs nothing in layout. The reference does the same thing with a ring.
+ *
+ * Six outlined boxes at rest read as six things to do. One filled chip against
+ * five bare labels reads as a choice already made, which is what it is.
  */
 .size-selector__chip {
   display: grid;
@@ -55,11 +63,27 @@
   min-width: 3.6rem;
   height: 3.6rem;
   padding: var(--bf-space-6) var(--bf-space-10);
-  border: var(--bf-border);
+  border: var(--bf-border-width) solid transparent;
   font-size: var(--bf-text-body-size);
   font-weight: var(--bf-weight-bold);
   letter-spacing: var(--bf-text-body-tracking);
   cursor: pointer;
+
+  /* The reference's own figures. Colour only — nothing here moves. */
+  transition:
+    border-color 300ms ease-in-out,
+    background-color 300ms ease-in-out,
+    color 300ms ease-in-out;
+}
+
+/*
+ * Only the ones that are a live choice. The selected chip is already filled, so
+ * a ring on it would be drawn in the cream it is printed in and read as a gap
+ * cut out of the block; a sold-out chip is not selectable and should not offer
+ * the affordance at all.
+ */
+.size-selector__input:not(:checked, :disabled) + .size-selector__chip:hover {
+  border-color: currentcolor;
 }
 
 .size-selector__input:checked + .size-selector__chip {
