@@ -10,6 +10,9 @@
  */
 
 .accordion {
+  --accordion-duration: 520ms;
+  --accordion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
   display: block;
 }
 
@@ -38,36 +41,106 @@
 }
 
 /*
- * The toggle is a fixed 22 square holding both glyphs, so the header's height
- * does not change between the plus and the minus — Lucide's minus is a single
- * stroke and would otherwise let the row collapse by a pixel on open.
+ * The plus/minus, drawn as two bars so it can MORPH instead of being swapped.
+ *
+ * Opening turns the mark a quarter turn and collapses ::before. A quarter turn
+ * maps horizontal onto vertical, so the bar that survives is the one that
+ * started vertical — which lands horizontal, i.e. a minus. Closing runs the
+ * same thing backwards and the minus grows its second stroke back.
+ *
+ * Rotating alone would be invisible: a plus has fourfold symmetry, so a quarter
+ * turn of it is the same shape. The collapse is what makes the rotation
+ * readable, and the rotation is what stops the collapse looking like a bar
+ * simply vanishing. Neither half works on its own.
  */
 .accordion__toggle {
-  display: grid;
+  position: relative;
   flex: none;
-  place-items: center;
   width: 2.2rem;
   height: 2.2rem;
+  transition: transform var(--accordion-duration) var(--accordion-ease);
 }
 
-.accordion__icon {
-  display: none;
-  grid-area: 1 / 1;
+.accordion__toggle::before,
+.accordion__toggle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background-color: currentcolor;
+  content: "";
+  transition: transform var(--accordion-duration) var(--accordion-ease);
 }
 
-.accordion__icon--closed {
-  display: block;
+/* The stroke that collapses. */
+.accordion__toggle::before {
+  width: 100%;
+  height: var(--bf-border-width-section);
+  transform: translate(-50%, -50%);
 }
 
-.accordion[open] .accordion__icon--closed {
-  display: none;
+/* The stroke that survives as the minus. */
+.accordion__toggle::after {
+  width: var(--bf-border-width-section);
+  height: 100%;
+  transform: translate(-50%, -50%);
 }
 
-.accordion[open] .accordion__icon--open {
-  display: block;
+/*
+ * Open is the attribute's job while the script is absent — under reduced motion
+ * and with no JS at all, `[open]` is the only signal there is.
+ */
+.accordion[open] .accordion__toggle {
+  transform: rotate(90deg);
 }
 
+.accordion[open] .accordion__toggle::before {
+  transform: translate(-50%, -50%) scaleX(0);
+}
+
+/*
+ * CLOSING IS THE ASYMMETRIC CASE, and this pair is what fixes it.
+ *
+ * bf-accordion.js can set `open` immediately when expanding, so the mark starts
+ * turning on the same frame as the click. It cannot do the same when
+ * collapsing: removing `open` takes the panel out of the layout, so the
+ * attribute has to survive until the height animation ends — which left the
+ * plus sitting rotated for the whole close and snapping back at the very end.
+ *
+ * So the script marks the intent instead, the moment the click lands, and these
+ * override the `[open]` rules above.
+ *
+ * `[open]` IS REPEATED HERE ON PURPOSE and the rule does not work without it.
+ * An attribute selector carries the same weight as a class, so the rules above
+ * are (0,3,0); `:where()` contributes nothing, so matching on the class alone
+ * would be (0,2,0) and lose. The symptom was precise and misleading — the mark
+ * held at ninety degrees for the whole close and only snapped back at the very
+ * end, when `open` was finally removed and the losing rule stopped competing.
+ *
+ * The `:where()` wrapper is what the BEM linter wants: a state class chained
+ * bare into a descendant selector is rejected, and bf-product-card.css writes
+ * `:where(.is-concealed)` for the same reason.
+ */
+.accordion[open]:where(.is-closing) .accordion__toggle {
+  transform: none;
+}
+
+.accordion[open]:where(.is-closing) .accordion__toggle::before {
+  transform: translate(-50%, -50%);
+}
+
+/*
+ * The clipper. `overflow: hidden` is what makes the height animation in
+ * bf-accordion.js read as a reveal rather than as a box squashing its own
+ * contents, and it carries NO padding — `height` does not include padding, so
+ * any here would survive a collapse to zero and leave the panel standing 48px
+ * tall until the attribute finally cleared. The height is animated, never set
+ * here: CSS owns the look, the script owns the number.
+ */
 .accordion__panel {
+  overflow: hidden;
+}
+
+.accordion__body {
   display: flex;
   flex-direction: column;
   gap: var(--bf-space-12);
@@ -80,10 +153,10 @@
  * spaces the blocks; these two rules stop the browser's default margins from
  * adding a second, larger space on top of it.
  */
-.accordion__panel > :where(p, ul, ol) {
+.accordion__body > :where(p, ul, ol) {
   margin: 0;
 }
 
-.accordion__panel :where(ul, ol) {
+.accordion__body :where(ul, ol) {
   padding-left: var(--bf-space-20);
 }

@@ -1,0 +1,89 @@
+/* @define price-roll */
+
+/*
+ * The price rendered as digit reels. bf-price-roll.js builds the markup; this
+ * file is the window the reels turn behind.
+ *
+ * Everything is sized in `em` so the block inherits whatever type it is dropped
+ * into — the 32px sale price and the 20px compare-at use the same rules and
+ * neither needs a size of its own.
+ */
+
+.price-roll {
+  display: inline-flex;
+  align-items: baseline;
+
+  /* Tabular figures, or the reels change width as they turn. A proportional
+     "1" is narrower than a "0" in most faces, so a price rolling 1 -> 8 would
+     widen mid-spin and shove everything after it along the line. */
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * `white-space: pre` is not a nicety. The block is a flex container, so every
+ * character becomes a flex item, and a flex item holding only a space collapses
+ * to nothing — "Rs. 1,099.00" rendered as "Rs.1,099.00" until this was added.
+ */
+.price-roll__char {
+  display: inline-block;
+  white-space: pre;
+}
+
+/*
+ * One digit's window. Exactly one character tall, with the overflow clipped —
+ * this is what turns a tall column into a slot showing a single glyph.
+ */
+.price-roll__reel {
+  overflow: hidden;
+  display: inline-block;
+  height: 1em;
+  line-height: 1em;
+}
+
+/*
+ * The column. Two runs of 0-9, moved by whole characters — index 12 is the
+ * "2" of the second run, which is why a roll can end past the tenth item and
+ * still show the right glyph.
+ */
+.price-roll__stack {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(calc(var(--price-roll-index, 0) * -1em));
+
+  /* No transition here on purpose. The script writes one inline, per digit,
+     with the stagger baked into its delay — declaring it here would animate
+     the resting pose being set on first render, which is the one moment
+     nothing should move. */
+}
+
+.price-roll__digit {
+  height: 1em;
+  line-height: 1em;
+}
+
+/* ---------------------------------------------------------------- strike --- */
+
+/*
+ * The compare-at price, drawn rather than declared.
+ *
+ * `text-decoration: line-through` on the surrounding <s> paints nothing here:
+ * decoration is not drawn across atomic inline boxes, and every reel is one —
+ * a flex item with `overflow: hidden`. The <s> stays for the semantics and
+ * this draws the line the customer needs to see.
+ *
+ * Hairline weight, not the 2px of the sold-out strike. That one is a refusal
+ * and should be loud; this one is a comparison sitting beside the real price.
+ */
+.price-roll--strike {
+  position: relative;
+}
+
+.price-roll--strike::after {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: var(--bf-border-width);
+  background-color: currentcolor;
+  content: "";
+}

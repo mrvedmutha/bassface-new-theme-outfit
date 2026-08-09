@@ -55,14 +55,23 @@
 }
 
 /*
- * Square, from the boards, and enforced here rather than trusted from the file.
- * The catalogue's source images are not all 1:1, and a column of images that
+ * Square, from the boards, and enforced here rather than trusted from the file:
+ * the catalogue's source images are not all 1:1, and a column of images that
  * each set their own height turns the gallery into a ragged stack.
+ *
+ * The ratio lives on the WRAPPER. The curtain is drawn on <bf-reveal> and has
+ * to cover the image exactly, which means the box has to exist and be the right
+ * shape before the image loads — a ratio on the <img> alone is not known until
+ * then, and the panel would size to nothing.
  */
+.main-product__media {
+  aspect-ratio: 1 / 1;
+}
+
 .main-product__image {
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -250,7 +259,29 @@
   padding: var(--bf-space-32) 0 4.8rem;
 }
 
+/*
+ * Add to Bag, and its hover.
+ *
+ * Read off the reference: on hover the label and the trailing arrow both shift
+ * right by one arrow width while a second arrow, parked just off the left edge,
+ * slides into the space they leave. The clip is what sells it — the incoming
+ * arrow has nowhere to have come from.
+ *
+ * The easing is theirs too, and it is not one of ours: cubic-bezier with a
+ * negative first control point undershoots before it moves, so the group leans
+ * back a hair and then goes. A standard ease-out reads as a slide; this reads
+ * as a flick.
+ *
+ * `1em` rather than a fixed figure, so the travel is always exactly the width
+ * of the arrow beside it — the arrow is drawn at 26px against 36px text.
+ */
 .main-product__cta {
+  --main-product-cta-shift: 1em;
+  --main-product-cta-duration: 500ms;
+  --main-product-cta-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
+
+  position: relative;
+  overflow: hidden;
   display: flex;
   gap: var(--bf-space-14);
   align-items: center;
@@ -264,6 +295,42 @@
   letter-spacing: var(--bf-text-cta-tracking);
   line-height: var(--bf-leading-tight);
   cursor: pointer;
+}
+
+.main-product__cta-arrow,
+.main-product__cta-label {
+  display: inline-flex;
+  transition: transform var(--main-product-cta-duration) var(--main-product-cta-ease);
+}
+
+/*
+ * Absolute, so it takes no space in the flow — the button must not be an arrow
+ * wider than it looks, and the label must not start shifted across.
+ */
+.main-product__cta-arrow--lead {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+}
+
+/* Keyboard focus gets the same movement. The button is one control, so
+   :focus-visible on it is the exact keyboard equivalent of the hover. */
+.main-product__cta:hover .main-product__cta-arrow--lead,
+.main-product__cta:focus-visible .main-product__cta-arrow--lead {
+  transform: translateX(0);
+}
+
+.main-product__cta:hover .main-product__cta-label,
+.main-product__cta:hover .main-product__cta-arrow:not(.main-product__cta-arrow--lead),
+.main-product__cta:focus-visible .main-product__cta-label,
+.main-product__cta:focus-visible .main-product__cta-arrow:not(.main-product__cta-arrow--lead) {
+  transform: translateX(var(--main-product-cta-shift));
+}
+
+/* Sold out is not hoverable — the button is disabled and there is no arrow to
+   move, so the shift would slide the struck label sideways for no reason. */
+.main-product__cta[disabled] .main-product__cta-label {
+  transform: none;
 }
 
 .main-product__cta[disabled] {

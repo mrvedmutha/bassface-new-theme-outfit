@@ -36,12 +36,17 @@
 {{ 'bf-size-selector.css' | asset_url | stylesheet_tag }}
 {{ 'bf-accordion.css' | asset_url | stylesheet_tag }}
 {{ 'bf-size-chart.css' | asset_url | stylesheet_tag }}
+{{ 'bf-reveal.css' | asset_url | stylesheet_tag }}
+{{ 'bf-price-roll.css' | asset_url | stylesheet_tag }}
 {{ 'bf-main-product.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-product-form.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-quantity.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-sticky-column.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-delivery-estimate.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-reveal.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-price-roll.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-accordion.js' | asset_url }}" defer="defer"></script>
 
 {%- liquid
   assign variant = product.selected_or_first_available_variant
@@ -118,30 +123,32 @@
     {%- endcomment -%}
     <div class="main-product__gallery">
       {%- for image in product.images -%}
-        <img
-          class="main-product__image"
-          src="{{ image | image_url: width: 1546 }}"
-          srcset="
-            {{ image | image_url: width: 549 }} 549w,
-            {{ image | image_url: width: 773 }} 773w,
-            {{ image | image_url: width: 1098 }} 1098w,
-            {{ image | image_url: width: 1546 }} 1546w
-          "
-          sizes="(min-width: 1024px) 55vw, 100vw"
-          width="{{ image.width }}"
-          height="{{ image.height }}"
-          alt="{{ image.alt | escape }}"
-          {% comment %}
-            The first gallery image is the LCP element on this template, so it
-            is the one image that must not be deferred or de-prioritised.
-          {% endcomment %}
-          {% if forloop.first %}
-            loading="eager"
-            fetchpriority="high"
-          {% else %}
-            loading="lazy"
-          {% endif %}
-        >
+        <bf-reveal class="reveal reveal--curtain main-product__media">
+          <img
+            class="main-product__image"
+            src="{{ image | image_url: width: 1546 }}"
+            srcset="
+              {{ image | image_url: width: 549 }} 549w,
+              {{ image | image_url: width: 773 }} 773w,
+              {{ image | image_url: width: 1098 }} 1098w,
+              {{ image | image_url: width: 1546 }} 1546w
+            "
+            sizes="(min-width: 1024px) 55vw, 100vw"
+            width="{{ image.width }}"
+            height="{{ image.height }}"
+            alt="{{ image.alt | escape }}"
+            {% comment %}
+              The first gallery image is the LCP element on this template, so it
+              is the one image that must not be deferred or de-prioritised.
+            {% endcomment %}
+            {% if forloop.first %}
+              loading="eager"
+              fetchpriority="high"
+            {% else %}
+              loading="lazy"
+            {% endif %}
+          >
+        </bf-reveal>
       {%- else -%}
         {{ 'product-1' | placeholder_svg_tag: 'main-product__image' }}
       {%- endfor -%}
@@ -155,7 +162,9 @@
       written up because they look right and are not.
     {%- endcomment -%}
     <bf-sticky-column class="main-product__info">
-      <h1 class="main-product__title">{{ product.title }}</h1>
+      <bf-reveal class="reveal reveal--rise">
+        <h1 class="main-product__title">{{ product.title }}</h1>
+      </bf-reveal>
 
       {%- comment -%}
         The id is the contract: product-info.js copies innerHTML from the
@@ -168,10 +177,16 @@
         the failure mode of an AJAX variant picker.
       {%- endcomment -%}
       <div class="main-product__price-row" id="price-{{ section.id }}" role="status">
-        <span class="main-product__price">{{ variant.price | money }}</span>
+        <bf-price-roll class="price-roll main-product__price" data-key="price">
+          {{- variant.price | money -}}
+        </bf-price-roll>
 
         {%- if variant.compare_at_price > variant.price -%}
-          <s class="main-product__compare">{{ variant.compare_at_price | money }}</s>
+          <s class="main-product__compare">
+            <bf-price-roll class="price-roll price-roll--strike" data-key="compare">
+              {{- variant.compare_at_price | money -}}
+            </bf-price-roll>
+          </s>
         {%- endif -%}
 
         {%- if section.settings.tax_note != blank -%}
@@ -186,6 +201,36 @@
           {%- endfor -%}
         </ul>
       {%- endif -%}
+
+      {%- comment -%}
+        Every variant's formatted price, so a size click can repaint the figure
+        from data already on the page instead of waiting for the server.
+
+        product-info re-fetches this whole section on every option change and
+        swaps the price in from the response — correct, and several hundred
+        milliseconds of network before the customer sees the number they just
+        asked for. This map is what closes that gap; the server render still
+        arrives and still wins, it just confirms what is already on screen.
+
+        Keyed by variant.title, which Shopify builds by joining the option
+        values with " / " — exactly what bf-price-roll.js reconstructs from the
+        checked radios, so no variant matching is reimplemented here.
+
+        `| json` rather than bare interpolation: it quotes and escapes, so a
+        currency format containing a quote cannot break the document.
+      {%- endcomment -%}
+      <script type="application/json" data-bf-price-map>
+        {
+          {%- for option_variant in product.variants -%}
+            {{ option_variant.title | json }}: {
+              "price": {{ option_variant.price | money | json }}
+              {%- if option_variant.compare_at_price > option_variant.price -%}
+                , "compare": {{ option_variant.compare_at_price | money | json }}
+              {%- endif -%}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        }
+      </script>
 
       {%- render 'bf-size-selector', product: product -%}
 
@@ -263,9 +308,21 @@
           {%- endcomment -%}
           <div class="main-product__cta-row" data-cta>
             {%- if variant.available -%}
+              {%- comment -%}
+                Three moving parts, from the reference: a second arrow parked
+                off the left edge slides in while the label and the trailing
+                arrow both shift right by their own arrow's width. The button
+                clips, so the incoming arrow appears from nowhere and the
+                outgoing one is not seen leaving.
+              {%- endcomment -%}
               <button class="main-product__cta" type="submit" name="add">
+                <span class="main-product__cta-arrow main-product__cta-arrow--lead" aria-hidden="true">
+                  {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                </span>
                 <span class="main-product__cta-label">{{ section.settings.cta_label }}</span>
-                {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                <span class="main-product__cta-arrow" aria-hidden="true">
+                  {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                </span>
               </button>
             {%- else -%}
               {%- comment -%}

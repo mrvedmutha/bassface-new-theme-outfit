@@ -26,25 +26,33 @@
 {%- endcomment -%}
 
 {%- if content != blank -%}
-  <details class="accordion" id="Accordion-{{ id }}">
-    <summary class="accordion__header">
-      <span class="accordion__label">{{ label }}</span>
+  <bf-accordion>
+    <details class="accordion" id="Accordion-{{ id }}">
+      <summary class="accordion__header">
+        <span class="accordion__label">{{ label }}</span>
+
+        {%- comment -%}
+          The plus is DRAWN, not an icon — two pseudo-element bars on one span.
+          It has to morph into the minus rather than be swapped for it: the
+          whole mark rotates a quarter turn while the bar that would end up
+          vertical collapses, so the two strokes resolve into one. Two <svg>
+          glyphs cross-fading cannot do that, and a rotating plus is
+          indistinguishable from a still one, so both halves are needed.
+
+          No element inside it, so nothing here is an empty box needing filler.
+        {%- endcomment -%}
+        <span class="accordion__toggle" aria-hidden="true"></span>
+      </summary>
 
       {%- comment -%}
-        Both icons ship and CSS shows one. Swapping them in script would mean
-        the marker is wrong for however long the JS takes to arrive, and wrong
-        permanently if it never does.
+        Two boxes, not one. The outer is the clipper whose height is animated;
+        the padding lives on the inner. With padding on the clipper, `height: 0`
+        still leaves the 48px of it standing, so the last of the panel vanished
+        in one frame at the end of every close instead of closing with it.
       {%- endcomment -%}
-      <span class="accordion__toggle" aria-hidden="true">
-        <span class="accordion__icon accordion__icon--closed">
-          {%- render 'bf-icon', icon: 'plus', size: 22 -%}
-        </span>
-        <span class="accordion__icon accordion__icon--open">
-          {%- render 'bf-icon', icon: 'minus', size: 22 -%}
-        </span>
-      </span>
-    </summary>
-
-    <div class="accordion__panel">{{ content }}</div>
-  </details>
+      <div class="accordion__panel">
+        <div class="accordion__body">{{ content }}</div>
+      </div>
+    </details>
+  </bf-accordion>
 {%- endif -%}

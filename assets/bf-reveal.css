@@ -1,0 +1,97 @@
+/* @define reveal */
+
+/*
+ * The two entrance poses driven by bf-reveal.js.
+ *
+ * THE RESTING STATE IS THE VISIBLE ONE. Nothing here hides anything until the
+ * script adds `is-concealed`, which is the whole safety argument: a failed or
+ * blocked asset request leaves a plain, readable page rather than a gallery of
+ * grey panels and invisible text. bf-product-card.css makes the same choice for
+ * the same reason.
+ *
+ * Timings match their sources exactly — the curtain is the card's 940ms
+ * expo-out, the rise is the hero's 1400ms quart-out with a 60ms stagger — so
+ * the product page reads as the same theme rather than as a near miss.
+ */
+
+.reveal {
+  --reveal-curtain-duration: 940ms;
+  --reveal-curtain-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --reveal-rise-duration: 1400ms;
+  --reveal-rise-ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --reveal-stagger: 60ms;
+  --reveal-index: 0;
+
+  /* The curtain reads as a shade of the surface rather than a colour of its
+     own, so it tracks the theme. Same 12% as the card's. */
+  --reveal-curtain: color-mix(in srgb, var(--bf-ink) 12%, var(--bf-surface));
+
+  display: block;
+}
+
+/* --------------------------------------------------------------- curtain --- */
+
+.reveal--curtain {
+  position: relative;
+  overflow: hidden;
+}
+
+/*
+ * Drawn rather than added to the markup, so the gallery stays a list of images
+ * with nothing decorative interleaved — and so there is no empty element here
+ * at all.
+ */
+.reveal--curtain::after {
+  position: absolute;
+  z-index: 1;
+  background-color: var(--reveal-curtain);
+  transform: translateX(100%);
+  content: "";
+  inset: 0;
+}
+
+/* Primed. No transition — this is the starting pose being set, and animating
+   into it is exactly what must not happen. */
+.reveal--curtain:where(.is-concealed)::after {
+  transform: translateX(0);
+}
+
+.reveal--curtain:where(.is-concealed) img {
+  transform: translateX(-50%) scale(1.4);
+}
+
+/* Running. Same specificity as the primed rules, so source order decides. */
+.reveal--curtain:where(.is-revealed)::after {
+  transform: translateX(100%);
+  transition: transform var(--reveal-curtain-duration) var(--reveal-curtain-ease);
+}
+
+.reveal--curtain:where(.is-revealed) img {
+  transform: none;
+  transition: transform var(--reveal-curtain-duration) var(--reveal-curtain-ease);
+}
+
+/* ------------------------------------------------------------------ rise --- */
+
+/*
+ * The clip is on the wrapper and the movement on the child, which is what makes
+ * this a reveal rather than a slide: the text climbs out from behind its own
+ * top edge instead of arriving from somewhere off-screen.
+ *
+ * `> *` rather than a named element — the block wraps whatever the info column
+ * puts inside it, a heading in one place and a list in another, and naming them
+ * would mean a rule per caller.
+ */
+.reveal--rise {
+  overflow: hidden;
+}
+
+.reveal--rise:where(.is-concealed) > * {
+  transform: translateY(110%);
+}
+
+.reveal--rise:where(.is-revealed) > * {
+  transform: none;
+  transition: transform var(--reveal-rise-duration) var(--reveal-rise-ease)
+    calc(var(--reveal-index) * var(--reveal-stagger));
+}
