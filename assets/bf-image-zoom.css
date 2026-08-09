@@ -1,0 +1,136 @@
+/* @define image-zoom */
+
+/*
+ * The full-screen image viewer. bf-image-zoom.js owns opening and closing;
+ * everything here is the box it opens into.
+ */
+
+.image-zoom {
+  display: contents;
+}
+
+/*
+ * A <dialog> arrives with a UA stylesheet that fights all of this: a fixed
+ * width, an inset that centres a small box, a border, a background and 1em of
+ * padding. Every declaration below through `padding` is undoing one of those.
+ *
+ * `100dvh` rather than `100vh`. On mobile Safari `vh` is the tallest the
+ * viewport ever gets, so with the address bar showing, the bottom of the image
+ * and the close button would sit below the fold of a box that cannot scroll.
+ */
+
+/*
+ * `minmax(0, 1fr)` rather than a bare `place-items: center`, and the difference
+ * is the whole layout. With auto tracks the row grows to the image's INTRINSIC
+ * height — 2000px on these photographs — so the grid ends up taller than the
+ * dialog and the image's own `max-height: 100%` resolves against that stretched
+ * track instead of the viewport. Measured, the picture ran off the bottom of
+ * the screen. A zero minimum stops the track expanding past its container,
+ * which is what makes 100% mean the viewport again.
+ */
+.image-zoom__dialog {
+  overflow: hidden;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: var(--bf-page-padding);
+  background: none;
+  border: 0;
+}
+
+/*
+ * The scrim, in the top layer, so nothing on the page can paint over it — the
+ * fixed header included, which no z-index on an ordinary overlay would beat
+ * without a fight.
+ *
+ * 88%, NOT the theme's --bf-scrim, and deliberately so on two counts.
+ *
+ * The shared scrim is 45%, tuned for the nav drawer and the search overlay,
+ * where the page behind stays legible on purpose because you are moving
+ * through it. This is a viewer: the page behind is not context, it is
+ * distraction, and the whole point is that one photograph is the only thing
+ * left on screen. At 45% the cream page glows through and the picture — most of
+ * this catalogue is black garments on grey — competes with it.
+ *
+ * A literal rather than a custom property because ::backdrop does not reliably
+ * inherit them. Whether it inherits from its originating element changed part
+ * way through the spec's life, and on an engine that resolves the variable to
+ * nothing the scrim would come out fully transparent rather than merely the
+ * wrong shade.
+ */
+
+/*
+ * `display` IS SCOPED TO [open], AND IT HAS TO BE.
+ *
+ * A closed dialog is hidden by one UA rule — `dialog:not([open])
+ * { display: none }` — and an unconditional `display: grid` here outranks it.
+ * The dialog then stays in the layout after closing: a full-viewport box whose
+ * src has just been dropped, which paints as an empty frame sitting over the
+ * page. It read as a broken image, because that is more or less what it was.
+ */
+.image-zoom__dialog[open] {
+  display: grid;
+}
+
+.image-zoom__dialog::backdrop {
+  background-color: rgb(0 0 0 / 88%);
+}
+
+/*
+ * Contained, not covered. This is the picture being examined, so none of it may
+ * be cropped — which is the one thing the gallery thumbnails do differently,
+ * where filling the square matters more than showing the whole frame.
+ */
+.image-zoom__image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/*
+ * Over the image rather than beside it — at full bleed there is no "beside".
+ * Sized in the surface colour so it stays legible against a dark photograph,
+ * which most of this catalogue is.
+ */
+.image-zoom__close {
+  position: absolute;
+  z-index: 1;
+  top: var(--bf-page-padding);
+  right: var(--bf-page-padding);
+  display: grid;
+  place-items: center;
+  width: 4.4rem;
+  height: 4.4rem;
+  padding: 0;
+  background-color: var(--bf-surface);
+  border: 0;
+  color: var(--bf-ink);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------- trigger --- */
+
+/*
+ * The gallery image as a button. It has to be a real one: the picture opens
+ * something, so it must be reachable by keyboard and announced as a control,
+ * and a click handler on an <img> is neither.
+ *
+ * `zoom-in` is the cursor the whole convention rests on — it is what tells
+ * anyone with a pointer that the image does more than sit there.
+ */
+.image-zoom__trigger {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: zoom-in;
+}

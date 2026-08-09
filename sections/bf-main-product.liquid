@@ -38,6 +38,7 @@
 {{ 'bf-size-chart.css' | asset_url | stylesheet_tag }}
 {{ 'bf-reveal.css' | asset_url | stylesheet_tag }}
 {{ 'bf-price-roll.css' | asset_url | stylesheet_tag }}
+{{ 'bf-image-zoom.css' | asset_url | stylesheet_tag }}
 {{ 'bf-main-product.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-product-form.js' | asset_url }}" defer="defer"></script>
@@ -47,6 +48,7 @@
 <script src="{{ 'bf-reveal.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-price-roll.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'bf-accordion.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-image-zoom.js' | asset_url }}" defer="defer"></script>
 
 {%- liquid
   assign variant = product.selected_or_first_available_variant
@@ -124,30 +126,46 @@
     <div class="main-product__gallery">
       {%- for image in product.images -%}
         <bf-reveal class="reveal reveal--curtain main-product__media">
-          <img
-            class="main-product__image"
-            src="{{ image | image_url: width: 1546 }}"
-            srcset="
-              {{ image | image_url: width: 549 }} 549w,
-              {{ image | image_url: width: 773 }} 773w,
-              {{ image | image_url: width: 1098 }} 1098w,
-              {{ image | image_url: width: 1546 }} 1546w
-            "
-            sizes="(min-width: 1024px) 55vw, 100vw"
-            width="{{ image.width }}"
-            height="{{ image.height }}"
-            alt="{{ image.alt | escape }}"
-            {% comment %}
-              The first gallery image is the LCP element on this template, so it
-              is the one image that must not be deferred or de-prioritised.
-            {% endcomment %}
-            {% if forloop.first %}
-              loading="eager"
-              fetchpriority="high"
-            {% else %}
-              loading="lazy"
-            {% endif %}
+          {%- comment -%}
+            A real button, not a click handler on the image: the picture opens
+            something, so it has to be reachable by keyboard and announced as a
+            control. The full-size source is carried on the trigger rather than
+            fetched here — bf-image-zoom.js only ever requests the one opened.
+          {%- endcomment -%}
+          <button
+            class="image-zoom__trigger"
+            type="button"
+            data-zoom-src="{{ image | image_url: width: 2400 }}"
+            data-zoom-alt="{{ image.alt | escape }}"
+            data-zoom-width="{{ image.width }}"
+            data-zoom-height="{{ image.height }}"
+            aria-label="{{ 'Expand image' }} {{ forloop.index }}"
           >
+            <img
+              class="main-product__image"
+              src="{{ image | image_url: width: 1546 }}"
+              srcset="
+                {{ image | image_url: width: 549 }} 549w,
+                {{ image | image_url: width: 773 }} 773w,
+                {{ image | image_url: width: 1098 }} 1098w,
+                {{ image | image_url: width: 1546 }} 1546w
+              "
+              sizes="(min-width: 1024px) 55vw, 100vw"
+              width="{{ image.width }}"
+              height="{{ image.height }}"
+              alt="{{ image.alt | escape }}"
+              {% comment %}
+                The first gallery image is the LCP element on this template, so it
+                is the one image that must not be deferred or de-prioritised.
+              {% endcomment %}
+              {% if forloop.first %}
+                loading="eager"
+                fetchpriority="high"
+              {% else %}
+                loading="lazy"
+              {% endif %}
+            >
+          </button>
         </bf-reveal>
       {%- else -%}
         {{ 'product-1' | placeholder_svg_tag: 'main-product__image' }}
@@ -418,6 +436,34 @@
       </div>
     </bf-sticky-column>
   </product-info>
+
+  {%- comment -%}
+    One viewer for the whole gallery — the dialog holds a single image whose
+    source is swapped as it opens, so a twelve-photograph product does not ship
+    twelve dialogs and only the picture actually opened is ever downloaded at
+    full size.
+  {%- endcomment -%}
+  <bf-image-zoom class="image-zoom">
+    <dialog class="image-zoom__dialog" aria-label="{{ product.title | escape }}">
+      <button class="image-zoom__close" type="button" data-zoom-close>
+        {%- render 'bf-icon', icon: 'x', size: 22, label: 'Close' -%}
+      </button>
+      {%- comment -%}
+        Dimensions are the first image's and are replaced per picture as the
+        viewer opens — carried on each trigger, so the browser knows the aspect
+        ratio before the full-size file has decoded and the image does not jump
+        into shape. They are on the tag as well because a src-less <img> still
+        has to declare a box.
+      {%- endcomment -%}
+      <img
+        class="image-zoom__image"
+        data-zoom-image
+        alt=""
+        width="{{ product.images.first.width | default: 1 }}"
+        height="{{ product.images.first.height | default: 1 }}"
+      >
+    </dialog>
+  </bf-image-zoom>
 
   {%- comment -%}
     Product structured data. Dawn emitted this from the bottom of its own
