@@ -1,0 +1,77 @@
+/* @define size-chart */
+
+/*
+ * The size chart table inside the PDP's Size Chart accordion row.
+ *
+ * Block is `size-chart`. It starts at the chart title and ends at the table's
+ * outer rule — the accordion owns the panel padding above and below, so the
+ * block carries no outer margin and drops into any container.
+ *
+ * A real <table>, not a flex grid. It is tabular data, and `table-layout:
+ * fixed` reproduces the boards' column arithmetic natively: the label column
+ * is pinned and the size columns divide whatever is left. That is one rule for
+ * every breakpoint — the boards measure 130 + 6x72 at 1440 and 130 + 6x42 at
+ * 448, which is the same declaration seen at two widths, not two decisions.
+ * It also absorbs the column count, which is 6 for the oversized tee and 5 for
+ * the standard and polo charts.
+ */
+
+.size-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+}
+
+/*
+ * Caption, 13 — the boards say 14, which is not on the type ramp. Of the two
+ * neighbouring steps only 13 works: 15 is the table's own size, and a title
+ * set in the same style as the data it labels stops reading as a title.
+ */
+.size-chart__title {
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-text-caption-weight);
+  letter-spacing: var(--bf-text-caption-tracking);
+}
+
+.size-chart__frame {
+  padding: var(--bf-space-16);
+  border: var(--bf-border);
+}
+
+.size-chart__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.size-chart__cell {
+  padding: var(--bf-space-10) 0;
+  border-top: var(--bf-border);
+  font-size: var(--bf-text-ui-size);
+  font-weight: var(--bf-text-ui-weight);
+  letter-spacing: var(--bf-text-ui-tracking);
+  text-align: center;
+}
+
+/*
+ * The rules sit BETWEEN rows, so the head row carries none. Written as a
+ * removal on the head rather than an addition on `tr + tr` because the head
+ * and the body are separate parents — the sibling combinator never spans them.
+ */
+.size-chart__row--head .size-chart__cell {
+  border-top: 0;
+  font-weight: var(--bf-weight-bold);
+}
+
+/*
+ * 130 flat at every width, which is what the boards do. The measurement labels
+ * are the longest strings in the table ("Shoulder"), so the fixed column is
+ * the one that must not shrink; the size columns are three characters at most
+ * and take the squeeze without wrapping.
+ *
+ * The body labels are <th scope="row">, so this also undoes the UA's centring.
+ */
+.size-chart__cell--label {
+  width: 13rem;
+  text-align: left;
+}

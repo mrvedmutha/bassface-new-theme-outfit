@@ -1,0 +1,85 @@
+/* @define size-selector */
+
+/*
+ * The variant picker — a label and a row of chips, per product option.
+ *
+ * Block is `size-selector`, in its own file because one file defines one block.
+ * These rules cannot live in bf-main-product.css: the linter only checks
+ * selectors belonging to the block that file declares, so a second block
+ * smuggled in beside the first is silently unchecked.
+ *
+ * Do not write the linter's directive name in prose anywhere in a stylesheet.
+ * postcss-bem-linter scans every comment for it, not just the first, so a
+ * mention inside an explanation rebinds the component to the next word and
+ * every selector below it starts failing.
+ *
+ * The radio inputs are visually hidden rather than styled. A native radio can
+ * be recoloured but not reshaped into a bordered rectangle, and hiding it keeps
+ * the whole of the group's keyboard behaviour — arrow keys moving the
+ * selection, one tab stop for the set — which a div with click handlers gives
+ * up entirely.
+ */
+
+.size-selector__fieldset {
+  display: flex;
+  gap: var(--bf-space-16);
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: var(--bf-space-24) 0;
+  border: 0;
+  border-bottom: var(--bf-border-width-section) solid var(--bf-ink);
+}
+
+.size-selector__label {
+  font-size: var(--bf-text-control-size);
+  font-weight: var(--bf-text-control-weight);
+  letter-spacing: var(--bf-text-control-tracking);
+}
+
+.size-selector__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bf-space-10);
+  justify-content: flex-end;
+}
+
+/*
+ * The chip. The board draws the selected one with 14px side padding against the
+ * others' 10, which would make the row twitch sideways on every selection, so
+ * the extra 4 is dropped and all chips keep one width.
+ */
+.size-selector__chip {
+  display: grid;
+  place-items: center;
+  min-width: 3.6rem;
+  height: 3.6rem;
+  padding: var(--bf-space-6) var(--bf-space-10);
+  border: var(--bf-border);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-body-tracking);
+  cursor: pointer;
+}
+
+.size-selector__input:checked + .size-selector__chip {
+  background-color: var(--bf-ink);
+  color: var(--bf-surface);
+}
+
+/*
+ * Sold out. The reference strikes at 2px and does not grey anything, which is
+ * the only treatment available in a two-colour palette anyway — and it stays
+ * legible, where a dimmed chip on cream would not.
+ */
+.size-selector__input:disabled + .size-selector__chip {
+  cursor: default;
+  text-decoration: line-through 2px;
+}
+
+/* Keyboard focus lands on the hidden radio, so the ring has to be drawn on the
+   label that stands in for it. */
+.size-selector__input:focus-visible + .size-selector__chip {
+  outline: var(--bf-border-width-section) solid var(--bf-ink);
+  outline-offset: 2px;
+}

@@ -1,0 +1,98 @@
+{%- comment -%}
+  Bassface size chart — the measurements table inside the PDP's Size Chart row.
+
+  A leaf snippet. It renders the chart title and the table, nothing else: the
+  accordion owns the row header, the toggle and the panel padding, so this can
+  drop into any container. The consumer loads bf-size-chart.css, same as it does
+  for bf-product-card.
+
+  Accepts:
+    product - a product object. Required. Renders nothing at all when the
+              product resolves to no chart, so the accordion row can test the
+              same condition and hide itself rather than open onto emptiness.
+
+  Usage:
+    {%- render 'bf-size-chart', product: product -%}
+
+  Data comes from the `size_chart` metaobject, reached through the product's
+  `custom.size_chart` reference. Both were built by the scripts in
+  new-design/script/ — create-size-chart-entries.mjs owns the three entries,
+  assign-size-charts.mjs owns the metafield definition and the assignments, and
+  verify-size-chart.mjs checks the pair against assets/size-chart/. Change the
+  measurements there, never here.
+
+  size_columns and measurement_rows are list.single_line_text_field, so Liquid
+  hands back real arrays. Each measurement row is pipe-delimited, label first:
+  "Chest|40|42|44|46|48|50".
+{%- endcomment -%}
+
+{%- liquid
+  assign chart = product.metafields.custom.size_chart.value
+
+  comment
+    Fallback by product type, for a product created without the metafield.
+
+    All 92 products carry the reference today, so this never fires for them —
+    it is here for product 93, where the alternative is a tee silently
+    advertising no sizing at all. The metafield is checked first, so an
+    explicit assignment always wins and this costs nothing when it is present.
+
+    "Regular T-Shirt" maps to the STANDARD chart: the product type and the
+    chart title disagree on the word, which is exactly why the map is written
+    out instead of handleizing product.type — that would miss all 48 of them.
+    Same map as assign-size-charts.mjs; change both together.
+  endcomment
+
+  unless chart
+    case product.type
+      when 'Oversized T-Shirt'
+        assign fallback = 'unisex-oversized-t-shirt'
+      when 'Regular T-Shirt'
+        assign fallback = 'unisex-standard-t-shirt'
+      when 'Polo T-Shirt'
+        assign fallback = 'polo-t-shirt'
+    endcase
+
+    if fallback
+      assign chart = shop.metaobjects.size_chart[fallback]
+    endif
+  endunless
+-%}
+
+{%- if chart -%}
+  {%- assign columns = chart.size_columns.value -%}
+
+  <div class="size-chart">
+    <p class="size-chart__title">{{- chart.chart_title.value }} — measurements in {{ chart.unit_label.value -}}</p>
+
+    <div class="size-chart__frame">
+      <table class="size-chart__table">
+        <thead>
+          <tr class="size-chart__row size-chart__row--head">
+            <th class="size-chart__cell size-chart__cell--label" scope="col">Size</th>
+            {%- for column in columns -%}
+              <th class="size-chart__cell" scope="col">{{ column }}</th>
+            {%- endfor -%}
+          </tr>
+        </thead>
+
+        <tbody>
+          {%- for row in chart.measurement_rows.value -%}
+            {%- assign cells = row | split: '|' -%}
+            <tr class="size-chart__row">
+              <th class="size-chart__cell size-chart__cell--label" scope="row">{{ cells[0] }}</th>
+              {%- comment -%}
+                Walked by column rather than by cell, so a row with too few or
+                too many values still lands on the header's grid instead of
+                shearing the table sideways.
+              {%- endcomment -%}
+              {%- for column in columns -%}
+                <td class="size-chart__cell">{{ cells[forloop.index] }}</td>
+              {%- endfor -%}
+            </tr>
+          {%- endfor -%}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{%- endif -%}

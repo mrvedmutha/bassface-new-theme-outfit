@@ -73,6 +73,19 @@ export default [
         Shopify: 'readonly',
         gsap: 'readonly',
         Lenis: 'readonly',
+
+        /*
+         * Dawn's own globals, defined by files theme.liquid loads on every page
+         * before ours: pubsub.js exports subscribe/publish, constants.js the
+         * event names, global.js the fetch helper, and theme.liquid itself
+         * assigns window.routes. Declared here rather than reached for through
+         * `window.` so a typo is still a lint error.
+         */
+        subscribe: 'readonly',
+        publish: 'readonly',
+        PUB_SUB_EVENTS: 'readonly',
+        fetchConfig: 'readonly',
+        routes: 'readonly',
       },
     },
     rules: {

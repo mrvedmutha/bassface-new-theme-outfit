@@ -1,0 +1,64 @@
+/* @define breadcrumb */
+
+/*
+ * The breadcrumb row, shared by the product page and any page that needs one.
+ *
+ * The boards draw this identically on the PDP and the search results page —
+ * same type, same padding, same 900 on the current crumb. bf-main-search.css
+ * still carries its own copy under `main-search__crumb*`; this block is the one
+ * to keep, and that copy should be retired into it.
+ */
+
+.breadcrumb {
+  /* The boards' 40/24 below the laptop breakpoint, 56/32 at and above it. Both
+     top values are off the 4px scale, so they are literals rather than a var()
+     standing in for a token that does not exist — same as the search page's. */
+  padding: 4rem var(--bf-page-padding) var(--bf-space-24);
+}
+
+@media screen and (width >= 1024px) {
+  .breadcrumb {
+    padding: 5.6rem var(--bf-page-padding) var(--bf-space-32);
+  }
+}
+
+/*
+ * Wrapping is left to the content rather than forced at a breakpoint, and that
+ * reproduces the boards on its own: the row measures 544 wide, so it fits on
+ * one line down to 834 (802 of gutter) and has to break at 448 (416), which is
+ * exactly where the mobile board shows the title dropping to its own line.
+ *
+ * The two gaps differ because the boards' do — 8 between crumbs, 4 between the
+ * wrapped rows.
+ */
+.breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bf-space-4) var(--bf-space-8);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  list-style: none;
+}
+
+.breadcrumb__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.breadcrumb__link:hover {
+  text-decoration: underline;
+}
+
+/* 900 on the current page — the boards' one weight change in the row, and what
+   marks where you are without a colour or a rule doing it. */
+.breadcrumb__item--current {
+  /* The only crumb that can run to a second line, so the only one that needs
+     leading meant for wrapped text. The mobile board sets 1.3 on this node. */
+  font-weight: var(--bf-weight-black);
+  line-height: var(--bf-leading-normal);
+}

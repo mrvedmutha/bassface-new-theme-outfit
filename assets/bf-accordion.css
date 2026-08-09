@@ -1,0 +1,89 @@
+/* @define accordion */
+
+/*
+ * One collapsible row. Built on <details>/<summary>, so everything here is
+ * presentation — no rule in this file makes the thing open or close.
+ *
+ * The boards draw the rule directly under the HEADER, not under the row, which
+ * is why it is a border on the summary. Open, the order reads header / rule /
+ * panel; closed, the rule is what separates one row's label from the next.
+ */
+
+.accordion {
+  display: block;
+}
+
+.accordion__header {
+  display: flex;
+  gap: var(--bf-space-16);
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--bf-space-24) 0;
+  border-bottom: var(--bf-border);
+  cursor: pointer;
+
+  /* Both are needed: the standard property, and the pseudo-element WebKit used
+     before it shipped support for the standard one. */
+  list-style: none;
+}
+
+.accordion__header::-webkit-details-marker {
+  display: none;
+}
+
+.accordion__label {
+  font-size: var(--bf-text-card-title-size);
+  font-weight: var(--bf-text-card-title-weight);
+  letter-spacing: var(--bf-text-card-title-tracking);
+}
+
+/*
+ * The toggle is a fixed 22 square holding both glyphs, so the header's height
+ * does not change between the plus and the minus — Lucide's minus is a single
+ * stroke and would otherwise let the row collapse by a pixel on open.
+ */
+.accordion__toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.accordion__icon {
+  display: none;
+  grid-area: 1 / 1;
+}
+
+.accordion__icon--closed {
+  display: block;
+}
+
+.accordion[open] .accordion__icon--closed {
+  display: none;
+}
+
+.accordion[open] .accordion__icon--open {
+  display: block;
+}
+
+.accordion__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+  padding: var(--bf-space-20) 0 var(--bf-space-28);
+}
+
+/*
+ * The description panel is merchant HTML from the product admin, so it arrives
+ * with its own paragraphs and lists rather than as one string. The gap above
+ * spaces the blocks; these two rules stop the browser's default margins from
+ * adding a second, larger space on top of it.
+ */
+.accordion__panel > :where(p, ul, ol) {
+  margin: 0;
+}
+
+.accordion__panel :where(ul, ol) {
+  padding-left: var(--bf-space-20);
+}

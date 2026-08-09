@@ -1,0 +1,89 @@
+{%- comment -%}
+  Bassface variant picker — the "Size  [XS][S][M][L][XL][2XL]" row.
+
+  Accepts:
+    product - a product object. Required.
+
+  Usage:
+    {%- render 'bf-size-selector', product: product -%}
+
+  The consumer loads bf-main-product.css and must place this inside
+  <product-info>, which is what listens for the change.
+
+  Named for the size row it draws, but it loops product.options_with_values, so
+  a two-option product gets two rows rather than a broken one.
+
+  THREE PIECES OF THIS MARKUP ARE A CONTRACT with Dawn's VariantSelects in
+  global.js and product-info.js. None of them are decorative:
+
+    - `.product-form__input` on the wrapper. updateSelectionMetadata does
+      `target.closest('.product-form__input').querySelector(...)` with no null
+      check, so without this class every click on a size throws a TypeError
+      before the change event is ever published.
+    - `<fieldset>`. Both getAllSelectedOptions and the selectedOptionValues
+      getter query `fieldset input:checked` — a div with role="radiogroup"
+      reads identically to a screen reader and is invisible to those queries.
+    - `[data-selected-variant]`. getSelectedVariant parses this JSON out of the
+      re-rendered section to decide availability and the new URL.
+
+  The legend is hidden and the visible "Size" is a separate aria-hidden span.
+  The board puts the label and the chips on one line, and a <legend> is not laid
+  out as a flex item — it is painted into the fieldset's border. Hiding it keeps
+  the accessible grouping intact while the row lays out as drawn.
+{%- endcomment -%}
+
+<variant-selects
+  data-product-id="{{ product.id }}"
+  data-product-title="{{ product.title | escape }}"
+  data-product-handle="{{ product.handle }}"
+  data-selected-price-amount="{{ product.selected_or_first_available_variant.price }}"
+  data-currency-code="{{ cart.currency.iso_code }}"
+>
+  {%- for option in product.options_with_values -%}
+    <div class="product-form__input size-selector">
+      <fieldset class="size-selector__fieldset">
+        <legend class="visually-hidden">{{ option.name }}</legend>
+        <span class="size-selector__label" aria-hidden="true">{{ option.name }}</span>
+
+        <div class="size-selector__options">
+          {%- for value in option.values -%}
+            {%- assign input_id = 'Option-'
+              | append: section.id
+              | append: '-'
+              | append: option.position
+              | append: '-'
+              | append: forloop.index
+            -%}
+
+            {%- comment -%}
+              Sold-out values are disabled rather than merely struck. The chip
+              is styled to match the CTA's sold-out treatment either way, but a
+              selectable size that cannot be bought is a dead end the customer
+              only discovers at the button.
+            {%- endcomment -%}
+            <input
+              class="size-selector__input visually-hidden"
+              type="radio"
+              id="{{ input_id }}"
+              name="{{ option.name | escape }}-{{ option.position }}"
+              value="{{ value.name | escape }}"
+              data-option-name="{{ option.name | escape }}"
+              data-option-value-id="{{ value.id }}"
+              {% if value.selected %}
+                checked
+              {% endif %}
+              {% unless value.available %}
+                disabled
+              {% endunless %}
+            >
+            <label class="size-selector__chip" for="{{ input_id }}">{{ value.name }}</label>
+          {%- endfor -%}
+        </div>
+      </fieldset>
+    </div>
+  {%- endfor -%}
+
+  <script type="application/json" data-selected-variant>
+    {{ product.selected_or_first_available_variant | json }}
+  </script>
+</variant-selects>

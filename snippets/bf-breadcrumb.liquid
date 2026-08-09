@@ -1,0 +1,58 @@
+{%- comment -%}
+  Bassface breadcrumb — the "Home / Category / This Page" row.
+
+  Accepts:
+    current      - the current page's label. Required. Rendered as text, never a
+                   link, and carries aria-current="page".
+    parent_label - optional middle crumb. Omitted entirely when blank, which is
+                   how a two-crumb trail is asked for.
+    parent_url   - optional link for the middle crumb. With a label but no URL
+                   the crumb renders as plain text, which is what a product type
+                   with no matching collection needs.
+    home_label   - defaults to 'Home'.
+    label        - the landmark name read by screen readers. Defaults to
+                   'Breadcrumb'.
+
+  Usage:
+    {%- render 'bf-breadcrumb', current: product.title, parent_label: 'Tees' -%}
+
+  The consumer loads bf-breadcrumb.css.
+
+  Three crumbs is the maximum by design, not by omission — every board draws
+  exactly Home / Category / Page, and a variadic list in Liquid means passing
+  parallel delimited strings that break on the first title containing the
+  delimiter. Product titles here already contain commas, hyphens and brackets.
+
+  The separators are <li aria-hidden> rather than CSS ::before content. A
+  generated slash is not in the accessibility tree at all, so a screen reader
+  reads the trail as one run-on string; an aria-hidden element is skipped by
+  assistive tech but still separates the crumbs for everyone else, including
+  when the row wraps.
+{%- endcomment -%}
+
+{%- liquid
+  assign home_label = home_label | default: 'Home'
+  assign label = label | default: 'Breadcrumb'
+-%}
+
+<nav class="breadcrumb" aria-label="{{ label }}">
+  <ol class="breadcrumb__list">
+    <li class="breadcrumb__item">
+      <a class="breadcrumb__link" href="{{ routes.root_url }}">{{ home_label }}</a>
+    </li>
+
+    {%- if parent_label != blank -%}
+      <li class="breadcrumb__item" aria-hidden="true">/</li>
+      <li class="breadcrumb__item">
+        {%- if parent_url != blank -%}
+          <a class="breadcrumb__link" href="{{ parent_url }}">{{ parent_label }}</a>
+        {%- else -%}
+          {{ parent_label }}
+        {%- endif -%}
+      </li>
+    {%- endif -%}
+
+    <li class="breadcrumb__item" aria-hidden="true">/</li>
+    <li class="breadcrumb__item breadcrumb__item--current" aria-current="page">{{ current }}</li>
+  </ol>
+</nav>

@@ -71,7 +71,9 @@
         {%- endif -%}
 
         <li>
-          <a class="masthead__link" href="{{ routes.cart_url }}">{{- 'Bag' }} ({{ cart.item_count }}) </a>
+          <a class="masthead__link" href="{{ routes.cart_url }}">
+            {{- 'Bag' }} (<span data-cart-count>{{ cart.item_count }}</span>)
+          </a>
         </li>
 
         {%- if show_currency -%}
@@ -132,7 +134,9 @@
         </li>
 
         <li>
-          <a class="masthead__link" href="{{ routes.cart_url }}">{{- 'Bag' }} ({{ cart.item_count }}) </a>
+          <a class="masthead__link" href="{{ routes.cart_url }}">
+            {{- 'Bag' }} (<span data-cart-count>{{ cart.item_count }}</span>)
+          </a>
         </li>
 
         <li>

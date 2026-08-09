@@ -1,0 +1,497 @@
+{%- comment -%}
+  Bassface product page — the main section of the product template.
+
+  Replaces Dawn's sections/main-product.liquid, which stays on disk for any
+  template still pointing at it. The stock section is a block system: vendor,
+  title, price and the rest are reorderable rows a merchant composes. This one
+  is a FIXED layout, deliberately. The boards describe one arrangement at five
+  widths, and a reorderable info column can produce arrangements they do not
+  describe. Blocks return in stage 4, for the accordion rows and the offers,
+  where the count genuinely varies.
+
+  What is NOT reimplemented is variant switching. This section keeps Dawn's
+  <product-info> element and its DOM contract — the same data-section, data-url
+  and #price-{{ section.id }} target — so assets/product-info.js goes on
+  re-fetching the section through the Section Rendering API on every option
+  change and swapping the price in. Rewriting that means reimplementing history
+  state, ?variant= deep links and sold-out resolution for no visual gain.
+
+  Two contract details worth knowing before editing:
+
+    - The element renders safely half-built. connectedCallback subscribes to
+      option changes and then returns early from initQuantityHandlers when
+      there is no .quantity__input, so the stages below can land one at a time.
+    - updateMedia is guarded on `media-gallery ul` existing, and setActiveMedia
+      is called with optional chaining. The gallery here is plain markup with
+      no <media-gallery>, and that is a no-op rather than a crash.
+
+  Still to come: the zoom and offers modals, and the =<834 restructure, where
+  the gallery becomes a horizontally overflowing strip below a title/price wrap.
+  Until the offers modal exists every offer line renders inline rather than
+  collapsing to "+ more offers", so nothing here points at a modal that is not
+  built yet.
+{%- endcomment -%}
+
+{{ 'bf-breadcrumb.css' | asset_url | stylesheet_tag }}
+{{ 'bf-size-selector.css' | asset_url | stylesheet_tag }}
+{{ 'bf-accordion.css' | asset_url | stylesheet_tag }}
+{{ 'bf-size-chart.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-product.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-product-form.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-quantity.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-sticky-column.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-delivery-estimate.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign variant = product.selected_or_first_available_variant
+
+  comment
+    The middle crumb. `collection` is set by Shopify only when the visitor
+    arrived through /collections/x/products/y, so it is the truthful answer
+    when present — it is the route they actually took.
+
+    Falling back to product.type means guessing at a collection, and the guess
+    has to be checked: collections['no-such-handle'] returns an EmptyDrop, not
+    nil, so a bare truthiness test passes and links the crumb at a 404. The
+    `== empty` comparison is what EmptyDrop answers to.
+
+    With a type but no matching collection the label still renders, unlinked.
+    Losing the category from the trail is worse than losing the link.
+  endcomment
+
+  if collection
+    assign crumb_label = collection.title
+    assign crumb_url = collection.url
+  elsif product.type != blank
+    assign crumb_label = product.type
+    assign type_handle = product.type | handleize
+    unless collections[type_handle] == empty
+      assign crumb_url = collections[type_handle].url
+    endunless
+  endif
+
+  comment
+    Selling points. `custom.highlights` is a list metafield that does not exist
+    on the store yet — it needs the same treatment the size chart got, a
+    definition plus an assignment script, and until then this falls through.
+
+    The fallback is the size chart's own fit_note, which is already populated
+    for all 92 products and already says the thing the board's first pointer
+    says: "Oversized fit — size up if you like it roomier." One real pointer is
+    worth more than three placeholders.
+  endcomment
+
+  assign pointers = product.metafields.custom.highlights.value
+
+  unless pointers
+    assign chart = product.metafields.custom.size_chart.value
+    if chart.fit_note != blank
+      assign pointers = chart.fit_note.value | split: '~~~'
+    endif
+  endunless
+
+  assign offers = section.settings.offers | newline_to_br | split: '<br />'
+  assign payments = section.settings.payment_methods | split: ','
+-%}
+
+<div class="main-product">
+  {%- render 'bf-breadcrumb',
+    current: product.title,
+    parent_label: crumb_label,
+    parent_url: crumb_url,
+    home_label: section.settings.breadcrumb_home,
+    label: section.settings.breadcrumb_label
+  -%}
+
+  <product-info
+    id="MainProduct-{{ section.id }}"
+    class="main-product__grid"
+    data-section="{{ section.id }}"
+    data-url="{{ product.url }}"
+    data-update-url="true"
+  >
+    {%- comment -%}
+      Three stacked squares on the boards, but the count is whatever the product
+      has — the gallery is a column, so a fourth image extends it rather than
+      breaking a fixed composition.
+    {%- endcomment -%}
+    <div class="main-product__gallery">
+      {%- for image in product.images -%}
+        <img
+          class="main-product__image"
+          src="{{ image | image_url: width: 1546 }}"
+          srcset="
+            {{ image | image_url: width: 549 }} 549w,
+            {{ image | image_url: width: 773 }} 773w,
+            {{ image | image_url: width: 1098 }} 1098w,
+            {{ image | image_url: width: 1546 }} 1546w
+          "
+          sizes="(min-width: 1024px) 55vw, 100vw"
+          width="{{ image.width }}"
+          height="{{ image.height }}"
+          alt="{{ image.alt | escape }}"
+          {% comment %}
+            The first gallery image is the LCP element on this template, so it
+            is the one image that must not be deferred or de-prioritised.
+          {% endcomment %}
+          {% if forloop.first %}
+            loading="eager"
+            fetchpriority="high"
+          {% else %}
+            loading="lazy"
+          {% endif %}
+        >
+      {%- else -%}
+        {{ 'product-1' | placeholder_svg_tag: 'main-product__image' }}
+      {%- endfor -%}
+    </div>
+
+    {%- comment -%}
+      A custom element rather than a div: the column is taller than the viewport
+      on a normal laptop, and a plain sticky offset would hide its last rows for
+      good. bf-sticky-column.js measures it and hands the offset back. See the
+      note there — it is the second attempt, and the first two CSS-only ones are
+      written up because they look right and are not.
+    {%- endcomment -%}
+    <bf-sticky-column class="main-product__info">
+      <h1 class="main-product__title">{{ product.title }}</h1>
+
+      {%- comment -%}
+        The id is the contract: product-info.js copies innerHTML from the
+        re-rendered section into `#price-{{ section.id }}` on every variant
+        change, so everything price-related has to live INSIDE this element,
+        including the compare-at and the tax note. Anything outside it keeps
+        the first variant's values forever.
+
+        role="status" so the change is announced — the price moving silently is
+        the failure mode of an AJAX variant picker.
+      {%- endcomment -%}
+      <div class="main-product__price-row" id="price-{{ section.id }}" role="status">
+        <span class="main-product__price">{{ variant.price | money }}</span>
+
+        {%- if variant.compare_at_price > variant.price -%}
+          <s class="main-product__compare">{{ variant.compare_at_price | money }}</s>
+        {%- endif -%}
+
+        {%- if section.settings.tax_note != blank -%}
+          <span class="main-product__tax-note">{{ section.settings.tax_note }}</span>
+        {%- endif -%}
+      </div>
+
+      {%- if pointers != blank -%}
+        <ul class="main-product__pointers">
+          {%- for pointer in pointers -%}
+            <li class="main-product__pointer">{{ pointer }}</li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- render 'bf-size-selector', product: product -%}
+
+      <bf-product-form
+        class="main-product__form"
+        data-section="{{ section.id }}"
+        {%- comment -%}
+          The section that draws the bag counter. Passed from Liquid so
+          bf-product-form.js holds no theme knowledge — see the note there.
+        {%- endcomment -%}
+        data-cart-section="bf-header"
+      >
+        <form
+          id="product-form-{{ section.id }}"
+          action="{{ routes.cart_add_url }}"
+          method="post"
+          enctype="multipart/form-data"
+        >
+          {%- comment -%}
+            Updated in place by product-info's updateVariantInputs, which finds
+            it by the form's id. Nothing in bf-product-form.js writes to it.
+          {%- endcomment -%}
+          <input type="hidden" name="id" value="{{ variant.id }}">
+
+          {%- comment -%}
+            <bf-quantity>, not Dawn's <quantity-input> — see the note at the top
+            of bf-quantity.js. The short version: Dawn's stepper is styled
+            through the same three classes its script needs, and those classes
+            paint it from Dawn's colour scheme rather than from --bf-ink, so it
+            stayed #121212 in every Bassface theme.
+
+            The label is on the button, not on the icon: bf-icon's `label`
+            makes the SVG role="img", which would put a second accessible name
+            inside the one the button already has.
+          {%- endcomment -%}
+          <div class="main-product__quantity">
+            <bf-quantity class="main-product__stepper">
+              <button
+                class="main-product__stepper-button"
+                type="button"
+                data-step="down"
+                aria-label="Decrease quantity"
+              >
+                {%- render 'bf-icon', icon: 'minus', size: 28 -%}
+              </button>
+
+              <input
+                class="main-product__stepper-input"
+                type="number"
+                name="quantity"
+                id="Quantity-{{ section.id }}"
+                value="1"
+                min="1"
+                step="1"
+                aria-label="Quantity"
+              >
+
+              <button
+                class="main-product__stepper-button"
+                type="button"
+                data-step="up"
+                aria-label="Increase quantity"
+              >
+                {%- render 'bf-icon', icon: 'plus', size: 28 -%}
+              </button>
+            </bf-quantity>
+          </div>
+
+          {%- comment -%}
+            data-cta is the swap target. product-info re-renders this whole
+            section on every option change but only copies a fixed list of ids
+            into the live page, and the button is not on it — bf-product-form.js
+            reads the server's new button out of here instead of deciding
+            availability for itself.
+          {%- endcomment -%}
+          <div class="main-product__cta-row" data-cta>
+            {%- if variant.available -%}
+              <button class="main-product__cta" type="submit" name="add">
+                <span class="main-product__cta-label">{{ section.settings.cta_label }}</span>
+                {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+              </button>
+            {%- else -%}
+              {%- comment -%}
+                The reference strikes the label and drops the arrow rather than
+                greying anything — there is no grey in this palette. Disabled
+                rather than a bare <span> so the state reaches assistive tech
+                as unavailability instead of as decoration on some text.
+              {%- endcomment -%}
+              <button class="main-product__cta" type="submit" disabled>
+                <span class="main-product__cta-label main-product__cta-label--sold-out">
+                  {{- section.settings.sold_out_label -}}
+                </span>
+              </button>
+            {%- endif -%}
+          </div>
+
+          <p class="main-product__error" data-cart-error role="alert" hidden></p>
+        </form>
+      </bf-product-form>
+
+      <div class="main-product__delivery">
+        <p class="main-product__delivery-line">
+          {%- comment -%}
+            The dates are computed in bf-delivery-estimate.js, not here. The
+            model is two stacked business-day windows — processing, then
+            region-dependent shipping — and Liquid has no weekday arithmetic
+            without a counting loop. Ported from the live theme, where the same
+            code sat in a custom_liquid block in templates/product.json.
+
+            The element renders its fallback region synchronously, so the line
+            is never blank and never shifts; the IP lookup only refines it.
+          {%- endcomment -%}
+          <span>
+            {{- section.settings.delivery_prefix }}
+            <bf-delivery-estimate
+              data-region="{{ section.settings.default_region }}"
+              data-detect="{{ section.settings.detect_region }}"
+              >&nbsp;</bf-delivery-estimate
+            >.
+          </span>
+
+          {%- if section.settings.shipping_policy_page != blank -%}
+            {%- render 'bf-icon', icon: 'arrow-right', size: 14 -%}
+            <a class="main-product__delivery-link" href="{{ section.settings.shipping_policy_page.url }}">
+              {{- section.settings.shipping_policy_page.title -}}
+            </a>
+          {%- endif -%}
+        </p>
+
+        {%- for offer in offers -%}
+          {%- assign offer_text = offer | strip_html | strip -%}
+          {%- if offer_text != blank -%}
+            <p class="main-product__offer">{{ offer_text }}</p>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+
+      {%- if payments != blank -%}
+        <ul class="main-product__payments">
+          {%- for method in payments -%}
+            <li class="main-product__payment">{{ method | strip }}</li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      <div class="main-product__accordion">
+        {%- render 'bf-accordion',
+          label: section.settings.description_label,
+          content: product.description,
+          id: 'description'
+        -%}
+
+        {%- capture size_chart -%}{%- render 'bf-size-chart', product: product -%}{%- endcapture -%}
+        {%- render 'bf-accordion', label: section.settings.size_chart_label, content: size_chart, id: 'size-chart' -%}
+
+        {%- render 'bf-accordion',
+          label: section.settings.shipping_label,
+          content: section.settings.shipping_content,
+          id: 'shipping'
+        -%}
+      </div>
+    </bf-sticky-column>
+  </product-info>
+
+  {%- comment -%}
+    Product structured data. Dawn emitted this from the bottom of its own
+    main-product.liquid and nowhere else, so replacing that section silently
+    took the theme's Product schema — price, availability, images — off every
+    product page. It is one filter; it belongs here.
+  {%- endcomment -%}
+  <script type="application/ld+json">
+    {{ product | structured_data }}
+  </script>
+</div>
+
+{% schema %}
+{
+  "name": "Product page",
+  "tag": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Breadcrumb"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    },
+    {
+      "type": "header",
+      "content": "Price"
+    },
+    {
+      "type": "text",
+      "id": "tax_note",
+      "label": "Tax note",
+      "info": "Shown beside the price. Leave blank to hide.",
+      "default": "Inclusive of all taxes"
+    },
+    {
+      "type": "header",
+      "content": "Buy box"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "Add to bag label",
+      "default": "Add to Bag"
+    },
+    {
+      "type": "text",
+      "id": "sold_out_label",
+      "label": "Sold out label",
+      "default": "Sold out"
+    },
+    {
+      "type": "header",
+      "content": "Delivery and offers"
+    },
+    {
+      "type": "text",
+      "id": "delivery_prefix",
+      "label": "Delivery line",
+      "info": "The date range is appended automatically.",
+      "default": "Order today, get it by"
+    },
+    {
+      "type": "select",
+      "id": "default_region",
+      "label": "Fallback region",
+      "info": "Used before the location lookup answers, and whenever it fails or the location is not recognised. Metro is the fastest bracket, so an unknown visitor is quoted the most optimistic timeline.",
+      "options": [
+        { "value": "Metro", "label": "Metro" },
+        { "value": "South", "label": "South" },
+        { "value": "NorthEast_JK", "label": "North East and J&K" },
+        { "value": "Islands", "label": "Islands" }
+      ],
+      "default": "Metro"
+    },
+    {
+      "type": "checkbox",
+      "id": "detect_region",
+      "label": "Detect region from IP",
+      "info": "Sends the visitor's IP to ipapi.co on every product page. Off means every visitor sees the fallback region.",
+      "default": true
+    },
+    {
+      "type": "page",
+      "id": "shipping_policy_page",
+      "label": "Shipping policy page"
+    },
+    {
+      "type": "textarea",
+      "id": "offers",
+      "label": "Offers",
+      "info": "One offer per line. Every line is shown; the \"+ more offers\" modal is not built yet.",
+      "default": "BASS350 — Buy 2, get ₹350 off."
+    },
+    {
+      "type": "text",
+      "id": "payment_methods",
+      "label": "Payment methods",
+      "info": "Comma separated.",
+      "default": "Visa, Mastercard, RuPay, UPI, Cash on Delivery"
+    },
+    {
+      "type": "header",
+      "content": "Accordion"
+    },
+    {
+      "type": "text",
+      "id": "description_label",
+      "label": "Description row",
+      "default": "Product Description"
+    },
+    {
+      "type": "text",
+      "id": "size_chart_label",
+      "label": "Size chart row",
+      "default": "Size Chart"
+    },
+    {
+      "type": "text",
+      "id": "shipping_label",
+      "label": "Shipping row",
+      "default": "Shipping & Returns"
+    },
+    {
+      "type": "richtext",
+      "id": "shipping_content",
+      "label": "Shipping row content",
+      "info": "Leave blank to hide the row.",
+      "default": "<p>Dispatched within 24 hours. Free returns within 24 hours of delivery, on unworn items with tags attached.</p>"
+    }
+  ]
+}
+{% endschema %}

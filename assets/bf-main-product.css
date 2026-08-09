@@ -1,0 +1,361 @@
+/* @define main-product */
+
+/*
+ * The product page's main section.
+ *
+ * Block is `main-product`, matching the file, and it supersedes Dawn's stock
+ * section — whose styles live in section-main-product.css and touch nothing
+ * here, because none of these class names exist there.
+ *
+ * The size selector and the accordion are separate blocks in their own files
+ * — bf-size-selector.css and bf-accordion.css — because one file defines one
+ * block. What is here is the grid, the gallery, and the info column's own runs
+ * of type and spacing.
+ */
+
+.main-product {
+  display: block;
+}
+
+/* ------------------------------------------------------------------ grid --- */
+
+/*
+ * 773 and 595 with a 24 gutter is what the desktop board measures, and the fr
+ * pair is the same statement made proportionally. The arithmetic checks out at
+ * both two-column widths, which is why one declaration covers them: at 1440 the
+ * gutters leave 1392, minus the 24 gap is 1368, split 773:595 lands on exactly
+ * 773 and 595. At 1024 it leaves 952, which splits to 538 and 414 against a
+ * board drawn at 539 and 413 — a rounding difference, not a second decision.
+ *
+ * Below 1024 it is one column. The boards restructure entirely at 834 and the
+ * single column is the shape that gets there; stage 6 adds the title/price wrap
+ * and the bleeding gallery strip, which is also where the side padding goes,
+ * since the strip runs edge to edge.
+ */
+.main-product__grid {
+  display: grid;
+  gap: var(--bf-space-24);
+
+  /* The boards' 160 bottom, off the 4px scale and so a literal. */
+  padding: 0 var(--bf-page-padding) 16rem;
+}
+
+@media screen and (width >= 1024px) {
+  .main-product__grid {
+    grid-template-columns: 773fr 595fr;
+  }
+}
+
+/* --------------------------------------------------------------- gallery --- */
+
+.main-product__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+}
+
+/*
+ * Square, from the boards, and enforced here rather than trusted from the file.
+ * The catalogue's source images are not all 1:1, and a column of images that
+ * each set their own height turns the gallery into a ragged stack.
+ */
+.main-product__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+/* ------------------------------------------------------------------ info --- */
+
+/* The column is a custom element, and an unknown element is inline by default —
+   an inline box cannot be a grid item that sticks, or take a height to measure. */
+.main-product__info {
+  display: block;
+}
+
+/*
+ * The info column sticks. The gallery runs to 6048px on a seven-image product
+ * against roughly 1010px of info, so without it the right half of the page is
+ * empty for a very long way down.
+ *
+ * THE OFFSET IS THE WHOLE PROBLEM, and it is why bf-sticky-column.js exists.
+ * The fallback below is what the column wants — clear of the fixed header —
+ * and it is correct only while the column fits on screen. Measured on a real
+ * product it does not: 1010px with every accordion closed against a 907px
+ * viewport, 1481px with them open. A sticky box taller than the viewport pins
+ * at `top` and its bottom is then unreachable at every scroll position, which
+ * made Shipping & Returns impossible to read.
+ *
+ * So the script overrides the offset with `viewport - own height - gap`, a
+ * negative number for a tall column, which lets it scroll up until its last
+ * row meets the viewport floor and pin there. The full note is in that file;
+ * `bottom` and "set both" were both tried and neither works.
+ *
+ * `align-self: start` is not optional. A grid item stretches to the row height
+ * by default, which would make this box as tall as the gallery and leave it
+ * nothing to travel within, so it would never appear to stick at all.
+ *
+ * Only at two columns: stacked, there is nothing beside it to stick against —
+ * and the script reads `top: auto` there and does nothing, by design.
+ */
+@media screen and (width >= 1024px) {
+  .main-product__info {
+    position: sticky;
+    top: var(--main-product-sticky-top, calc(var(--bf-header-height) + var(--bf-space-24)));
+    align-self: start;
+  }
+}
+
+.main-product__title {
+  margin: 0;
+  font-size: var(--bf-text-title-size);
+  font-weight: var(--bf-text-title-weight);
+  letter-spacing: var(--bf-text-title-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+.main-product__price-row {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+  padding-top: var(--bf-space-28);
+}
+
+.main-product__price {
+  font-size: var(--bf-text-price-size);
+  font-weight: var(--bf-text-price-weight);
+  letter-spacing: var(--bf-text-price-tracking);
+}
+
+/*
+ * The board draws the MRP at the control size but in regular weight, where the
+ * token is 900 — that weight belongs to the labels it is named for, not to a
+ * struck-through figure sitting next to a 32px price.
+ */
+.main-product__compare {
+  font-size: var(--bf-text-control-size);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: var(--bf-text-control-tracking);
+}
+
+/*
+ * Caption, 13 — the board says 14, which is not on the type ramp. The same
+ * substitution the size chart's title makes, for the same reason, so the two
+ * pieces of small print on this page stay one size rather than two.
+ */
+.main-product__tax-note {
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-text-caption-weight);
+  letter-spacing: var(--bf-text-caption-tracking);
+}
+
+/* -------------------------------------------------------------- pointers --- */
+
+.main-product__pointers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-10);
+  margin: 0;
+  padding: var(--bf-space-28) 0 0;
+  list-style: none;
+}
+
+/*
+ * The board's 6px dot, drawn rather than listed. A real list-style marker
+ * cannot be sized or coloured independently of the text, and the gap between
+ * marker and text is not settable at all — which is the measurement the board
+ * actually specifies here.
+ */
+.main-product__pointer {
+  display: flex;
+  gap: var(--bf-space-10);
+  align-items: center;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+}
+
+.main-product__pointer::before {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  background-color: currentcolor;
+  border-radius: 50%;
+  content: "";
+}
+
+/* -------------------------------------------------------- quantity + cta --- */
+
+.main-product__quantity {
+  /* The board's 48 top, off the 4px scale and so a literal. */
+  padding: 4.8rem 0 var(--bf-space-16);
+  border-bottom: var(--bf-border-width-section) solid var(--bf-ink);
+}
+
+.main-product__stepper {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+}
+
+.main-product__stepper-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+/*
+ * At the floor, the minus is a real disabled button. Muted ink rather than an
+ * opacity, so the colour still comes from the theme's own pair — an opacity
+ * over cream produces a pink that is in neither palette.
+ */
+.main-product__stepper-button:disabled {
+  color: var(--bf-ink-muted);
+  cursor: default;
+}
+
+/*
+ * A number input, so the value is typeable and the browser validates it, with
+ * the spinner removed — the board's stepper is the two icon buttons beside it.
+ * `field-sizing: content` is not used: the box would resize as the digits grow
+ * and shift both buttons.
+ */
+.main-product__stepper-input {
+  width: 4rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: 2.8rem;
+  font-weight: var(--bf-weight-regular);
+  line-height: var(--bf-leading-tight);
+  text-align: center;
+  appearance: textfield;
+}
+
+.main-product__stepper-input::-webkit-outer-spin-button,
+.main-product__stepper-input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.main-product__cta-row {
+  /* 48 again, this time below. */
+  padding: var(--bf-space-32) 0 4.8rem;
+}
+
+.main-product__cta {
+  display: flex;
+  gap: var(--bf-space-14);
+  align-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--bf-text-cta-size);
+  font-weight: var(--bf-text-cta-weight);
+  letter-spacing: var(--bf-text-cta-tracking);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+}
+
+.main-product__cta[disabled] {
+  cursor: default;
+}
+
+/* In flight. Keyed off aria-disabled, which the script sets anyway to stop a
+   second submit — a separate state class would be a second source of truth for
+   one condition. */
+.main-product__cta[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 2px, from the reference's `decoration-2`, and the same rule the sold-out size
+   chip uses. */
+.main-product__cta-label--sold-out {
+  text-decoration: line-through 2px;
+}
+
+.main-product__error {
+  margin: 0;
+  font-size: var(--bf-text-ui-size);
+}
+
+/* -------------------------------------------------- delivery and offers --- */
+
+.main-product__delivery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+
+  /* The board's 36, off the scale. */
+  padding: 3.6rem 0;
+  border-bottom: var(--bf-border-width-section) solid var(--bf-ink);
+}
+
+.main-product__delivery-line {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  margin: 0;
+  font-size: var(--bf-text-group-title-size);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: var(--bf-text-group-title-tracking);
+}
+
+.main-product__delivery-link {
+  color: inherit;
+}
+
+.main-product__offer {
+  margin: 0;
+  font-size: var(--bf-text-control-size);
+  font-weight: var(--bf-text-control-weight);
+  letter-spacing: var(--bf-text-control-tracking);
+}
+
+/* ------------------------------------------------------------- payments --- */
+
+/*
+ * Wordmarks as text, not as the SVG marks in bf-payment-mark — the board sets
+ * this row in Archivo at 15 and includes "Cash on Delivery", which has no logo
+ * to draw. Those marks belong to the footer.
+ */
+.main-product__payments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bf-space-10);
+  align-items: center;
+  margin: 0;
+  padding: var(--bf-space-28) 0 0;
+  font-size: var(--bf-text-ui-size);
+  font-weight: var(--bf-text-ui-weight);
+  letter-spacing: var(--bf-text-ui-tracking);
+  list-style: none;
+}
+
+/* The separator belongs between items, so it hangs off the left of every one
+   but the first rather than off the right of all but the last. */
+.main-product__payment + .main-product__payment::before {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: var(--bf-space-10);
+  background-color: currentcolor;
+  border-radius: 50%;
+  content: "";
+}
+
+/* ------------------------------------------------------------ accordion --- */
+
+.main-product__accordion {
+  padding-top: var(--bf-space-64);
+}
