@@ -271,6 +271,17 @@
             bf-product-form.js holds no theme knowledge — see the note there.
           {%- endcomment -%}
           data-cart-section="bf-header"
+          {%- comment -%}
+            The three strings the script writes into the page, and how long the
+            result face is held for. All four are section settings — nothing the
+            customer reads is hard-coded in bf-product-form.js.
+
+            The hold is authored in seconds because that is what a merchant
+            thinks in; the script wants milliseconds.
+          {%- endcomment -%}
+          data-added-message="{{ section.settings.added_label | escape }}"
+          data-error-message="{{ section.settings.error_message | escape }}"
+          data-feedback-duration="{{ section.settings.feedback_duration | times: 1000 | round }}"
         >
           <form
             id="product-form-{{ section.id }}"
@@ -342,15 +353,58 @@
                   off the left edge slides in while the label and the trailing
                   arrow both shift right by their own arrow's width. The button
                   clips, so the incoming arrow appears from nowhere and the
-                  outgoing one is not seen leaving.
+                  outgoing one is not seen leaving. That is the hover, and it
+                  lives on the idle face below.
+
+                  The four faces below are stacked in one grid cell and rolled
+                  through vertically by bf-product-form.js writing data-state on
+                  the button — idle, then pending, then added or error, then back
+                  to idle. The add is a fetch with no cart drawer behind it, so
+                  without this the only thing that moves on a successful add is a
+                  digit in the header, and the customer is left guessing whether
+                  the click took.
+
+                  Every face but the idle one is aria-hidden: the button's
+                  accessible name has to stay "Add to Bag" for anyone who arrives
+                  at it mid-roll. aria-disabled covers the in-flight moment and
+                  the confirmation reaches assistive tech through the status
+                  region below, so nothing is only said in pixels.
                 {%- endcomment -%}
                 <button class="main-product__cta" type="submit" name="add">
-                  <span class="main-product__cta-arrow main-product__cta-arrow--lead" aria-hidden="true">
-                    {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                  <span class="main-product__cta-face main-product__cta-face--idle">
+                    <span class="main-product__cta-arrow main-product__cta-arrow--lead" aria-hidden="true">
+                      {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                    </span>
+                    <span class="main-product__cta-label">{{ section.settings.cta_label }}</span>
+                    <span class="main-product__cta-arrow" aria-hidden="true">
+                      {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+                    </span>
                   </span>
-                  <span class="main-product__cta-label">{{ section.settings.cta_label }}</span>
-                  <span class="main-product__cta-arrow" aria-hidden="true">
-                    {%- render 'bf-icon', icon: 'arrow-up-right', size: 26 -%}
+
+                  {%- comment -%}
+                    The dots are three real full stops, not drawn circles: they
+                    inherit the face and the 36px size, so they sit on the
+                    baseline as an ellipsis rather than as three shapes that
+                    happen to be near some text. All three hold their space at
+                    rest, so the fade cannot shuffle the label's width.
+                  {%- endcomment -%}
+                  <span class="main-product__cta-face main-product__cta-face--pending" aria-hidden="true">
+                    <span class="main-product__cta-label">
+                      {{- section.settings.pending_label -}}
+                      <span class="main-product__cta-dot">.</span>
+                      <span class="main-product__cta-dot">.</span>
+                      <span class="main-product__cta-dot">.</span>
+                    </span>
+                  </span>
+
+                  <span class="main-product__cta-face main-product__cta-face--added" aria-hidden="true">
+                    {%- render 'bf-icon', icon: 'check', size: 26 -%}
+                    <span class="main-product__cta-label">{{ section.settings.added_label }}</span>
+                  </span>
+
+                  <span class="main-product__cta-face main-product__cta-face--error" aria-hidden="true">
+                    {%- render 'bf-icon', icon: 'circle-x', size: 26 -%}
+                    <span class="main-product__cta-label">{{ section.settings.retry_label }}</span>
                   </span>
                 </button>
               {%- else -%}
@@ -366,9 +420,29 @@
                   </span>
                 </button>
               {%- endif -%}
+
+              {%- comment -%}
+                Inside data-cta, directly under the button, for two reasons: it
+                reads as belonging to the control that failed rather than
+                floating below the row's 48px of breathing room, and a variant
+                change wipes it along with the rest of the swap, so an error
+                about the size you just moved off cannot outlive it.
+
+                The button's error face says "Try again" — this line carries the
+                reason, which is usually Shopify's own ("You can only add 3 of
+                this item to your cart") rather than ours.
+              {%- endcomment -%}
+              <p class="main-product__error" data-cart-error role="alert" hidden></p>
             </div>
 
-            <p class="main-product__error" data-cart-error role="alert" hidden></p>
+            {%- comment -%}
+              The success confirmation for assistive tech. The button's "Added"
+              face is aria-hidden and the header counter changes silently, so
+              without this a screen reader is told nothing at all on a
+              successful add. role="alert" would be wrong — nothing has gone
+              wrong — and the error line above already owns that role.
+            {%- endcomment -%}
+            <p class="visually-hidden" data-cart-status role="status"></p>
           </form>
         </bf-product-form>
 
@@ -527,6 +601,45 @@
       "id": "sold_out_label",
       "label": "Sold out label",
       "default": "Sold out"
+    },
+    {
+      "type": "text",
+      "id": "pending_label",
+      "label": "Adding label",
+      "info": "Shown on the button while the request is in flight. The animated ellipsis is added automatically — do not type one.",
+      "default": "Adding"
+    },
+    {
+      "type": "text",
+      "id": "added_label",
+      "label": "Added label",
+      "info": "Shown on the button for a moment after the item reaches the bag.",
+      "default": "Added"
+    },
+    {
+      "type": "text",
+      "id": "retry_label",
+      "label": "Failed label",
+      "info": "Shown on the button when the add does not go through. Keep it short — it shares the button's width with the add to bag label.",
+      "default": "Try again"
+    },
+    {
+      "type": "text",
+      "id": "error_message",
+      "label": "Add to bag error",
+      "info": "Shown under the button when the add fails and Shopify gives no reason of its own — a dropped connection, usually.",
+      "default": "Couldn't add to bag. Please try again."
+    },
+    {
+      "type": "range",
+      "id": "feedback_duration",
+      "label": "Hold the result for",
+      "info": "How long the added or failed label stays before the button returns to add to bag.",
+      "unit": "s",
+      "min": 1,
+      "max": 5,
+      "step": 0.5,
+      "default": 2
     },
     {
       "type": "header",

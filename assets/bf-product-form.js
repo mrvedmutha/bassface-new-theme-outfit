@@ -17,13 +17,38 @@
  * theme.liquid, and Dawn's <product-info>, which owns variant switching. The
  * hidden id input is updated by product-info's own updateVariantInputs, keyed
  * off the form's id, so this file never touches it.
+ *
+ * Because there is no drawer and no notification, the only thing a successful
+ * add moves is a digit in the header — off-screen on a phone, and easy to miss
+ * anywhere. So the button reports its own progress and its own result, as one
+ * strip of faces turning behind it:
+ *
+ *   idle -> pending -> added -> idle
+ *                   -> error -> idle
+ *
+ * The whole contract with bf-main-product.css is data-state on the button
+ * holding one of those names, or being absent for idle. Every string and the
+ * length of the hold come from section settings, through data attributes;
+ * nothing the customer reads lives here.
  */
 
 if (!customElements.get('bf-product-form')) {
+  /*
+   * The floor under the pending face, and the one number in here that has to
+   * stay in step with a stylesheet: bf-main-product.css rolls a face in over
+   * 380ms. A cart add on a good connection answers in less than that, and
+   * without a floor the "Adding…" face would be caught halfway up the window
+   * and sent straight back down — a flicker that reads as a fault rather than
+   * as progress. Waiting the roll out costs nothing the customer notices and
+   * buys a state they can actually see.
+   */
+  const MINIMUM_PENDING = 420;
+
   customElements.define(
     'bf-product-form',
     class BfProductForm extends HTMLElement {
       variantChangeUnsubscriber = undefined;
+      resetTimer = undefined;
 
       connectedCallback() {
         this.form = this.querySelector('form');
@@ -42,10 +67,17 @@ if (!customElements.get('bf-product-form')) {
 
       disconnectedCallback() {
         this.variantChangeUnsubscriber?.();
+        clearTimeout(this.resetTimer);
       }
 
       get submitButton() {
         return this.querySelector('[type="submit"]');
+      }
+
+      /* Authored in seconds in the section settings; already milliseconds by the
+         time Liquid writes the attribute. */
+      get feedbackDuration() {
+        return Number(this.dataset.feedbackDuration) || 2000;
       }
 
       onVariantChange({ data: { sectionId, html } }) {
@@ -53,7 +85,18 @@ if (!customElements.get('bf-product-form')) {
 
         const source = html.querySelector(`bf-product-form[data-section="${sectionId}"] [data-cta]`);
         const destination = this.querySelector('[data-cta]');
-        if (source && destination) destination.innerHTML = source.innerHTML;
+        if (!source || !destination) return;
+
+        /*
+         * The swap discards the button the hold was running against, so the
+         * timer has to go with it — otherwise it fires later and writes state
+         * onto the replacement, or onto nothing. Cancelling first also means
+         * the fresh markup arrives in its resting pose, which is the only
+         * correct one for a variant the customer has not tried to add yet.
+         */
+        clearTimeout(this.resetTimer);
+        destination.innerHTML = source.innerHTML;
+        this.announce();
       }
 
       onSubmit(event) {
@@ -62,8 +105,16 @@ if (!customElements.get('bf-product-form')) {
         const button = this.submitButton;
         if (button.hasAttribute('disabled') || button.getAttribute('aria-disabled') === 'true') return;
 
-        this.setError();
+        /*
+         * Clearing before setting matters when the customer adds again during
+         * the hold: it cancels the timer that would otherwise fire mid-request
+         * and drop the button back to idle while it is still working. Both
+         * writes land in the same frame, so what is seen is one roll from the
+         * old result to pending, not a return to idle and back out again.
+         */
+        this.resetFeedback();
         button.setAttribute('aria-disabled', 'true');
+        button.dataset.state = 'pending';
 
         const config = fetchConfig('javascript');
         config.headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -84,24 +135,46 @@ if (!customElements.get('bf-product-form')) {
 
         config.body = body;
 
-        fetch(routes.cart_add_url, config)
-          .then((response) => response.json())
-          .then((response) => {
+        const request = fetch(routes.cart_add_url, config).then((response) => response.json());
+        const floor = new Promise((resolve) => {
+          setTimeout(resolve, MINIMUM_PENDING);
+        });
+
+        /*
+         * allSettled rather than all, because the floor has to hold on the
+         * failure path too — a request that is refused instantly deserves the
+         * same visible pending state as one that is granted instantly, and
+         * `all` would reject the moment the fetch did and skip straight past
+         * it. Nothing here rejects, so the finally below always runs last.
+         */
+        Promise.allSettled([request, floor])
+          .then(([outcome]) => {
+            if (outcome.status === 'rejected') {
+              this.showResult('error');
+              return;
+            }
+
+            /*
+             * /cart/add.js answers 200 with a body on success and a body
+             * carrying `status` on refusal — an out-of-stock line, a quantity
+             * over what is left. Neither is a rejected promise, so this branch
+             * is the only thing separating the two.
+             */
+            const response = outcome.value;
+
             if (response.status) {
-              this.setError(response.description || response.message);
+              this.showResult('error', response.description || response.message);
               return;
             }
 
             this.updateCartCount(response.sections?.[cartSection]);
+            this.showResult('added');
 
             publish(PUB_SUB_EVENTS.cartUpdate, {
               source: 'bf-product-form',
               productVariantId: body.get('id'),
               cartData: response,
             });
-          })
-          .catch(() => {
-            this.setError(window.cartStrings?.error);
           })
           .finally(() => {
             button.removeAttribute('aria-disabled');
@@ -126,12 +199,52 @@ if (!customElements.get('bf-product-form')) {
         });
       }
 
+      /*
+       * The one entry point for "the request answered". `state` is the face the
+       * button rolls to and is the whole of the CSS contract — bf-main-product.css
+       * matches on data-state and nothing else, so there is no second class to
+       * keep in step with it.
+       */
+      showResult(state, message) {
+        const button = this.submitButton;
+        if (!button) return;
+
+        if (state === 'error') {
+          this.setError(message || this.dataset.errorMessage);
+        } else {
+          this.announce(this.dataset.addedMessage);
+        }
+
+        button.dataset.state = state;
+
+        clearTimeout(this.resetTimer);
+        this.resetTimer = setTimeout(this.resetFeedback.bind(this), this.feedbackDuration);
+      }
+
+      /* Back to the resting pose: the idle face, no error line, nothing left in
+         the live region to be re-read. */
+      resetFeedback() {
+        clearTimeout(this.resetTimer);
+        this.resetTimer = undefined;
+
+        const button = this.submitButton;
+        if (button) delete button.dataset.state;
+
+        this.setError();
+        this.announce();
+      }
+
       setError(message) {
         const target = this.querySelector('[data-cart-error]');
         if (!target) return;
 
         target.textContent = message || '';
         target.toggleAttribute('hidden', !message);
+      }
+
+      announce(message) {
+        const target = this.querySelector('[data-cart-status]');
+        if (target) target.textContent = message || '';
       }
     }
   );

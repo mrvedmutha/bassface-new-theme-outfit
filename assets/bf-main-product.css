@@ -280,11 +280,28 @@
   --main-product-cta-duration: 500ms;
   --main-product-cta-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
 
+  /* The roll is a different gesture from the hover and gets its own pair. It is
+     an answer arriving, not a flick — shorter, and no undershoot to lean back
+     on, because the customer is waiting on it. */
+  --main-product-cta-roll-duration: 380ms;
+  --main-product-cta-roll-ease: cubic-bezier(0.33, 1, 0.68, 1);
+
   position: relative;
   overflow: hidden;
-  display: flex;
-  gap: var(--bf-space-14);
+
+  /*
+   * Grid rather than flex, and every face in the one cell. Stacking them keeps
+   * all three in flow, so the button is as wide and as tall as its widest face
+   * and never resizes as they swap — an absolutely positioned face would size
+   * the button to "Add to Bag" alone and the clip would then eat the ends of
+   * the others. justify-items keeps each face at its own width inside that box.
+   *
+   * The gap moved down to the face with the flex; a grid gap here would be
+   * pushing the stacked cells apart, which is not what it was for.
+   */
+  display: grid;
   align-items: center;
+  justify-items: start;
   padding: 0;
   background: none;
   border: 0;
@@ -295,6 +312,102 @@
   letter-spacing: var(--bf-text-cta-tracking);
   line-height: var(--bf-leading-tight);
   cursor: pointer;
+}
+
+/*
+ * One face of the button. Relative, so the lead arrow's `left: 0` anchors to
+ * the face it belongs to and travels with it when the face rolls away.
+ */
+.main-product__cta-face {
+  position: relative;
+  grid-area: 1 / 1;
+  display: flex;
+  gap: var(--bf-space-14);
+  align-items: center;
+  transition: transform var(--main-product-cta-roll-duration) var(--main-product-cta-roll-ease);
+}
+
+/* Parked one full height below, where the button's clip hides them. 110% rather
+   than 100% so no subpixel rounding leaves a hairline of the next face showing
+   along the bottom edge. */
+.main-product__cta-face--pending,
+.main-product__cta-face--added,
+.main-product__cta-face--error {
+  transform: translateY(110%);
+}
+
+/*
+ * Everything travels the same way: a face enters from below and leaves upwards,
+ * never back the way it came. Idle -> pending -> added is then one continuous
+ * roll in one direction rather than three separate swaps, which is what makes
+ * the button read as a strip turning behind a window.
+ *
+ * Matching the bare attribute for the idle face rather than listing every value
+ * means a fourth face later needs no change here.
+ */
+.main-product__cta[data-state] .main-product__cta-face--idle {
+  transform: translateY(-110%);
+}
+
+/*
+ * Faces that have already had their turn, sent up and out of the window.
+ *
+ * The second pair is what happens when the customer adds again during the hold:
+ * the script drops back to pending in the same frame it clears the result, and
+ * without this the outgoing "Added" would fall back down through the "Adding…"
+ * rising to meet it — two faces crossing in a window built to show one.
+ */
+.main-product__cta[data-state="added"] .main-product__cta-face--pending,
+.main-product__cta[data-state="error"] .main-product__cta-face--pending,
+.main-product__cta[data-state="pending"] .main-product__cta-face--added,
+.main-product__cta[data-state="pending"] .main-product__cta-face--error {
+  transform: translateY(-110%);
+}
+
+.main-product__cta[data-state="pending"] .main-product__cta-face--pending,
+.main-product__cta[data-state="added"] .main-product__cta-face--added,
+.main-product__cta[data-state="error"] .main-product__cta-face--error {
+  transform: translateY(0);
+}
+
+/*
+ * The ellipsis.
+ *
+ * A stagger built from three delays rather than one animation on a wrapper: the
+ * dots have to peak at different moments, and the only thing distinguishing
+ * them is when their cycle starts. 1.2s is slow enough to read as breathing
+ * rather than as a spinner in a hurry — the request it is covering is usually
+ * gone in half that.
+ *
+ * The animation is scoped to the pending state, so nothing is running while the
+ * button sits idle on the page.
+ */
+.main-product__cta-dot {
+  opacity: 0.25;
+}
+
+.main-product__cta[data-state="pending"] .main-product__cta-dot {
+  animation: main-product-cta-dot 1200ms ease-in-out infinite;
+}
+
+.main-product__cta[data-state="pending"] .main-product__cta-dot:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.main-product__cta[data-state="pending"] .main-product__cta-dot:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+@keyframes main-product-cta-dot {
+  0%,
+  70%,
+  100% {
+    opacity: 0.25;
+  }
+
+  35% {
+    opacity: 1;
+  }
 }
 
 .main-product__cta-arrow,
@@ -320,9 +433,11 @@
   transform: translateX(0);
 }
 
-.main-product__cta:hover .main-product__cta-label,
+/* Scoped to the idle face: the arrows only exist there, but the label class is
+   on all three, and the result faces have no arrow to make room for. */
+.main-product__cta:hover .main-product__cta-face--idle .main-product__cta-label,
 .main-product__cta:hover .main-product__cta-arrow:not(.main-product__cta-arrow--lead),
-.main-product__cta:focus-visible .main-product__cta-label,
+.main-product__cta:focus-visible .main-product__cta-face--idle .main-product__cta-label,
 .main-product__cta:focus-visible .main-product__cta-arrow:not(.main-product__cta-arrow--lead) {
   transform: translateX(var(--main-product-cta-shift));
 }
@@ -339,9 +454,10 @@
 
 /* In flight. Keyed off aria-disabled, which the script sets anyway to stop a
    second submit — a separate state class would be a second source of truth for
-   one condition. */
+   one condition. The dimming this used to carry is gone: the pending face says
+   what is happening in words, and greying it out only made those words harder
+   to read. */
 .main-product__cta[aria-disabled="true"] {
-  opacity: 0.6;
   cursor: default;
 }
 
@@ -351,9 +467,42 @@
   text-decoration: line-through 2px;
 }
 
+/*
+ * The reason under the button, when there is one.
+ *
+ * No red: red is the ink of the default theme, so an error painted in it would
+ * be invisible there and would read as ordinary body copy in the other two.
+ * What marks it instead is the rule above it — the same hairline the rest of
+ * the buy box divides on, used here to detach the line from the control.
+ */
 .main-product__error {
-  margin: 0;
+  margin: var(--bf-space-16) 0 0;
+  padding-top: var(--bf-space-12);
+  border-top: var(--bf-border-hairline);
   font-size: var(--bf-text-ui-size);
+  line-height: var(--bf-leading-normal);
+}
+
+/*
+ * The roll is the confirmation, so it cannot simply be switched off — what goes
+ * is the travel. Zeroing the duration leaves the faces swapping instantly,
+ * which still answers the question the click asked.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .main-product__cta-face {
+    transition-duration: 0s;
+  }
+
+  /* The ellipsis stops pulsing and simply sits there at full strength. What it
+     was signalling — that the button is busy — is already in the word beside
+     it, so nothing is lost by holding it still. */
+  .main-product__cta[data-state="pending"] .main-product__cta-dot {
+    animation: none;
+  }
+
+  .main-product__cta-dot {
+    opacity: 1;
+  }
 }
 
 /* -------------------------------------------------- delivery and offers --- */
