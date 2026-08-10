@@ -99,20 +99,46 @@
         this.search();
       });
 
-      /* The form still submits to /search on Enter — that is the no-JS path and
-         it stays the behaviour here too, so Enter always reaches the full
-         results page rather than doing nothing. */
-      for (const toggle of document.querySelectorAll(`[aria-controls="${this.id}"]`)) {
-        toggle.addEventListener('click', (event) => {
-          event.preventDefault();
-          this.open(toggle);
-        });
-      }
+      this.bindToggles();
+      document.addEventListener('bf:page-loaded', this.bindToggles);
     }
 
     disconnectedCallback() {
+      document.removeEventListener('bf:page-loaded', this.bindToggles);
       this.releaseDocument();
     }
+
+    /*
+     * Binds every opener, AND REBINDS THEM AFTER A NAVIGATION.
+     *
+     * This overlay is rendered from theme.liquid, so bf-page-transition never
+     * replaces it and connectedCallback runs exactly once per hard load. The
+     * openers are not: they live in the header section, which the router does
+     * replace whenever its markup differs — the cart count and the current-page
+     * state are both in there. After the first such swap the openers on screen
+     * were freshly parsed nodes carrying no handler, so clicking Search fell
+     * through to the plain `href="/search"` the link needs for the no-JS path,
+     * and the router obligingly transitioned to the results page for a query
+     * nobody had typed. bf-header.js rebinds off the same event for the same
+     * reason.
+     *
+     * Re-adding onToggle to an opener that survived the swap is a no-op: it is
+     * one stable per-instance reference, and the DOM discards a duplicate
+     * (type, callback, capture) triple rather than firing it twice.
+     */
+    bindToggles = () => {
+      for (const toggle of document.querySelectorAll(`[aria-controls="${this.id}"]`)) {
+        toggle.addEventListener('click', this.onToggle);
+      }
+    };
+
+    /* The form still submits to /search on Enter — that is the no-JS path and it
+       stays the behaviour here too, so Enter always reaches the full results
+       page rather than doing nothing. The opener is only ever the drawer. */
+    onToggle = (event) => {
+      event.preventDefault();
+      this.open(event.currentTarget);
+    };
 
     open(opener) {
       if (this.classList.contains(OPEN_CLASS)) return;
