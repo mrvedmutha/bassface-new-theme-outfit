@@ -14,6 +14,9 @@
                  different places, so the shape belongs to the composition.
     sizes      - the `sizes` attribute. Pass the real column width.
     loading    - 'lazy' (default) or 'eager'.
+    title      - overrides the collection's own title. Optional; for the
+                 automatic all-products collection, which Shopify titles
+                 "Products" and nobody can rename.
 
   Usage:
     {%- render 'bf-collection-card', collection: collection, ratio: '7 / 6' -%}
@@ -67,8 +70,16 @@
   </span>
 
   <span class="collection-card__row">
+    {%- comment -%}
+      `title` overrides collection.title. The one caller today is the All
+      Collections page's first card: Shopify's automatic all-products
+      collection is titled "Products", which reads as a category next to
+      "Afrojack" and "Alesso", and the board labels it "All Products". The
+      merchant cannot rename an automatic collection, so the label has to come
+      from the caller.
+    {%- endcomment -%}
     <span class="collection-card__title">
-      {{- collection.title | default: 'Collection' -}}
+      {{- title | default: collection.title | default: 'Collection' -}}
     </span>
     <span class="collection-card__arrow">
       {%- render 'bf-icon', icon: 'arrow-up-right', size: 22 -%}

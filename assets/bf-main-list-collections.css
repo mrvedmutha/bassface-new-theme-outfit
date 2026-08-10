@@ -1,0 +1,128 @@
+/* @define list-collections */
+
+/*
+ * The All Collections page — `t9xbna`.
+ *
+ * FULL-BLEED, no --bf-page-max cap. The theme has settled on the viewport minus
+ * twice the page padding as its content width: the masthead, the hero and the
+ * footer all say so in their own files, and bf-main-collection.css does the
+ * same. Dawn's stock section boxed this page into a centred ~1070px container
+ * that left a third of a wide screen empty and fitted only three columns.
+ *
+ * The 1440 figures in DESIGN-STATUS — 4 columns, 24 gutter, 330 cards — are the
+ * board's REFERENCE viewport, not a ceiling. Above 1440 the same four columns
+ * simply get wider, which is what every other page in this theme does.
+ */
+
+.list-collections {
+  display: block;
+}
+
+/* --------------------------------------------------------- breadcrumb --- */
+
+.list-collections__breadcrumb {
+  /* The board's 56 top, matching the collection page. Off the 4px scale, so a
+     literal rather than a var() standing in for a token that does not exist. */
+  padding: 5.6rem var(--bf-page-padding) var(--bf-space-32);
+}
+
+.list-collections__crumbs {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  list-style: none;
+}
+
+.list-collections__crumb-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.list-collections__crumb-link:hover {
+  text-decoration: underline;
+}
+
+.list-collections__crumb:where([aria-current]) {
+  font-weight: var(--bf-weight-black);
+}
+
+/* ------------------------------------------------------------- header --- */
+
+.list-collections__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+  padding: 0 var(--bf-page-padding) var(--bf-space-40);
+}
+
+.list-collections__title {
+  margin: 0;
+  font-size: var(--bf-text-title-size);
+  font-weight: var(--bf-text-title-weight);
+  letter-spacing: var(--bf-text-title-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* 64rem is the measure the collection page and the search page both give a
+   column of text under a title. Three pages agreeing beats three literals. */
+.list-collections__description {
+  width: 64rem;
+  max-width: 100%;
+  margin: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-normal);
+}
+
+/* --------------------------------------------------------------- grid --- */
+
+.list-collections__content {
+  padding: 0 var(--bf-page-padding) 12rem;
+}
+
+/*
+ * Four columns, 40 between rows and 24 between them — the same asymmetric gap
+ * the product grid uses, so a collection card and a product card sit on one
+ * rhythm across the site.
+ */
+.list-collections__grid {
+  display: grid;
+  gap: var(--bf-space-40) var(--bf-space-24);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
+.list-collections__crumb-link:focus,
+.list-collections__crumb-link:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ============================================================== <834 ==== *
+ * 4 / 4 / 2 / 2 / 2 across the five viewports, per the grid table in
+ * DESIGN-STATUS — four columns hold down to 1024, then straight to two. Column
+ * gap drops 24 -> 16 with the gutter; row gap stays 40, which the table states
+ * outright.
+ */
+
+@media screen and (width < 834px) {
+  .list-collections__grid {
+    gap: var(--bf-space-40) var(--bf-space-16);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .list-collections__breadcrumb {
+    padding-top: var(--bf-space-32);
+  }
+
+  .list-collections__content {
+    padding-bottom: 6.4rem;
+  }
+}

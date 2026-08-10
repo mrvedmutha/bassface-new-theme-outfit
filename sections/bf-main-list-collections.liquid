@@ -1,0 +1,145 @@
+{%- comment -%}
+  Bassface All Collections page — replaces Dawn's main-list-collections for
+  templates/list-collections.json. The board is `t9xbna`.
+
+  Same page furniture as bf-main-collection: breadcrumb, 48px title, optional
+  description, then a grid. No toolbar — there is nothing to filter or sort on
+  an index of nine collections, and the board draws none.
+
+  NOT PAGINATED, unlike Dawn's version. A collection index is a nav page, not a
+  catalogue: the visitor came here to see the whole list and pick one, and a
+  Load More that hides half of it defeats that. Worth revisiting if this store
+  ever carries enough collections to make the page long — at which point the
+  Load More in bf-main-collection.js is the thing to reuse.
+{%- endcomment -%}
+
+{{ 'bf-collection-card.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-list-collections.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  case section.settings.sort
+    when 'date_reversed'
+      assign sorted = collections | sort: 'published_at' | reverse
+    when 'products_high'
+      assign sorted = collections | sort: 'all_products_count' | reverse
+    else
+      assign sorted = collections | sort: 'title'
+  endcase
+-%}
+
+<div class="list-collections">
+  <nav class="list-collections__breadcrumb" aria-label="{{ section.settings.breadcrumb_label }}">
+    <ol class="list-collections__crumbs">
+      <li class="list-collections__crumb">
+        <a class="list-collections__crumb-link" href="{{ routes.root_url }}">
+          {{- section.settings.breadcrumb_home -}}
+        </a>
+      </li>
+      <li class="list-collections__crumb" aria-hidden="true">/</li>
+      <li class="list-collections__crumb" aria-current="page">{{ section.settings.heading }}</li>
+    </ol>
+  </nav>
+
+  <div class="list-collections__header">
+    <h1 class="list-collections__title">{{ section.settings.heading }}</h1>
+
+    {%- if section.settings.description != blank -%}
+      <p class="list-collections__description">{{ section.settings.description }}</p>
+    {%- endif -%}
+  </div>
+
+  <div class="list-collections__content">
+    <div class="list-collections__grid">
+      {%- comment -%}
+        "All Products" first, which the board shows and Shopify's `collections`
+        does not contain — the all-products collection is automatic and never
+        appears in that list. `collections.all` reaches it directly.
+
+        Optional, because a merchant who has built their own "Everything"
+        collection would otherwise get two cards pointing at the same place.
+      {%- endcomment -%}
+      {%- assign card_sizes = '(min-width: 834px) 25vw, 50vw' -%}
+
+      {%- if section.settings.show_all_products -%}
+        {%- render 'bf-collection-card',
+          collection: collections.all,
+          title: section.settings.all_products_label,
+          ratio: '11 / 12',
+          sizes: card_sizes,
+          loading: 'eager'
+        -%}
+      {%- endif -%}
+
+      {%- for collection in sorted -%}
+        {%- comment -%}
+          Skipped when the card above already rendered it. `collections.all` and
+          a merchant-made collection with the handle "all" are the same object,
+          so without this the first row can repeat itself.
+        {%- endcomment -%}
+        {%- if section.settings.show_all_products and collection.handle == 'all' -%}
+          {%- continue -%}
+        {%- endif -%}
+
+        {%- render 'bf-collection-card', collection: collection, ratio: '11 / 12', sizes: card_sizes -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Collections list",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Collections"
+    },
+    {
+      "type": "text",
+      "id": "description",
+      "label": "Description",
+      "default": "Shop by artist or by style — every tee we've dropped, sorted the way you actually browse."
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Breadcrumb home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Breadcrumb landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_all_products",
+      "label": "Show \"All Products\" first",
+      "info": "Adds a card for the automatic all-products collection, which Shopify does not include in the list.",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "all_products_label",
+      "label": "\"All Products\" card label",
+      "info": "Shopify titles that collection \"Products\" and it cannot be renamed in the admin.",
+      "default": "All Products"
+    },
+    {
+      "type": "select",
+      "id": "sort",
+      "label": "Sort collections by",
+      "options": [
+        { "value": "alphabetical", "label": "A–Z" },
+        { "value": "date_reversed", "label": "Newest first" },
+        { "value": "products_high", "label": "Most products first" }
+      ],
+      "default": "alphabetical"
+    }
+  ]
+}
+{% endschema %}

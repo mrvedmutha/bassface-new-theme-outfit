@@ -1,13 +1,11 @@
 {
   "sections": {
     "main": {
-      "type": "main-list-collections",
+      "type": "bf-main-list-collections",
       "settings": {
-        "title": "Collections",
+        "heading": "Collections",
         "sort": "alphabetical",
-        "image_ratio": "square",
-        "columns_desktop": 3,
-        "columns_mobile": "2"
+        "show_all_products": true
       }
     }
   },
