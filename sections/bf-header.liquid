@@ -134,12 +134,6 @@
         </li>
 
         <li>
-          <a class="masthead__link" href="{{ routes.cart_url }}">
-            {{- 'Bag' }} (<span data-cart-count>{{ cart.item_count }}</span>)
-          </a>
-        </li>
-
-        <li>
           <a
             class="masthead__link"
             href="{{ routes.search_url }}"
@@ -148,6 +142,18 @@
             {% endif %}
           >
             {{- 'Search' -}}
+          </a>
+        </li>
+
+        {%- comment -%}
+          Bag last, and last on purpose: the rightmost slot is the one a thumb
+          finds without looking, and it is where every other shop puts the cart.
+          Search is the item that can afford to move inward — it opens an
+          overlay that takes the whole screen anyway.
+        {%- endcomment -%}
+        <li>
+          <a class="masthead__link" href="{{ routes.cart_url }}">
+            {{- 'Bag' }} (<span data-cart-count>{{ cart.item_count }}</span>)
           </a>
         </li>
       </ul>
