@@ -158,10 +158,19 @@
           <div class="search__grid search__grid--products">
             {%- for i in (1..settings.search_result_limit) -%}
               <div class="search__cell">
+                {%- comment -%}
+                  The &nbsp; in each of these is load-bearing. Dawn's base.css
+                  carries `div:empty { display: none }` at (0,1,1), which
+                  outranks a bare `.class` rule — so all three of these boxes
+                  were being hidden outright and the loading skeleton showed
+                  nothing at all. They are purely decorative and have no text of
+                  their own, so a non-breaking space is what keeps them in the
+                  layout. See the same note in bf-footer.css and bf-hero.css.
+                {%- endcomment -%}
                 <div class="search__skeleton-card">
-                  <div class="search__skeleton-media"></div>
-                  <div class="search__skeleton-line"></div>
-                  <div class="search__skeleton-line search__skeleton-line--short"></div>
+                  <div class="search__skeleton-media">&nbsp;</div>
+                  <div class="search__skeleton-line">&nbsp;</div>
+                  <div class="search__skeleton-line search__skeleton-line--short">&nbsp;</div>
                 </div>
               </div>
             {%- endfor -%}
