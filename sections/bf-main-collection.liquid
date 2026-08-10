@@ -1,0 +1,390 @@
+{%- comment -%}
+  Bassface collection page — replaces Dawn's main-collection-banner AND
+  main-collection-product-grid for templates/collection.json.
+
+  Two stock sections become one. Dawn splits the banner from the grid so a
+  merchant can reorder or drop the banner, but the board draws a single column —
+  breadcrumb, title, description, toolbar, grid — with the toolbar's count bound
+  to the grid beneath it. Split across two sections that count would have to be
+  recomputed in a section that cannot see the paginate block, and reordering
+  them would put "12 Products" above nothing.
+
+  Structurally this is bf-main-search with the search box removed and the
+  collection's description in its place; the grid, Load More and empty state are
+  the same treatment, which is what the boards draw. Where the two pages differ
+  is that this one filters — see bf-filter-drawer.
+
+  Load More is the Section Rendering API: bf-main-collection.js fetches the next
+  page of this same section and appends its cards. `paginate` is what makes that
+  honest — it knows both the true total and whether another page exists.
+{%- endcomment -%}
+
+{{ 'bf-product-card.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-collection.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-product-card.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-main-collection.js' | asset_url }}" defer="defer"></script>
+
+{%- comment -%}
+  Loaded only where there is something to filter. A collection with no filters
+  configured in Search & Discovery gets neither the trigger, the panel, nor the
+  two files behind them.
+{%- endcomment -%}
+{%- if collection.filters.size > 0 -%}
+  {{ 'bf-filter-drawer.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'bf-filter-drawer.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+
+{%- liquid
+  assign per_page = section.settings.products_per_page
+-%}
+
+{%- paginate collection.products by per_page -%}
+  <bf-main-collection class="main-collection" data-section-id="{{ section.id }}">
+    {%- comment -%}
+      Both strings come from settings, not the locale file — same call as the
+      search page. Dawn 15.5 has no `general.breadcrumbs` group, and adding one
+      would mean editing en.default.json plus the thirty translations beside it
+      to name two words the merchant can set here in seconds.
+    {%- endcomment -%}
+    <nav class="main-collection__breadcrumb" aria-label="{{ section.settings.breadcrumb_label }}">
+      <ol class="main-collection__crumbs">
+        <li class="main-collection__crumb">
+          <a class="main-collection__crumb-link" href="{{ routes.root_url }}">
+            {{- section.settings.breadcrumb_home -}}
+          </a>
+        </li>
+        <li class="main-collection__crumb" aria-hidden="true">/</li>
+        <li class="main-collection__crumb" aria-current="page">{{ collection.title }}</li>
+      </ol>
+    </nav>
+
+    <div class="main-collection__header">
+      <h1 class="main-collection__title">{{ collection.title }}</h1>
+
+      {%- comment -%}
+        Rendered only when the merchant has written one. The board draws two
+        lines here, but an empty <div> on a collection without a description
+        would still take the 24px gap above it and leave a hole under the title.
+
+        `collection.description` is rich text, so it arrives wrapped in <p> and
+        may carry links — the CSS zeroes those margins rather than the Liquid
+        stripping the tags, which would also strip the links.
+      {%- endcomment -%}
+      {%- if collection.description != blank -%}
+        <div class="main-collection__description rte">{{ collection.description }}</div>
+      {%- endif -%}
+    </div>
+
+    <div class="main-collection__content">
+      {%- comment -%}
+        The toolbar sits OUTSIDE the results region below, and that placement is
+        the empty state's requirement rather than an accident of nesting:
+        DESIGN-STATUS records that an empty collection keeps its toolbar so
+        filters and sort stay reachable, reading "0 Products". Inside
+        [data-results] it would be swapped away by the very filter change that
+        emptied the grid, stranding the visitor with no way to undo it.
+      {%- endcomment -%}
+      <div class="main-collection__toolbar">
+        {%- comment -%}
+          aria-live because filtering swaps the grid with no navigation and no
+          focus move — without it the only feedback that anything happened is
+          visual, and a screen-reader user ticking "In Stock" hears nothing at
+          all. Polite, so it waits for a pause rather than interrupting.
+
+          The raw figure rides along in a data attribute because the drawer's
+          "Show Results (12)" needs the number, and the text beside it is
+          "12 products" in English and something else in every other locale.
+          Scraping digits out of a translated string is a bug in waiting.
+        {%- endcomment -%}
+        <p
+          class="main-collection__count"
+          data-results-count
+          data-results-total="{{ paginate.items }}"
+          aria-live="polite"
+        >
+          {%- comment -%}
+            `paginate.items`, not `collection.products_count` — the latter is the
+            collection's own size and ignores active filters, so a filtered page
+            showing 12 cards would announce all 84.
+
+            Dawn's pluralised key gives "12 products" where the board reads
+            "12 Products". The wording loses to correctness: this string ships
+            translated into every locale the theme carries, and a hardcoded
+            "Products" would be English on a Spanish storefront and would say
+            "1 Products" besides.
+          {%- endcomment -%}
+          {{- 'products.facets.product_count_simple' | t: count: paginate.items -}}
+        </p>
+
+        {%- if collection.filters.size > 0 or collection.sort_options.size > 0 -%}
+          <div class="main-collection__tools">
+            {%- comment -%}
+              Filter sits left of Sort, per the board. `aria-controls` is what
+              binds it to the panel — bf-filter-drawer.js collects its toggles
+              by querying for that attribute, so no id needs to be threaded
+              through in the other direction.
+            {%- endcomment -%}
+            {%- if collection.filters.size > 0 -%}
+              <button
+                class="main-collection__filter"
+                type="button"
+                aria-controls="bf-filter-drawer"
+                aria-expanded="false"
+              >
+                <span class="main-collection__filter-icon" aria-hidden="true">
+                  {%- render 'bf-icon', icon: 'sliders-horizontal', size: 18 -%}
+                </span>
+                {{ section.settings.filter_label }}
+              </button>
+            {%- endif -%}
+
+            {%- if collection.sort_options.size > 0 -%}
+              <div class="main-collection__sort">
+                {%- assign current_sort = collection.sort_by | default: collection.default_sort_by -%}
+                <label class="visually-hidden" for="bf-collection-sort">
+                  {{ 'products.facets.sort_by_label' | t }}
+                </label>
+                <select
+                  class="main-collection__sort-select"
+                  id="bf-collection-sort"
+                  name="sort_by"
+                  data-results-sort
+                >
+                  {%- for option in collection.sort_options -%}
+                    <option
+                      value="{{ option.value }}"
+                      {% if option.value == current_sort %}
+                        selected
+                      {% endif %}
+                    >
+                      {{ option.name }}
+                    </option>
+                  {%- endfor -%}
+                </select>
+
+                {%- comment -%}
+                  Mirrors the select's current option as text, because the board
+                  draws a label and a chevron and a native select cannot be
+                  painted that way across browsers. The server renders the correct
+                  value so a no-JS first paint is right; the script updates it.
+
+                  "Sort by:" rather than the board's "Sort:" — it is the key the
+                  search page's toolbar already uses, and two sibling toolbars
+                  disagreeing by one word is worse than one word differing from
+                  the board. It is also translated, which a literal would not be.
+                {%- endcomment -%}
+                <span class="main-collection__sort-label" data-results-sort-label>
+                  {{ 'products.facets.sort_by_label' | t }}
+                  {%- for option in collection.sort_options -%}
+                    {%- if option.value == current_sort %} {{ option.name }}{% endif -%}
+                  {%- endfor -%}
+                </span>
+                <span class="main-collection__sort-icon" aria-hidden="true">
+                  {%- render 'bf-icon', icon: 'chevron-down', size: 16 -%}
+                </span>
+              </div>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- comment -%}
+        Everything a filter or sort change replaces, in one element. The script
+        fetches this section for the new URL and swaps this subtree wholesale
+        rather than diffing card by card — the server already decided what the
+        page contains, and re-deciding it here is how a grid and its count drift
+        apart.
+      {%- endcomment -%}
+      <div class="main-collection__results" data-results>
+        {%- if collection.products.size > 0 -%}
+          <div class="main-collection__grid" data-results-grid>
+            {%- for product in collection.products -%}
+              {%- render 'bf-product-card',
+                product: product,
+                ratio: '3 / 4',
+                sizes: '(min-width: 834px) 25vw, 50vw',
+                index: forloop.index0
+              -%}
+            {%- endfor -%}
+          </div>
+
+          {%- comment -%}
+            The next page's URL, rendered by the server. The script reads it,
+            fetches that page of this section, appends its cards and replaces
+            this value with the one the fetched page carried — so paging forward
+            needs no arithmetic on the client. Shopify keeps the active filters
+            and sort in `paginate.next.url`, so a filtered Load More stays
+            filtered without this having to rebuild the query string.
+          {%- endcomment -%}
+          <div
+            class="main-collection__more"
+            data-results-more
+            {% unless paginate.next %}
+              hidden
+            {% endunless %}
+          >
+            <button
+              class="main-collection__more-button"
+              type="button"
+              data-results-more-button
+              data-next-url="{{ paginate.next.url }}"
+            >
+              <span>{{ section.settings.load_more_label }}</span>
+              <span class="main-collection__more-icon" aria-hidden="true">
+                {%- render 'bf-icon', icon: 'plus', size: 18 -%}
+              </span>
+            </button>
+          </div>
+
+        {%- else -%}
+          <div class="main-collection__empty">
+            <p class="main-collection__empty-lines">
+              <span class="main-collection__empty-line">{{ section.settings.empty_line_1 }}</span>
+              <span class="main-collection__empty-line">{{ section.settings.empty_line_2 }}</span>
+            </p>
+
+            <a
+              class="main-collection__cta"
+              href="{{ section.settings.empty_cta_url | default: routes.all_products_collection_url }}"
+            >
+              {{ section.settings.empty_cta_label }}
+              <span class="main-collection__cta-icon" aria-hidden="true">
+                {%- render 'bf-icon', icon: 'arrow-up-right', size: 48 -%}
+              </span>
+            </a>
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+
+    {%- comment -%}
+      Inside <bf-main-collection> so the drawer can reach the grid with a
+      closest() rather than a document-wide id lookup, but OUTSIDE
+      [data-results] so a filter change does not swap away the panel the visitor
+      is still using. It is `position: fixed`, so where it sits in the document
+      costs nothing in layout.
+
+      `paginate.items` is passed explicitly: snippets get their own scope and
+      cannot see `paginate`, which is a block-local object rather than a global.
+    {%- endcomment -%}
+    {%- if collection.filters.size > 0 -%}
+      {%- render 'bf-filter-drawer',
+        filters: collection.filters,
+        total: paginate.items,
+        heading: section.settings.filter_heading,
+        clear_label: section.settings.filter_clear_label,
+        apply_label: section.settings.filter_apply_label,
+        close_label: section.settings.filter_close_label,
+        chip_filters: section.settings.chip_filters
+      -%}
+    {%- endif -%}
+  </bf-main-collection>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "Collection",
+  "settings": [
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Breadcrumb home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Breadcrumb landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    },
+    {
+      "type": "range",
+      "id": "products_per_page",
+      "label": "Products per page",
+      "info": "The board shows three rows of four.",
+      "min": 4,
+      "max": 36,
+      "step": 4,
+      "default": 12
+    },
+    {
+      "type": "text",
+      "id": "load_more_label",
+      "label": "Load more button",
+      "default": "Load More"
+    },
+    {
+      "type": "header",
+      "content": "Filters"
+    },
+    {
+      "type": "text",
+      "id": "filter_label",
+      "label": "Toolbar trigger",
+      "default": "Filter"
+    },
+    {
+      "type": "text",
+      "id": "filter_heading",
+      "label": "Drawer heading",
+      "default": "Filters"
+    },
+    {
+      "type": "text",
+      "id": "filter_clear_label",
+      "label": "Reset button",
+      "default": "Clear All"
+    },
+    {
+      "type": "text",
+      "id": "filter_apply_label",
+      "label": "Confirm button",
+      "info": "The live result count is appended in brackets.",
+      "default": "Show Results"
+    },
+    {
+      "type": "text",
+      "id": "filter_close_label",
+      "label": "Close button name",
+      "info": "Read by screen readers. Not shown.",
+      "default": "Close filters"
+    },
+    {
+      "type": "text",
+      "id": "chip_filters",
+      "label": "Filters drawn as chips",
+      "info": "Comma-separated filter names. These render as a grid of boxes instead of checkbox rows — for short values like sizes. Filters are added in Shopify admin under Search & Discovery.",
+      "default": "Size"
+    },
+    {
+      "type": "header",
+      "content": "Empty collection"
+    },
+    {
+      "type": "text",
+      "id": "empty_line_1",
+      "label": "First line",
+      "default": "Nothing in this collection yet."
+    },
+    {
+      "type": "text",
+      "id": "empty_line_2",
+      "label": "Second line",
+      "default": "Try another one."
+    },
+    {
+      "type": "text",
+      "id": "empty_cta_label",
+      "label": "Link label",
+      "default": "Explore the shop"
+    },
+    {
+      "type": "url",
+      "id": "empty_cta_url",
+      "label": "Link",
+      "info": "Defaults to all products."
+    }
+  ]
+}
+{% endschema %}

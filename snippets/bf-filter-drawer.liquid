@@ -1,0 +1,327 @@
+{%- comment -%}
+  Bassface filter drawer — the right-hand panel from the `rmFPV` component.
+
+  A snippet, not a section: it has no settings of its own and no life outside a
+  product grid. The collection page renders it today; search results is the next
+  caller, which is why every string arrives as a parameter rather than being
+  read from `section.settings` in here.
+
+  Accepts:
+    filters      - a filter list, i.e. `collection.filters`. Required; render
+                   nothing when it is empty (the caller checks, so that the
+                   toolbar's Filter trigger disappears with it).
+    total        - the current result count, for the "Show Results (12)" button.
+                   Pass `paginate.items` — snippets cannot see `paginate`.
+    heading      - panel heading. Defaults to "Filters".
+    clear_label  - the reset control. Defaults to "Clear All".
+    apply_label  - the confirm control. Defaults to "Show Results".
+    close_label  - accessible name for the X. Defaults to "Close filters".
+    chip_filters - comma-separated filter labels to draw as a chip grid instead
+                   of checkbox rows. Defaults to "Size".
+
+  Usage:
+    {%- render 'bf-filter-drawer', filters: collection.filters, total: paginate.items -%}
+
+  WHY A SETTING DECIDES CHIPS VS CHECKBOXES. Shopify types both Type and Size as
+  `list`; nothing in the data says one is a row of words and the other a grid of
+  boxes. The board draws Size as chips because its values are short, so the first
+  attempt was to measure the values and switch on length — which turns a design
+  decision into a guess that changes when a merchant adds a size called
+  "One Size". Naming the filter is explicit, survives new values, and the
+  merchant can move it.
+
+  NO PER-OPTION COUNTS, deliberately. Dawn prints "In stock (42)" beside every
+  box; the board prints none. That is also what lets this drawer stay in the DOM
+  untouched while filters are applied — with counts it would have to re-render
+  on every keystroke, and re-rendering a panel the visitor is mid-way through
+  moves the checkbox under their cursor.
+{%- endcomment -%}
+
+{%- liquid
+  assign heading = heading | default: 'Filters'
+  assign clear_label = clear_label | default: 'Clear All'
+  assign apply_label = apply_label | default: 'Show Results'
+  assign close_label = close_label | default: 'Close filters'
+  assign chip_setting = chip_filters | default: 'Size'
+
+  comment
+    Downcased and comma-joined so the comparison below is a single `contains`
+    against a delimited string — Liquid has no array membership test, and
+    `contains` on a bare join would match "Size" inside "One Size Only".
+  endcomment
+  assign chip_list = chip_setting | downcase | split: ','
+  assign chip_keys = ''
+  for name in chip_list
+    assign trimmed = name | strip
+    assign chip_keys = chip_keys | append: '|' | append: trimmed | append: '|'
+  endfor
+-%}
+
+<bf-filter-drawer class="filter-drawer" id="bf-filter-drawer">
+  {%- comment -%}
+    The scrim is a sibling of the panel and carries the close hook, so a click
+    anywhere off the panel closes. It is not a child of the panel for the
+    obvious reason and not on the host element for a less obvious one: the host
+    is `position: fixed` with `pointer-events: none` so that a closed drawer
+    cannot swallow clicks meant for the grid beneath it.
+
+    THE &nbsp; IS LOAD-BEARING. Dawn's base.css carries a blanket
+    `div:empty { display: none }` at (0,1,1), which outranks a bare `.class`
+    rule — so this div rendered at 0x0 with its background applied and the page
+    behind it simply never dimmed. bf-footer.css and bf-hero.css both hit the
+    same rule and record it. Any purely decorative div in this theme needs
+    content in it.
+  {%- endcomment -%}
+  <div class="filter-drawer__scrim" data-bf-drawer-close>&nbsp;</div>
+
+  <div class="filter-drawer__panel" role="dialog" aria-modal="true" aria-label="{{ heading }}">
+    <div class="filter-drawer__header">
+      <h2 class="filter-drawer__heading">{{ heading }}</h2>
+
+      <button class="filter-drawer__close" type="button" data-bf-drawer-close>
+        {%- render 'bf-icon', icon: 'x', size: 24, label: close_label -%}
+      </button>
+    </div>
+
+    {%- comment -%}
+      A real GET form to the collection, so the drawer works with the script
+      absent: every control is a named input, and the Show Results button
+      submits. With the script present the submit is intercepted — see
+      bf-filter-drawer.js — and the same field values become a fetched URL.
+
+      `sort_by` is NOT mirrored into a hidden input here. The script carries it
+      over from the live URL, and a hidden copy would go stale the moment the
+      toolbar's select changed without a reload.
+    {%- endcomment -%}
+    <form class="filter-drawer__body" id="bf-filter-form" method="get" data-filter-form>
+      {%- for filter in filters -%}
+        {%- comment -%}
+          A div with role="group", NOT a fieldset with a legend.
+
+          <legend> is laid out against the fieldset's BORDER box, not its
+          padding box, so it ignores the group's padding-top entirely: the
+          heading sat flush against the divider above it while the options below
+          it got the full 32px. There are resets that mostly fix this, all of
+          them browser-quirk-dependent. role="group" plus aria-labelledby is the
+          same thing to a screen reader and lays out like the box it looks like.
+        {%- endcomment -%}
+        {%- assign group_id = 'bf-filter-group-' | append: forloop.index -%}
+        <div class="filter-drawer__group" role="group" aria-labelledby="{{ group_id }}">
+          <h3 class="filter-drawer__group-title" id="{{ group_id }}">{{ filter.label }}</h3>
+
+          {%- liquid
+            assign filter_key = filter.label | downcase | strip
+            assign filter_key = '|' | append: filter_key | append: '|'
+            assign is_chips = false
+            if chip_keys contains filter_key
+              assign is_chips = true
+            endif
+          -%}
+
+          {%- case filter.type -%}
+            {%- when 'price_range' -%}
+              {%- comment -%}
+                Two number inputs in the shop's own currency. Dawn's own
+                treatment of the values is kept verbatim — `money_without_currency`
+                then stripping the thousands separator — because the field posts
+                a bare decimal and a value of "2,000" is rejected.
+              {%- endcomment -%}
+              <div class="filter-drawer__range">
+                {%- comment -%}
+                  Decimals are dropped from the bound, which the board also
+                  shows bare ("₹2,000", not "₹2,000.00"). A price filter is a
+                  coarse control — nobody bounds a search at ₹1,499.00 rather
+                  than ₹1,499 — and two trailing zeroes in a 120px field push
+                  the digits that matter out of view.
+                {%- endcomment -%}
+                {%- assign range_max = filter.range_max
+                  | money_without_currency
+                  | replace: ',', ''
+                  | split: '.'
+                  | first
+                -%}
+
+                <span class="filter-drawer__range-field">
+                  <span class="filter-drawer__range-symbol" aria-hidden="true">
+                    {{- cart.currency.symbol -}}
+                  </span>
+                  <label class="visually-hidden" for="bf-filter-price-min">
+                    {{ 'products.facets.from' | t }}
+                  </label>
+                  <input
+                    class="filter-drawer__range-input"
+                    id="bf-filter-price-min"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    max="{{ range_max }}"
+                    placeholder="0"
+                    name="{{ filter.min_value.param_name }}"
+                    data-filter-price-min
+                    {% if filter.min_value.value %}
+                      value="{{ filter.min_value.value | money_without_currency | replace: ',', '' | split: '.' | first }}"
+                    {% endif %}
+                  >
+                </span>
+
+                <span class="filter-drawer__range-dash" aria-hidden="true">—</span>
+
+                <span class="filter-drawer__range-field">
+                  <span class="filter-drawer__range-symbol" aria-hidden="true">
+                    {{- cart.currency.symbol -}}
+                  </span>
+                  <label class="visually-hidden" for="bf-filter-price-max">
+                    {{ 'products.facets.to' | t }}
+                  </label>
+                  <input
+                    class="filter-drawer__range-input"
+                    id="bf-filter-price-max"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    max="{{ range_max }}"
+                    placeholder="{{ range_max }}"
+                    name="{{ filter.max_value.param_name }}"
+                    data-filter-price-max
+                    {% if filter.max_value.value %}
+                      value="{{ filter.max_value.value | money_without_currency | replace: ',', '' | split: '.' | first }}"
+                    {% endif %}
+                  >
+                </span>
+              </div>
+
+              {%- comment -%}
+                The slider. Two native <input type="range"> stacked on one
+                track, NOT a pair of divs with pointer handlers.
+
+                Native ranges arrive with keyboard support (arrows, Home/End,
+                Page Up/Down), a screen-reader role and value, and touch
+                behaviour that already works — all of which a div-based thumb
+                has to rebuild, usually badly. What they cannot do is show two
+                thumbs, so there are two inputs laid over each other with the
+                track and fill drawn beneath; bf-filter-drawer.css hands pointer
+                events to the thumbs only, so each is grabbable even though the
+                inputs overlap completely.
+
+                THEY CARRY NO name= AND SO NEVER REACH THE FORM DATA. The number
+                fields above stay the single source of truth for the URL; the
+                slider writes into them and they do the rest. Two controls both
+                serialising a price is how a slider and a field end up
+                disagreeing about what was asked for.
+
+                Spans rather than divs for the track and fill: Dawn's
+                `div:empty` rule lists div but not span, and stuffing a &nbsp;
+                into a 2px-tall bar to satisfy it would fight the height it is
+                supposed to have.
+              {%- endcomment -%}
+              <div class="filter-drawer__slider" data-filter-slider>
+                <span class="filter-drawer__slider-track"></span>
+                <span class="filter-drawer__slider-fill" data-filter-slider-fill></span>
+
+                <input
+                  class="filter-drawer__slider-input"
+                  type="range"
+                  min="0"
+                  max="{{ range_max }}"
+                  step="1"
+                  value="{{ filter.min_value.value | default: 0 | money_without_currency | replace: ',', '' | split: '.' | first }}"
+                  aria-label="{{ 'products.facets.from' | t }}"
+                  data-filter-slider-min
+                >
+
+                <input
+                  class="filter-drawer__slider-input"
+                  type="range"
+                  min="0"
+                  max="{{ range_max }}"
+                  step="1"
+                  value="{% if filter.max_value.value %}{{ filter.max_value.value | money_without_currency | replace: ',', '' | split: '.' | first }}{% else %}{{ range_max }}{% endif %}"
+                  aria-label="{{ 'products.facets.to' | t }}"
+                  data-filter-slider-max
+                >
+              </div>
+
+            {%- else -%}
+              {%- comment -%}
+                `list` and `boolean` share this branch. Both expose
+                `filter.values` with a param_name and an active flag per value,
+                and the only difference the board draws is chips vs rows.
+              {%- endcomment -%}
+              <div
+                class="filter-drawer__options{% if is_chips %} filter-drawer__options--chips{% endif %}"
+              >
+                {%- for value in filter.values -%}
+                  {%- comment -%}
+                    A value matching nothing under the CURRENT filters is drawn
+                    but not removed, and stays tickable.
+
+                    Dawn disables these. That is wrong for sizes, which is the
+                    case that matters here: "no 2XL in this collection right
+                    now" is information a visitor wants, and a size that
+                    disappears from the grid the moment an unrelated filter
+                    narrows the list reads as a broken control. Marked with a
+                    modifier and left operable — ticking it and getting an empty
+                    grid is a truthful answer, and Clear All is right there.
+                  {%- endcomment -%}
+                  <label
+                    class="filter-drawer__option{% if is_chips %} filter-drawer__option--chip{% endif %}{% if value.count == 0 %} filter-drawer__option--empty{% endif %}"
+                    {% if value.count == 0 %}
+                      title="{{ 'products.facets.product_count_simple' | t: count: 0 }}"
+                    {% endif %}
+                  >
+                    {%- comment -%}
+                      The real input is visually hidden rather than
+                      `appearance: none` — it keeps native checkbox semantics,
+                      keyboard behaviour and form serialisation, and the drawn
+                      box beside it is what the board paints.
+                    {%- endcomment -%}
+                    <input
+                      class="filter-drawer__input visually-hidden"
+                      type="checkbox"
+                      name="{{ value.param_name }}"
+                      value="{{ value.value }}"
+                      {% if value.active %}
+                        checked
+                      {% endif %}
+                    >
+
+                    {%- unless is_chips -%}
+                      <span class="filter-drawer__box" aria-hidden="true">
+                        <span class="filter-drawer__tick">
+                          {%- render 'bf-icon', icon: 'check', size: 12 -%}
+                        </span>
+                      </span>
+                    {%- endunless -%}
+
+                    <span class="filter-drawer__option-label">{{ value.label }}</span>
+                  </label>
+                {%- endfor -%}
+              </div>
+          {%- endcase -%}
+        </div>
+      {%- endfor -%}
+    </form>
+
+    <div class="filter-drawer__footer">
+      <button class="filter-drawer__clear" type="button" data-filter-clear>
+        {{- clear_label -}}
+      </button>
+
+      {%- comment -%}
+        Closes the drawer; it does not apply anything. Filters take effect the
+        moment they are ticked, because the count on this button has to be a
+        real number and the only way to know it is to ask the server — and once
+        the server has answered, showing the grid it answered with is free.
+
+        The submit type is the no-JS path: without the script this is the only
+        way to send the form, and it does exactly what it says. `form=` rather
+        than nesting, because the footer is a flex row pinned below the
+        scrolling body and the form IS that scrolling body — the button cannot
+        be inside it and stay pinned.
+      {%- endcomment -%}
+      <button class="filter-drawer__apply" type="submit" form="bf-filter-form" data-filter-apply>
+        {{ apply_label }} (<span data-filter-total>{{ total }}</span>)
+      </button>
+    </div>
+  </div>
+</bf-filter-drawer>

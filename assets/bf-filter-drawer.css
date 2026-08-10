@@ -1,0 +1,537 @@
+/* @define filter-drawer */
+
+/*
+ * The filter drawer — `rmFPV`, drawn open over the collection page in `JiLqP`.
+ *
+ * A 420px panel pinned to the right edge, full viewport height, with a scrim
+ * over the page behind it. Measured off the component at 2x: 28 padding, a
+ * 74px header, 32 between groups with a hairline between each, and a 73px
+ * footer holding Clear All against a filled Show Results button.
+ *
+ * The type is entirely UI Kit tokens, and two of them were written for this
+ * component before it existed — --bf-text-group-title-* is annotated "sidebar
+ * and drawer filter group labels" and --bf-text-caption-* "fine print,
+ * price-range inputs". Nothing here is off-scale.
+ *
+ * COLOUR IS INK ON SURFACE, like every other Bassface surface, with one
+ * inversion: the Show Results button is --bf-ink filled with --bf-ink-invert
+ * text. That is the only filled control in the panel and the board draws it as
+ * the one thing that is not an outline.
+ */
+
+.filter-drawer {
+  /* Board width. Not a token: nothing else in the theme is 420 wide, and a
+     one-use custom property in :root would read as a system decision. */
+  --filter-drawer-width: 42rem;
+
+  /* Above the masthead, which sits at 100. The scrim has to cover it — a
+     drawer you can click "Shop" through is not modal. */
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+
+  /* The host spans the viewport so the scrim can, but a CLOSED drawer must not
+     swallow clicks meant for the grid underneath. Re-enabled on the two
+     children below once open. */
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------- scrim --- */
+
+.filter-drawer__scrim {
+  position: absolute;
+  inset: 0;
+
+  /*
+   * Neutral black at 25%, NOT a tint of --bf-ink.
+   *
+   * Deriving it from the ink was the first attempt, on the theory that a
+   * Bassface surface should not introduce a colour the system does not have.
+   * At 22% it washed the entire page pink — cream went rose and the product
+   * photography went with it, which is the one thing a scrim must not do. The
+   * board greys the page behind the drawer; black is what greys it. A scrim is
+   * a light level, not a brand colour.
+   */
+  background-color: rgb(0 0 0 / 0.25);
+  opacity: 0;
+  transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-drawer:where(.is-open) .filter-drawer__scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------- panel --- */
+
+.filter-drawer__panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: var(--filter-drawer-width);
+  max-width: 100%;
+  background-color: var(--bf-surface);
+  color: var(--bf-ink);
+
+  /* Off-canvas by its own width rather than by a percentage of the viewport,
+     so the distance travelled is the same at every screen size. */
+  transform: translateX(100%);
+  transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-drawer:where(.is-open) .filter-drawer__panel {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.filter-drawer__header {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--bf-space-16);
+  justify-content: space-between;
+  align-items: center;
+  height: 7.4rem;
+  padding: 0 var(--bf-space-28);
+  border-bottom: var(--bf-border);
+}
+
+.filter-drawer__heading {
+  margin: 0;
+
+  /* 24/900 off the board. The UI Kit's control size is 20 and its title 48;
+     neither is this, and a drawer heading is its own step between them. */
+  font-size: 2.4rem;
+  font-weight: var(--bf-weight-black);
+  letter-spacing: -0.02em;
+  line-height: var(--bf-leading-tight);
+}
+
+.filter-drawer__close {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Opening the drawer moves focus here, so this ring is drawn often. The
+   browser default is a 2px blue box that belongs to no theme; this is the same
+   hairline-and-offset the checkboxes use. */
+.filter-drawer__close:focus {
+  outline: none;
+}
+
+.filter-drawer__close:focus-visible {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: 4px;
+}
+
+/* -------------------------------------------------------------- body --- */
+
+/*
+ * The scrolling region. `min-height: 0` is what actually makes it scroll: a
+ * flex child's default `min-height: auto` refuses to shrink below its content,
+ * so without it the panel grows past the viewport and takes the pinned footer
+ * with it.
+ */
+.filter-drawer__body {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 var(--bf-space-28);
+}
+
+/*
+ * The group divider is INDENTED while the header's and footer's run full-bleed.
+ * That contrast is the board's: the two rules that bound the panel go edge to
+ * edge, and the ones that merely separate one filter from the next start where
+ * the content starts. Achieved by geometry rather than by two border colours —
+ * the header and footer carry their own padding, so their borders span the
+ * panel; the groups sit inside the body's 28px, so theirs cannot.
+ */
+.filter-drawer__group {
+  margin: 0;
+  padding: var(--bf-space-32) 0;
+  border-bottom: var(--bf-border);
+}
+
+/* The last rule would sit directly above the footer's own, drawing two lines a
+   few pixels apart at the bottom of a short filter list. */
+.filter-drawer__group:last-of-type {
+  border-bottom: 0;
+}
+
+.filter-drawer__group-title {
+  margin: 0 0 var(--bf-space-16);
+  padding: 0;
+  font-size: var(--bf-text-group-title-size);
+  font-weight: var(--bf-text-group-title-weight);
+  letter-spacing: var(--bf-text-group-title-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* ----------------------------------------------------------- options --- */
+
+.filter-drawer__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+}
+
+/* 3 across, 8 gap — (364 - 16) / 3 = 116, the board's chip width to the pixel
+   once the 28 padding is taken off the 420 panel. */
+.filter-drawer__options--chips {
+  display: grid;
+  gap: var(--bf-space-8);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.filter-drawer__option {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+  cursor: pointer;
+}
+
+.filter-drawer__option-label {
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/*
+ * The drawn checkbox. The real input is `.visually-hidden` beside it, still
+ * focusable and still serialised by the form — this span is paint only, which
+ * is why it carries aria-hidden in the markup.
+ *
+ * 2px radius is the board's; there is no radius token because this is the only
+ * rounded corner in the theme.
+ */
+.filter-drawer__box {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  align-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: var(--bf-border);
+  border-radius: 2px;
+  color: var(--bf-ink-invert);
+  transition: background-color 150ms linear;
+}
+
+/*
+ * The tick is always in the DOM and always the inverse colour; only the fill
+ * behind it arrives, so there is nothing to fade in or lay out on toggle.
+ *
+ * It gets its own element rather than the rule targeting the <svg> that
+ * bf-icon renders — a type selector under a block element is not a valid BEM
+ * component selector and the linter says so, correctly: it couples this
+ * stylesheet to the markup another snippet happens to emit.
+ */
+.filter-drawer__tick {
+  display: flex;
+  opacity: 0;
+  transition: opacity 150ms linear;
+}
+
+.filter-drawer__input:checked + .filter-drawer__box {
+  background-color: var(--bf-ink);
+}
+
+.filter-drawer__input:checked + .filter-drawer__box .filter-drawer__tick {
+  opacity: 1;
+}
+
+/* A focus ring IS drawn here, unlike the collection page's controls. The real
+   checkbox is visually hidden, so without this a keyboard user tabbing the
+   drawer has no cursor at all — not a muted one, none. */
+.filter-drawer__input:focus-visible + .filter-drawer__box {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: 3px;
+}
+
+/*
+ * A value that currently matches nothing. Dimmed, never disabled — see the note
+ * in bf-filter-drawer.liquid on why an unavailable size stays operable. 55% is
+ * --bf-ink-muted's own ratio, reused here rather than the token itself because
+ * this has to mute a border and a background as well as text.
+ */
+.filter-drawer__option--empty {
+  opacity: 0.45;
+}
+
+/* -------------------------------------------------------------- chips --- */
+
+.filter-drawer__option--chip {
+  justify-content: center;
+  height: 3.8rem;
+  padding: 0 var(--bf-space-8);
+  border: var(--bf-border);
+  text-align: center;
+}
+
+.filter-drawer__option--chip .filter-drawer__option-label {
+  overflow: hidden;
+  font-size: var(--bf-text-ui-size);
+  font-weight: var(--bf-weight-black);
+  letter-spacing: var(--bf-text-ui-tracking);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chips invert when active rather than showing a tick — there is no room for a
+   box beside a two-character label, and the board draws the state as a fill. */
+.filter-drawer__option--chip:has(.filter-drawer__input:checked) {
+  background-color: var(--bf-ink);
+  color: var(--bf-ink-invert);
+}
+
+.filter-drawer__option--chip:has(.filter-drawer__input:focus-visible) {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: 3px;
+}
+
+/* -------------------------------------------------------------- price --- */
+
+.filter-drawer__range {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+}
+
+.filter-drawer__range-field {
+  display: flex;
+  flex: 0 1 12rem;
+  gap: var(--bf-space-4);
+  align-items: center;
+  min-width: 0;
+  padding: var(--bf-space-8) var(--bf-space-12);
+  border: var(--bf-border);
+}
+
+.filter-drawer__range-symbol,
+.filter-drawer__range-dash {
+  flex: 0 0 auto;
+  font-size: var(--bf-text-caption-size);
+  line-height: var(--bf-leading-tight);
+}
+
+.filter-drawer__range-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-text-caption-weight);
+  letter-spacing: var(--bf-text-caption-tracking);
+  line-height: var(--bf-leading-tight);
+  appearance: none;
+}
+
+/* The spinners are 20-odd pixels of chrome inside a 120px field, and they are
+   the browser's styling, not ours. */
+.filter-drawer__range-input::-webkit-outer-spin-button,
+.filter-drawer__range-input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.filter-drawer__range-input:focus,
+.filter-drawer__range-input:focus-visible {
+  outline: none;
+}
+
+.filter-drawer__range-field:has(.filter-drawer__range-input:focus-visible) {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------ slider --- */
+
+/*
+ * The dual-handle price slider, under the two number fields.
+ *
+ * Not on the board — added because dragging a bound is faster than typing one,
+ * and because the two fields alone give no sense of where the collection's
+ * prices actually sit.
+ *
+ * TWO NATIVE RANGE INPUTS STACKED, which is the whole trick. Both fill the
+ * track and sit exactly on top of each other, so by default only the upper one
+ * would be reachable. `pointer-events: none` on the inputs and `auto` on their
+ * thumbs hands every pixel that is not a thumb through to whatever is beneath,
+ * which makes both thumbs grabbable and neither input able to swallow a drag
+ * meant for the other.
+ *
+ * The cost is that clicking the bare track does nothing — a native range would
+ * jump its thumb there. That is the right trade: with two thumbs, a track click
+ * has no unambiguous meaning anyway (which handle should move?), and keyboard
+ * users still get arrows, Home/End and Page Up/Down on both handles for free.
+ */
+.filter-drawer__slider {
+  --filter-drawer-thumb: 1.6rem;
+
+  position: relative;
+  height: var(--filter-drawer-thumb);
+  margin-top: var(--bf-space-20);
+}
+
+.filter-drawer__slider-track,
+.filter-drawer__slider-fill {
+  position: absolute;
+  top: 50%;
+  height: var(--bf-border-width);
+  transform: translateY(-50%);
+}
+
+.filter-drawer__slider-track {
+  right: 0;
+  left: 0;
+  background-color: var(--bf-hairline);
+}
+
+/* Inset by the script as the handles move; the declared values are the
+   unfiltered state so the server's first paint is already correct. */
+.filter-drawer__slider-fill {
+  right: 0;
+  left: 0;
+  background-color: var(--bf-ink);
+}
+
+.filter-drawer__slider-input {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  appearance: none;
+}
+
+/*
+ * The two thumb pseudo-elements cannot be combined into one rule. An unknown
+ * pseudo-element invalidates the ENTIRE selector list it appears in, so
+ * `::-webkit-slider-thumb, ::-moz-range-thumb` drops both on every browser —
+ * each engine only recognises its own. They must be declared separately.
+ */
+.filter-drawer__slider-input::-webkit-slider-thumb {
+  width: var(--filter-drawer-thumb);
+  height: var(--filter-drawer-thumb);
+  border: var(--bf-border-width) solid var(--bf-surface);
+  border-radius: 50%;
+  background-color: var(--bf-ink);
+  pointer-events: auto;
+  cursor: grab;
+  appearance: none;
+}
+
+.filter-drawer__slider-input::-moz-range-thumb {
+  width: var(--filter-drawer-thumb);
+  height: var(--filter-drawer-thumb);
+  border: var(--bf-border-width) solid var(--bf-surface);
+  border-radius: 50%;
+  background-color: var(--bf-ink);
+  pointer-events: auto;
+  cursor: grab;
+  appearance: none;
+}
+
+.filter-drawer__slider-input:focus,
+.filter-drawer__slider-input:focus-visible {
+  outline: none;
+}
+
+.filter-drawer__slider-input:focus-visible::-webkit-slider-thumb {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: 2px;
+}
+
+.filter-drawer__slider-input:focus-visible::-moz-range-thumb {
+  outline: var(--bf-border-width) solid var(--bf-ink);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ footer --- */
+
+.filter-drawer__footer {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--bf-space-16);
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--bf-space-16) var(--bf-space-28);
+  border-top: var(--bf-border);
+}
+
+.filter-drawer__clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+}
+
+.filter-drawer__clear:hover {
+  text-decoration: underline;
+}
+
+/* The one filled control in the panel. */
+.filter-drawer__apply {
+  min-width: 18rem;
+  height: 4.1rem;
+  padding: 0 var(--bf-space-20);
+  border: var(--bf-border-width) solid var(--bf-ink);
+  background-color: var(--bf-ink);
+  color: var(--bf-ink-invert);
+  font-family: inherit;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+}
+
+/* ============================================================== <448 ==== *
+ * No mobile board exists for this drawer — DESIGN-STATUS records `rmFPV` as
+ * desktop-only. It goes full-bleed below the small-mobile gutter rather than
+ * leaving a sliver of scrim beside a 420px panel on a 390px screen, which is
+ * the same call bf-nav-drawer makes.
+ */
+
+@media screen and (width < 448px) {
+  .filter-drawer__panel {
+    width: 100%;
+  }
+
+  .filter-drawer__header,
+  .filter-drawer__body,
+  .filter-drawer__footer {
+    padding-inline: var(--bf-space-16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-drawer__scrim,
+  .filter-drawer__panel,
+  .filter-drawer__box,
+  .filter-drawer__tick {
+    transition: none;
+  }
+}

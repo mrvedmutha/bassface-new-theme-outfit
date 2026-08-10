@@ -1,0 +1,428 @@
+/* @define main-collection */
+
+/*
+ * The collection page.
+ *
+ * Block is `main-collection`, not `collection` — Dawn already ships
+ * `.collection` in template-collection.css and both files load on this URL
+ * until templates/collection.json stops naming the stock sections.
+ *
+ * Deliberately a near-twin of bf-main-search.css: the two boards draw the same
+ * page furniture — breadcrumb, 48px title, toolbar, 4-up grid, Load More, and
+ * the 96px empty state — and the pages differ only in what sits under the title
+ * (a search box there, the collection description here) and in this one
+ * filtering. Sharing a stylesheet between them was the alternative and is
+ * rejected by the one-block-per-file rule; the duplication is visible, which is
+ * better than a `results` block that neither file is named after.
+ *
+ * EVERY COLOUR IS A TOKEN. The board draws the whole page as #FF0001 on
+ * #EDE4DD — ink on surface, one pair, no third colour, including the sort
+ * chevron. Dawn's grid section paints itself from its own colour-scheme
+ * settings, which is why the stock page stayed black-on-cream while the rest of
+ * the theme followed the switcher.
+ */
+
+/*
+ * The page's control type — count, sort label and Load More.
+ *
+ * The board sets the count and sort at 15 and Load More at 20. Fifteen is the
+ * UI Kit's nav size; next to a 48px title and cards this large it reads as a
+ * caption, so all three share the board's own Load More figure instead. Fixed
+ * rather than ramped, for the reason recorded at length in bf-main-search.css:
+ * --bf-text-title-size is flat, so a ramped toolbar overtakes the title on wide
+ * screens.
+ */
+.main-collection {
+  --main-collection-control-size: 2rem;
+
+  display: block;
+}
+
+/* --------------------------------------------------------- breadcrumb --- */
+
+.main-collection__breadcrumb {
+  /* The board's 56 top. Off the 4px scale, so it is a literal rather than a
+     var() with a fallback standing in for a token that does not exist. */
+  padding: 5.6rem var(--bf-page-padding) var(--bf-space-32);
+}
+
+.main-collection__crumbs {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  list-style: none;
+}
+
+.main-collection__crumb-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.main-collection__crumb-link:hover {
+  text-decoration: underline;
+}
+
+/* 900 on the current page — the board's one weight change in the row, and what
+   marks where you are without a colour or a rule doing it. */
+.main-collection__crumb:where([aria-current]) {
+  font-weight: var(--bf-weight-black);
+}
+
+/* ------------------------------------------------------------- header --- */
+
+.main-collection__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+  padding: 0 var(--bf-page-padding) var(--bf-space-40);
+}
+
+.main-collection__title {
+  margin: 0;
+  font-size: var(--bf-text-title-size);
+  font-weight: var(--bf-text-title-weight);
+  letter-spacing: var(--bf-text-title-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/*
+ * The description. Measured off the board at ~620px, which is where its two
+ * lines break; 64rem is that width rounded to the scale and is the same measure
+ * the search page gives its box, so the two pages agree on how wide a column of
+ * text under a title should be.
+ *
+ * Rich text from the admin, so the tag it arrives in is the merchant's choice —
+ * hence the descendant reset rather than styling the wrapper alone. Depth 2,
+ * which is the nesting limit and the reason this is not `.rte p > a`.
+ */
+.main-collection__description {
+  width: 64rem;
+  max-width: 100%;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-normal);
+}
+
+.main-collection__description :where(p) {
+  margin: 0;
+}
+
+.main-collection__description :where(a) {
+  color: inherit;
+}
+
+/* ------------------------------------------------------------ content --- */
+
+.main-collection__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-32);
+  padding: 0 var(--bf-page-padding) 12rem;
+}
+
+.main-collection__toolbar {
+  display: flex;
+  gap: var(--bf-space-24);
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--bf-space-28);
+}
+
+.main-collection__count,
+.main-collection__sort-label {
+  margin: 0;
+  font-size: var(--main-collection-control-size);
+  font-weight: var(--bf-text-ui-weight);
+  letter-spacing: var(--bf-text-ui-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+.main-collection__tools {
+  display: flex;
+  gap: var(--bf-space-28);
+  align-items: center;
+}
+
+/* The drawer trigger. Shares the toolbar's control size with the count and the
+   sort label, so the three read as one row of the same thing. */
+.main-collection__filter {
+  display: flex;
+  gap: var(--bf-space-10);
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--main-collection-control-size);
+  font-weight: var(--bf-text-ui-weight);
+  letter-spacing: var(--bf-text-ui-tracking);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+}
+
+.main-collection__filter-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/*
+ * A real <select> under the label, stretched over the whole control and made
+ * invisible. The board draws text plus a chevron, which no styling of a native
+ * select reproduces across browsers — but replacing it with a listbox means
+ * rebuilding keyboard support, screen-reader semantics and the mobile wheel
+ * picker that phones give this element for free. The select stays; only its
+ * painting is ours.
+ */
+.main-collection__sort {
+  position: relative;
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+}
+
+.main-collection__sort-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+}
+
+.main-collection__sort-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/*
+ * No focus ring on any control on this page — matching the search page, and
+ * worth recording what it costs. The ring is how a keyboard user knows where
+ * they are, and nothing replaces it: tabbing through the breadcrumb, sort and
+ * Load More moves an invisible cursor. Mouse and touch are unaffected either
+ * way, since :focus-visible never fired for them.
+ *
+ * If it should come back, one rule does it — an outline in --bf-ink at a 4px
+ * offset on :focus-visible reads as part of the design rather than as Chrome's
+ * default, which is what made the rings look wrong in the first place.
+ */
+.main-collection__crumb-link:focus,
+.main-collection__crumb-link:focus-visible,
+.main-collection__filter:focus,
+.main-collection__filter:focus-visible,
+.main-collection__sort-select:focus,
+.main-collection__sort-select:focus-visible,
+.main-collection__more-button:focus,
+.main-collection__more-button:focus-visible,
+.main-collection__cta:focus,
+.main-collection__cta:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------- grid --- */
+
+/*
+ * 4 x 330 + 3 x 24 = 1392, the content width to the pixel, and the asymmetric
+ * gap is the board's own: 40 between rows, 24 between columns.
+ */
+.main-collection__grid {
+  display: grid;
+  gap: var(--bf-space-40) var(--bf-space-24);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
+/*
+ * 80px clear of the last row, against the board's 48.
+ *
+ * The board draws Load More as bare text, and at the bottom of a 4-up grid that
+ * is not enough: the row above ends in a line of product titles at the same
+ * weight and a similar size, so the control read as a thirteenth caption rather
+ * than as the one thing on the page you press. It is now a bordered button —
+ * the same outline vocabulary as the filter chips — set in bold, and pushed
+ * clear of the grid so the gap above it is visibly larger than the 40px between
+ * rows. bf-main-search.css carries the identical treatment; the two pages share
+ * this control and must not diverge.
+ */
+.main-collection__more {
+  display: flex;
+  justify-content: center;
+  padding-top: 8rem;
+}
+
+.main-collection__more[hidden] {
+  display: none;
+}
+
+.main-collection__more-button {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+  padding: var(--bf-space-16) var(--bf-space-40);
+  border: var(--bf-border-width) solid var(--bf-ink);
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--main-collection-control-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+  transition:
+    background-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.main-collection__more-icon {
+  display: flex;
+  align-items: center;
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fills on hover, the same inversion the drawer's Show Results button wears at
+   rest — this is the page's primary action once the grid runs out. */
+@media (hover: hover) {
+  .main-collection__more-button:hover {
+    background-color: var(--bf-ink);
+    color: var(--bf-ink-invert);
+  }
+}
+
+.main-collection__more-button:where(.is-loading) .main-collection__more-icon {
+  transform: rotate(180deg);
+}
+
+/*
+ * The results region while a filter or sort request is in flight. Dimmed rather
+ * than emptied or spinner-covered: the outgoing grid is still the honest answer
+ * to the last question asked, and blanking it makes the page jump to zero
+ * height and back on every checkbox.
+ */
+.main-collection__results {
+  transition: opacity 200ms linear;
+}
+
+.main-collection__results:where(.is-loading) {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------- empty --- */
+
+.main-collection__empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-40);
+  padding: 7.2rem 0 12rem;
+}
+
+.main-collection__empty-lines {
+  margin: 0;
+}
+
+/*
+ * 96/800/-3.5 from the board — off-scale, and the largest type on any page
+ * outside the hero. It ramps down rather than wrapping, because two lines that
+ * became four would push the CTA off a laptop screen.
+ */
+.main-collection__empty-line {
+  display: block;
+  font-size: clamp(3.6rem, 6.6667vw, 9.6rem);
+  font-weight: var(--bf-weight-extrabold);
+  letter-spacing: -0.0365em;
+  line-height: var(--bf-leading-snug);
+}
+
+.main-collection__cta {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  align-self: start;
+  color: inherit;
+
+  /* Off-scale, same pair as the empty lines above. */
+  font-size: clamp(2.4rem, 2.7778vw, 4rem);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.025em;
+  line-height: var(--bf-leading-tight);
+  text-decoration: none;
+}
+
+.main-collection__cta-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+@media (hover: hover) {
+  .main-collection__cta-icon {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .main-collection__cta:hover .main-collection__cta-icon {
+    transform: translate(0.4rem, -0.4rem);
+  }
+}
+
+/* ============================================================== <834 ==== *
+ * Four columns hold all the way down to 1024 and then step straight to two,
+ * per the grid table in DESIGN-STATUS — 4 / 4 / 2 / 2 / 2 across the five
+ * viewports, derived from the homepage boards, which are drawn at all five and
+ * are the source of truth for card sizing.
+ *
+ * This is NOT what bf-main-search.css does; that file steps 4 / 3 / 2 on the
+ * homepage band breakpoints. The search grid predates the table and the
+ * collection grid is named in it, so the table wins here. The two want
+ * reconciling, but changing the search page's columns is a change to a shipped
+ * page and belongs in its own commit.
+ *
+ * Column gap drops 24 -> 16 with the gutter. Row gap stays 40 throughout, which
+ * the table states outright.
+ */
+
+@media screen and (width < 834px) {
+  .main-collection__grid {
+    gap: var(--bf-space-40) var(--bf-space-16);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-collection__breadcrumb {
+    padding-top: var(--bf-space-32);
+  }
+
+  .main-collection__content {
+    padding-bottom: 6.4rem;
+  }
+
+  /* The toolbar's two clusters stop fitting one line once the count and the
+     sort control are set at 20px on a 390px screen. */
+  .main-collection__toolbar {
+    gap: var(--bf-space-12);
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-collection__more-icon,
+  .main-collection__more-button,
+  .main-collection__cta-icon,
+  .main-collection__results {
+    transition: none;
+  }
+
+  .main-collection__cta:hover .main-collection__cta-icon {
+    transform: none;
+  }
+}
