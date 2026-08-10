@@ -269,6 +269,17 @@
      behind, which on iOS is what makes an overlay feel like it is leaking. */
   overscroll-behavior: contain;
   padding: var(--bf-space-24) var(--search-padding) var(--bf-space-32);
+
+  /* No visible scrollbar. The overlay is a flat black surface edge to edge and
+     a 15px system gutter cut into its right side, splitting the padding the
+     results are aligned to. Wheel, touch and keyboard scrolling are untouched —
+     this hides the indicator, it does not stop the scroll. Same treatment as
+     the product gallery rail. */
+  scrollbar-width: none;
+}
+
+.search__content::-webkit-scrollbar {
+  display: none;
 }
 
 .search__group + .search__group {
