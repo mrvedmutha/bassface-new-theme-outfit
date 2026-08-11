@@ -353,6 +353,18 @@
 }
 
 .main-collection__cta {
+  /* The cart's checkout button and the product page's add-to-bag, to the
+     figure — see the long note on `.main-cart__cta`. Third of the three
+     identical empty states; all three carry the gesture or none of them do. */
+  --main-collection-cta-arrow: 1.2em;
+  --main-collection-cta-duration: 500ms;
+  --main-collection-cta-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
+
+  position: relative;
+
+  /* The link hugs its content, so the trailing arrow pushed one arrow-width
+     right leaves through the element's own edge. */
+  overflow: hidden;
   display: flex;
   gap: var(--bf-space-8);
   align-items: center;
@@ -367,19 +379,39 @@
   text-decoration: none;
 }
 
-.main-collection__cta-icon {
-  display: flex;
+.main-collection__cta-icon,
+.main-collection__cta-label {
+  display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
 }
 
+/* Absolute, so it takes no space in the flow — the link must not be an arrow
+   wider than it looks, and the label must not start shifted across. */
+.main-collection__cta-icon--lead {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+}
+
 @media (hover: hover) {
-  .main-collection__cta-icon {
-    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  .main-collection__cta-icon,
+  .main-collection__cta-label {
+    transition: transform var(--main-collection-cta-duration) var(--main-collection-cta-ease);
   }
 
-  .main-collection__cta:hover .main-collection__cta-icon {
-    transform: translate(0.4rem, -0.4rem);
+  /* Keyboard focus gets the same movement. The link is one control, so
+     :focus-visible on it is the exact keyboard equivalent of the hover. */
+  .main-collection__cta:hover .main-collection__cta-icon--lead,
+  .main-collection__cta:focus-visible .main-collection__cta-icon--lead {
+    transform: translateX(0);
+  }
+
+  .main-collection__cta:hover .main-collection__cta-label,
+  .main-collection__cta:hover .main-collection__cta-icon:not(.main-collection__cta-icon--lead),
+  .main-collection__cta:focus-visible .main-collection__cta-label,
+  .main-collection__cta:focus-visible .main-collection__cta-icon:not(.main-collection__cta-icon--lead) {
+    transform: translateX(var(--main-collection-cta-arrow));
   }
 }
 
@@ -425,11 +457,21 @@
   .main-collection__more-icon,
   .main-collection__more-button,
   .main-collection__cta-icon,
+  .main-collection__cta-label,
   .main-collection__results {
     transition: none;
   }
 
-  .main-collection__cta:hover .main-collection__cta-icon {
+  /* Parked, not stilled — see the same pair in bf-main-cart.css. */
+  .main-collection__cta:hover .main-collection__cta-icon--lead,
+  .main-collection__cta:focus-visible .main-collection__cta-icon--lead {
+    transform: translateX(-100%);
+  }
+
+  .main-collection__cta:hover .main-collection__cta-label,
+  .main-collection__cta:hover .main-collection__cta-icon:not(.main-collection__cta-icon--lead),
+  .main-collection__cta:focus-visible .main-collection__cta-label,
+  .main-collection__cta:focus-visible .main-collection__cta-icon:not(.main-collection__cta-icon--lead) {
     transform: none;
   }
 }

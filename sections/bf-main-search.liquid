@@ -223,9 +223,18 @@
             class="main-search__cta"
             href="{{ section.settings.empty_cta_url | default: routes.all_products_collection_url }}"
           >
-            {{ section.settings.empty_cta_label }}
+            {%- comment -%}
+              The hover is the product page's add-to-bag and the cart's checkout,
+              whole: a second arrow parked off the left edge slides in while the
+              label and the trailing arrow shift right by an arrow's width. See
+              the note in bf-main-cart.liquid for the `1.2em`.
+            {%- endcomment -%}
+            <span class="main-search__cta-icon main-search__cta-icon--lead" aria-hidden="true">
+              {%- render 'bf-icon', icon: 'arrow-up-right', size: '1.2em' -%}
+            </span>
+            <span class="main-search__cta-label">{{ section.settings.empty_cta_label }}</span>
             <span class="main-search__cta-icon" aria-hidden="true">
-              {%- render 'bf-icon', icon: 'arrow-up-right', size: 48 -%}
+              {%- render 'bf-icon', icon: 'arrow-up-right', size: '1.2em' -%}
             </span>
           </a>
         </div>

@@ -91,9 +91,24 @@
           class="main-cart__cta"
           href="{{ section.settings.empty_cta_url | default: routes.all_products_collection_url }}"
         >
-          {{ section.settings.empty_cta_label }}
+          {%- comment -%}
+            The hover is the checkout button's, whole — see the note above it in
+            this file. A second arrow parked off the left edge slides in while
+            the label and the trailing arrow shift right by an arrow's width.
+
+            `1.2em` rather than the 48 this was: 1.2em of the label's 40px
+            ceiling IS 48, so the board is unchanged at 1440, and below it the
+            arrow now steps down with the label instead of staying 48 against
+            24px type. bf-main-cart.css repeats the figure as --main-cart-cta-arrow
+            — the two have to agree or the incoming arrow lands short of where
+            the label left.
+          {%- endcomment -%}
+          <span class="main-cart__cta-icon main-cart__cta-icon--lead" aria-hidden="true">
+            {%- render 'bf-icon', icon: 'arrow-up-right', size: '1.2em' -%}
+          </span>
+          <span class="main-cart__cta-label">{{ section.settings.empty_cta_label }}</span>
           <span class="main-cart__cta-icon" aria-hidden="true">
-            {%- render 'bf-icon', icon: 'arrow-up-right', size: 48 -%}
+            {%- render 'bf-icon', icon: 'arrow-up-right', size: '1.2em' -%}
           </span>
         </a>
       </bf-reveal>

@@ -411,6 +411,28 @@
    reveal wrapper now, so it has no flex parent left to align against, and a
    full-width <a> would give the hover a target the size of the page. */
 .main-cart__cta {
+  /*
+   * THE CHECKOUT BUTTON'S THREE FIGURES, and they have to be its three: the two
+   * controls answer the pointer on the same page, and until now they answered
+   * it differently — this one lifted its arrow diagonally in 300ms on an
+   * ease-out while `.main-cart__checkout` slid a second arrow in from the left
+   * in 500ms on a curve that leans back first. Two gestures, one page.
+   *
+   * --main-cart-checkout-arrow is 1.2em as well, and the icon is rendered at
+   * `size: '1.2em'` in the section. 1.2em of the clamp's 40px ceiling is 48 —
+   * the figure this icon was hard-coded to — so the board is unchanged at 1440.
+   */
+  --main-cart-cta-arrow: 1.2em;
+  --main-cart-cta-duration: 500ms;
+  --main-cart-cta-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
+
+  position: relative;
+
+  /* The link hugs its content, so the trailing arrow pushed one arrow-width
+     right leaves through the element's own edge — the product page's case
+     rather than the checkout's, which has to clip its face as well because it
+     is held at a width its widest face does not fill. */
+  overflow: hidden;
   display: flex;
   gap: var(--bf-space-8);
   align-items: center;
@@ -423,19 +445,42 @@
   text-decoration: none;
 }
 
-.main-cart__cta-icon {
-  display: flex;
+.main-cart__cta-icon,
+.main-cart__cta-label {
+  display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
 }
 
+/* Absolute, so it takes no space in the flow — the link must not be an arrow
+   wider than it looks, and the label must not start shifted across. */
+.main-cart__cta-icon--lead {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+}
+
+/* The guard is this control's own and it stays: the empty cart is a page a
+   phone reaches, and a sticky :hover after a tap would strand the arrow
+   mid-swap. Nothing is lost — the parked pose above is the resting one. */
 @media (hover: hover) {
-  .main-cart__cta-icon {
-    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  .main-cart__cta-icon,
+  .main-cart__cta-label {
+    transition: transform var(--main-cart-cta-duration) var(--main-cart-cta-ease);
   }
 
-  .main-cart__cta:hover .main-cart__cta-icon {
-    transform: translate(0.4rem, -0.4rem);
+  /* Keyboard focus gets the same movement. The link is one control, so
+     :focus-visible on it is the exact keyboard equivalent of the hover. */
+  .main-cart__cta:hover .main-cart__cta-icon--lead,
+  .main-cart__cta:focus-visible .main-cart__cta-icon--lead {
+    transform: translateX(0);
+  }
+
+  .main-cart__cta:hover .main-cart__cta-label,
+  .main-cart__cta:hover .main-cart__cta-icon:not(.main-cart__cta-icon--lead),
+  .main-cart__cta:focus-visible .main-cart__cta-label,
+  .main-cart__cta:focus-visible .main-cart__cta-icon:not(.main-cart__cta-icon--lead) {
+    transform: translateX(var(--main-cart-cta-arrow));
   }
 }
 
@@ -535,7 +580,8 @@
 @media (prefers-reduced-motion: reduce) {
   .main-cart__checkout-arrow,
   .main-cart__checkout-label,
-  .main-cart__cta-icon {
+  .main-cart__cta-icon,
+  .main-cart__cta-label {
     transition: none;
   }
 
@@ -555,7 +601,18 @@
     animation: none;
   }
 
-  .main-cart__cta:hover .main-cart__cta-icon {
+  /* PARKED, not stilled, exactly as the checkout above is: dropping only the
+     transition would leave the lead arrow jumping into place instantly, which
+     is the same movement with the part that made it legible removed. */
+  .main-cart__cta:hover .main-cart__cta-icon--lead,
+  .main-cart__cta:focus-visible .main-cart__cta-icon--lead {
+    transform: translateX(-100%);
+  }
+
+  .main-cart__cta:hover .main-cart__cta-label,
+  .main-cart__cta:hover .main-cart__cta-icon:not(.main-cart__cta-icon--lead),
+  .main-cart__cta:focus-visible .main-cart__cta-label,
+  .main-cart__cta:focus-visible .main-cart__cta-icon:not(.main-cart__cta-icon--lead) {
     transform: none;
   }
 }
