@@ -261,6 +261,14 @@
  * inline elements, so this has to be inline-block — which is also what gives it
  * a layout width to measure the overflow against.
  */
+
+/*
+ * NO HOVER UNDERLINE HERE, deliberately, and it is the one link family in the
+ * theme without one. The card already answers the pointer twice — the second
+ * photograph wipes in and the title sweeps if it overflows — and a third
+ * simultaneous response on the same gesture is noise. The grid is also the one
+ * place a rule under every title would read as a table.
+ */
 .product-card__title-text {
   display: inline-block;
   white-space: nowrap;

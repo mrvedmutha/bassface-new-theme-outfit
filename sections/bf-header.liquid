@@ -44,15 +44,28 @@
 
     <div class="masthead__cluster masthead__cluster--desktop">
       <ul class="masthead__links">
+        {%- comment -%}
+          Every entry in the row is marked when you are on it, menu links and
+          the three fixed ones alike — see snippets/bf-nav-active.liquid for what
+          counts as "on it" and why exact URL equality is not enough.
+        {%- endcomment -%}
         {%- for link in menu.links -%}
           <li>
-            <a class="masthead__link" href="{{ link.url }}">{{ link.title }}</a>
+            <a
+              class="masthead__link{% render 'bf-nav-active', url: link.url, link: link %}"
+              href="{{ link.url }}"
+              {% if link.current %}
+                aria-current="page"
+              {% endif %}
+            >
+              {{- link.title -}}
+            </a>
           </li>
         {%- endfor -%}
 
         <li>
           <a
-            class="masthead__link"
+            class="masthead__link{% render 'bf-nav-active', url: routes.search_url %}"
             href="{{ routes.search_url }}"
             {% if settings.search_enabled %}
               aria-controls="bf-search" aria-haspopup="dialog"
@@ -64,14 +77,20 @@
 
         {%- if shop.customer_accounts_enabled -%}
           <li>
-            <a class="masthead__link" href="{{ routes.account_url }}">
+            <a
+              class="masthead__link{% render 'bf-nav-active', url: routes.account_url %}"
+              href="{{ routes.account_url }}"
+            >
               {%- if customer %}{{ 'Account' }}{% else %}{{ 'Login' }}{% endif -%}
             </a>
           </li>
         {%- endif -%}
 
         <li>
-          <a class="masthead__link" href="{{ routes.cart_url }}">
+          <a
+            class="masthead__link{% render 'bf-nav-active', url: routes.cart_url %}"
+            href="{{ routes.cart_url }}"
+          >
             {{- 'Bag' }} (<span data-cart-count>{{ cart.item_count }}</span>)
           </a>
         </li>
@@ -135,7 +154,7 @@
 
         <li>
           <a
-            class="masthead__link"
+            class="masthead__link{% render 'bf-nav-active', url: routes.search_url %}"
             href="{{ routes.search_url }}"
             {% if settings.search_enabled %}
               aria-controls="bf-search" aria-haspopup="dialog"
@@ -152,7 +171,10 @@
           overlay that takes the whole screen anyway.
         {%- endcomment -%}
         <li>
-          <a class="masthead__link" href="{{ routes.cart_url }}">
+          <a
+            class="masthead__link{% render 'bf-nav-active', url: routes.cart_url %}"
+            href="{{ routes.cart_url }}"
+          >
             {{- 'Bag' }} (<span data-cart-count>{{ cart.item_count }}</span>)
           </a>
         </li>

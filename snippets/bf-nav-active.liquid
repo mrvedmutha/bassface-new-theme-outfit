@@ -1,0 +1,56 @@
+{%- comment -%}
+  Prints ` is-active` when the given URL is the page being served, and nothing
+  otherwise. Meant to be called from inside a class attribute:
+
+    <a class="masthead__link{% render 'bf-nav-active', url: link.url %}" …>
+
+  Accepts:
+    url  - the href being tested. Required; a blank one is never active.
+    link - the linklist entry, when there is one. Optional, and only used for
+           `link.active`, which covers an entry whose nested CHILD is the page.
+
+  WHY THIS IS NOT JUST `link.current`. Exact URL equality marks "Shop" on
+  /collections and then drops it the moment the visitor opens /collections/all
+  or a product — a nav that goes dark on the first click reads as "you have left
+  this section", which is the opposite of what a marker is for. `link.active`
+  only widens the test to a menu entry's own children, and a collection is not a
+  child of the Shop link in Navigation. So the third test: the request path sits
+  UNDER the link's.
+
+  Appending the slash before comparing is what keeps that honest — a bare
+  `contains` would mark a /pages/about entry while serving /pages/about-us, and
+  every /account link while serving /account-deleted. `/` is excluded from the
+  prefix test for the obvious reason: every path is under it.
+
+  ONE TEST, THREE NAVIGATIONS. The header, the mobile drawer and the footer all
+  render the same menus, so they cannot each decide separately what "you are
+  here" means — the drawer is the header at a different width, and the footer
+  repeats the policy menu the legal index also draws.
+
+  DERIVED, NEVER STORED, the same argument as bf-legal-index.liquid: there is no
+  setting to go stale when a page is renamed, and it survives the AJAX swap for
+  free because bf-page-transition.js re-renders the header and footer groups
+  from the server rather than moving a class around on the client.
+{%- endcomment -%}
+
+{%- liquid
+  assign target = url | default: ''
+  assign active = false
+
+  if link != blank and link.active
+    assign active = true
+  elsif target != blank
+    if request.path == target
+      assign active = true
+    elsif target != '/'
+      assign under = target | append: '/'
+      if request.path contains under
+        assign active = true
+      endif
+    endif
+  endif
+
+  if active
+    echo ' is-active'
+  endif
+-%}

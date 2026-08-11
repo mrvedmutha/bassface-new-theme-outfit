@@ -373,14 +373,36 @@
 /* Underlined rather than coloured: the theme has one ink per surface, so a link
    inside a document has nothing to be but underlined. Matches the breadcrumb's
    and the footer's hover treatment. */
+
+/*
+ * THE ONE PLACE THAT KEEPS A REAL UNDERLINE, and it is not an oversight.
+ *
+ * The theme's hover underline is a background gradient — see the tokens in
+ * bf-base.css — and a background cannot follow text across a line break. An
+ * inline box that wraps has one background positioning area spanning every
+ * fragment, so `background-size: 100%` draws a full rule under the first line
+ * and a stub under the second. These are the only links in the theme sitting
+ * mid-sentence in long-form copy, so they are also the only ones that wrap.
+ *
+ * They also want a resting underline for a second reason: a link buried in a
+ * paragraph of legal text has nothing else marking it as a link — the theme has
+ * one ink per surface, so there is no colour to spend. Same argument as
+ * bf-base.css's `p a, li a`.
+ *
+ * The hover is the thickness instead, which IS animatable and does follow the
+ * wrap. Same curve and duration as the wipe, so it reads as the same gesture.
+ */
 .legal__doc a {
   color: inherit;
+  transition: text-decoration-thickness var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: underline;
+  text-decoration-thickness: var(--bf-underline-thickness);
   text-underline-offset: 0.2em;
 }
 
-.legal__doc a:hover {
-  text-decoration-thickness: 2px;
+.legal__doc a:hover,
+.legal__doc a:focus-visible {
+  text-decoration-thickness: calc(var(--bf-underline-thickness) * 2);
 }
 
 /* -------------------------------------------------------------- laptop up --- */

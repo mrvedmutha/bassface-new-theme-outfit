@@ -160,22 +160,52 @@
 /*
  * Nav labels are the 24px subhead step, not the 15px UI step the kit's blurb
  * suggests — every label in both nav components is 24/400/-0.6.
+ *
+ * The wipe is a background, so `background: none` cannot stay — see the
+ * underline tokens in bf-base.css. The colour half of that reset is spelled out
+ * instead, and it is not optional: Search and Bag are <button>, and a button
+ * without an explicit background-color takes the platform's buttonface.
+ *
+ * currentcolor is what makes this survive the difference blend on the bar. The
+ * rule paints the same value the glyphs resolve to, whatever the backdrop turns
+ * them into, so the underline can never disagree with the label above it.
  */
 .masthead__link {
   display: inline-flex;
   gap: var(--bf-space-4);
   align-items: center;
   border: 0;
-  background: none;
+  background-color: transparent;
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
   padding: 0;
   color: inherit;
   font-size: var(--masthead-link-size);
   font-weight: var(--bf-text-subhead-weight);
   letter-spacing: var(--bf-text-subhead-tracking);
   line-height: 1.33;
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
+}
+
+/*
+ * THE CURRENT PAGE IS UNDERLINED AT REST. It is the same line the hover draws,
+ * held at full width rather than animated to it — so pointing at the entry you
+ * are already on does nothing, instead of a second rule appearing under the
+ * first. `:where()` keeps the state class at zero specificity, so the hover rule
+ * that follows still wins on source order for every other link in the row.
+ *
+ * The class comes from `link.active` in bf-header.liquid, which is true for a
+ * parent entry when a child is the page — Shop stays marked inside a collection.
+ */
+.masthead__link:where(.is-active),
+.masthead__link:hover,
+.masthead__link:focus-visible {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 .masthead__currency {

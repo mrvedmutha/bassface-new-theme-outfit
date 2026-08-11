@@ -196,7 +196,15 @@
               <ul class="colophon__col">
                 {%- for link in policies.links -%}
                   <li>
-                    <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+                    <a
+                      href="{{ link.url }}"
+                      class="colophon__link colophon__text{% render 'bf-nav-active', url: link.url, link: link %}"
+                      {% if link.current %}
+                        aria-current="page"
+                      {% endif %}
+                    >
+                      {{- link.title -}}
+                    </a>
                   </li>
                 {%- endfor -%}
               </ul>
@@ -212,7 +220,15 @@
               <ul class="colophon__col">
                 {%- for link in social.links -%}
                   <li>
-                    <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+                    <a
+                      href="{{ link.url }}"
+                      class="colophon__link colophon__text{% render 'bf-nav-active', url: link.url, link: link %}"
+                      {% if link.current %}
+                        aria-current="page"
+                      {% endif %}
+                    >
+                      {{- link.title -}}
+                    </a>
                   </li>
                 {%- endfor -%}
               </ul>
@@ -228,7 +244,15 @@
               <ul class="colophon__col">
                 {%- for link in secondary.links -%}
                   <li>
-                    <a href="{{ link.url }}" class="colophon__link colophon__text">{{ link.title }}</a>
+                    <a
+                      href="{{ link.url }}"
+                      class="colophon__link colophon__text{% render 'bf-nav-active', url: link.url, link: link %}"
+                      {% if link.current %}
+                        aria-current="page"
+                      {% endif %}
+                    >
+                      {{- link.title -}}
+                    </a>
                   </li>
                 {%- endfor -%}
               </ul>

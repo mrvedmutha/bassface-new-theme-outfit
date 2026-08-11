@@ -39,13 +39,20 @@
   list-style: none;
 }
 
+/* The wipe — see the underline tokens in bf-base.css. */
 .list-collections__crumb-link {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
   color: inherit;
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
-.list-collections__crumb-link:hover {
-  text-decoration: underline;
+.list-collections__crumb-link:hover,
+.list-collections__crumb-link:focus-visible {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 .list-collections__crumb:where([aria-current]) {

@@ -361,12 +361,21 @@
  * "Clear Filters" only, so footer links opt out and take it back on hover.
  */
 .colophon__link {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
-.colophon__link:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+/* The page you are on holds the line at full width instead of animating to it,
+   so hovering the entry you already clicked is a no-op. Same treatment as the
+   masthead row and the legal index. */
+.colophon__link:where(.is-active),
+.colophon__link:hover,
+.colophon__link:focus-visible {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 .colophon__text {

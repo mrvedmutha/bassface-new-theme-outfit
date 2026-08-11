@@ -270,6 +270,28 @@
   );
 }
 
+/*
+ * The current page, marked. STATIC, not a wipe: the drawer is the touch nav, so
+ * there is no hover to animate from, and the line is a statement of where you
+ * are rather than of where a pointer is. Written as the same background the rest
+ * of the theme animates so the two read as one treatment at different volumes.
+ *
+ * On the span rather than the link — see the note in bf-nav-drawer.liquid. The
+ * span also has to be inline-block: the links are the drawer's entrance
+ * transform target and a plain inline box would not take the width the
+ * background needs.
+ */
+.nav-drawer__label {
+  display: inline-block;
+}
+
+.nav-drawer__link:where(.is-active) .nav-drawer__label {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% var(--bf-underline-thickness);
+}
+
 .nav-drawer__currency {
   display: flex;
   padding-top: var(--nav-drawer-block-top);

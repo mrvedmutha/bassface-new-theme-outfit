@@ -76,7 +76,14 @@
               aria-current="page"
             {% endif %}
           >
-            {{- link.title -}}
+            {%- comment -%}
+              The span is the underline's box, and it is the only reason it
+              exists. The <a> is `display: block` so the whole row is a tap
+              target, which means a background on it draws the rule across the
+              full column however short the title is. The span is as wide as the
+              words and no wider.
+            {%- endcomment -%}
+            <span class="legal-index__text">{{- link.title -}}</span>
           </a>
         </li>
       {%- endfor -%}

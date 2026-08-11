@@ -100,22 +100,39 @@
   grid-area: 1 / 1;
 }
 
-/* The leading sits on the title rather than as a gap on the info column,
-   because a column gap would also land above the price and push it off the 24
-   the board gives it. */
+/*
+ * The leading sits on the title rather than as a gap on the info column,
+ * because a column gap would also land above the price and push it off the 24
+ * the board gives it.
+ *
+ * `align-self: start` is what keeps the underline on the words. `.cart-line__info`
+ * is a flex column, so this anchor stretches to the full width of the info
+ * track by default and the wipe — a background on the box — ran the whole
+ * column regardless of how short the product name was. Shrunk to its content,
+ * the box and the text are the same thing again.
+ */
 .cart-line__title {
+  align-self: start;
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
   margin-bottom: var(--cart-line-lead);
   color: inherit;
   font-size: var(--cart-line-title-size);
   font-weight: var(--bf-weight-medium);
   letter-spacing: -0.0278em;
   line-height: 1.05;
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
+/* The guard is the file's own, and it stays: a drawer is the one place a
+   sticky :hover after a tap would strand the underline in view. */
 @media (hover: hover) {
-  .cart-line__title:hover {
-    text-decoration: underline;
+  .cart-line__title:hover,
+  .cart-line__title:focus-visible {
+    background-size: 100% var(--bf-underline-thickness);
   }
 }
 
@@ -224,17 +241,23 @@
 }
 
 .cart-line__remove {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
   color: inherit;
   font-size: var(--cart-line-action-size);
   font-weight: var(--bf-weight-regular);
   letter-spacing: -0.0222em;
   line-height: 1.1;
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
 @media (hover: hover) {
-  .cart-line__remove:hover {
-    text-decoration: underline;
+  .cart-line__remove:hover,
+  .cart-line__remove:focus-visible {
+    background-size: 100% var(--bf-underline-thickness);
   }
 }
 

@@ -59,13 +59,20 @@
   list-style: none;
 }
 
+/* The wipe — see the underline tokens in bf-base.css. */
 .main-collection__crumb-link {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
   color: inherit;
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
-.main-collection__crumb-link:hover {
-  text-decoration: underline;
+.main-collection__crumb-link:hover,
+.main-collection__crumb-link:focus-visible {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 /* 900 on the current page — the board's one weight change in the row, and what

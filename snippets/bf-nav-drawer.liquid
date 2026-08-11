@@ -79,7 +79,24 @@
     <ul class="nav-drawer__links">
       {%- for link in menu.links -%}
         <li class="nav-drawer__item" style="--nav-drawer-index: {{ item_index }};">
-          <a class="nav-drawer__link" href="{{ link.url }}">{{ link.title }}</a>
+          {%- comment -%}
+            The span carries the underline, not the link: the link is a
+            full-width block so the whole row is a tap target, and a rule across
+            it would read as a divider rather than as a marker. Same reason
+            bf-legal-index.liquid wraps its titles.
+
+            The active test is the header's, to the line — one snippet, so the
+            drawer and the row it replaces cannot disagree about where you are.
+          {%- endcomment -%}
+          <a
+            class="nav-drawer__link{% render 'bf-nav-active', url: link.url, link: link %}"
+            href="{{ link.url }}"
+            {% if link.current %}
+              aria-current="page"
+            {% endif %}
+          >
+            <span class="nav-drawer__label">{{- link.title -}}</span>
+          </a>
         </li>
         {%- assign item_index = item_index | plus: 1 -%}
       {%- endfor -%}

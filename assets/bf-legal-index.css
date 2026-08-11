@@ -79,6 +79,9 @@
  * A bare inline link at this size is 21px tall; 12 above and below brings the
  * row to ~45 and clears the 44px minimum, and the link fills its cell so the
  * whole row is tappable rather than just the glyphs.
+ *
+ * Which is exactly why the underline is NOT on this element — see
+ * `legal-index__text` below.
  */
 .legal-index__link {
   display: block;
@@ -92,8 +95,35 @@
 }
 
 /*
+ * The wipe's box. A background on the link itself would draw the rule across
+ * the whole 280 column — or the whole grid cell when stacked — because that is
+ * how wide a block-level anchor is, however short "Refund Policy" happens to
+ * be. This span is as wide as the words.
+ *
+ * `inline-block` rather than plain inline so a title that wraps in the two-up
+ * mobile grid still gets one rule under one box. An inline box that breaks
+ * across lines has a single background positioning area spanning every
+ * fragment, so `100%` would draw a full rule under the first line and a stub
+ * under the second.
+ */
+.legal-index__text {
+  display: inline-block;
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
+}
+
+/*
  * Full ink at 700 — the boards' per-page override, now computed from
  * `link.current`. See snippets/bf-legal-index.liquid for why that matters.
+ *
+ * AND UNDERLINED AT REST. This is the one link on the page whose underline is a
+ * statement of where you are rather than of where the pointer is, so it starts
+ * at full width and never animates. Written as the same `background-size` the
+ * hover animates to, not a `text-decoration`, so pointing at the active entry
+ * is a no-op instead of a second line appearing under the first.
  *
  * `:where()` keeps the state class at zero specificity, so this rule wins on
  * source order alone and stays beatable by anything after it. Every `is-*` in
@@ -104,13 +134,18 @@
   font-weight: var(--bf-weight-bold);
 }
 
-/* Hover lifts to full ink as well as underlining: the muted state is the only
-   thing separating a link from the active entry, so brightening is what says
-   "this is the one you are pointing at" without a colour of its own. */
-.legal-index__link:hover {
+/* Hover lifts to full ink as well as wiping the underline in: the muted state
+   is the only thing separating a link from the active entry, so brightening is
+   what says "this is the one you are pointing at" without a colour of its own. */
+.legal-index__link:hover,
+.legal-index__link:focus-visible {
   color: var(--bf-ink);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+}
+
+.legal-index__link:where(.is-active) .legal-index__text,
+.legal-index__link:hover .legal-index__text,
+.legal-index__link:focus-visible .legal-index__text {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 /* -------------------------------------------------------------- laptop up -- */

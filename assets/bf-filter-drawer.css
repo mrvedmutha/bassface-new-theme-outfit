@@ -475,21 +475,29 @@
   border-top: var(--bf-border);
 }
 
+/* `background: none` gives way to the wipe — a <button> needs the colour half
+   of that reset spelled out or it takes the platform's buttonface. */
 .filter-drawer__clear {
   padding: 0;
   border: 0;
-  background: none;
+  background-color: transparent;
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
   color: inherit;
   font-family: inherit;
   font-size: var(--bf-text-body-size);
   font-weight: var(--bf-text-body-weight);
   letter-spacing: var(--bf-text-body-tracking);
   line-height: var(--bf-leading-tight);
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   cursor: pointer;
 }
 
-.filter-drawer__clear:hover {
-  text-decoration: underline;
+.filter-drawer__clear:hover,
+.filter-drawer__clear:focus-visible {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 /* The one filled control in the panel. */

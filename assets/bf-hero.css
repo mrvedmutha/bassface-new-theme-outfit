@@ -315,12 +315,17 @@
    Filters", so these opt out and take it back on hover — as the footer does. */
 .hero__link {
   display: inline-block;
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-underline-thickness);
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
-.hero__link:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+.hero__link:hover,
+.hero__link:focus-visible {
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 /* ================================================================ 834 ==== *

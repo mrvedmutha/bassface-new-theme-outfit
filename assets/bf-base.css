@@ -215,6 +215,39 @@
   --bf-radius-checkbox: 3px;
 
   /* ------------------------------------------------------------------
+     The link underline. One wipe, one curve, every link in the theme.
+
+     THE UNDERLINE IS A BACKGROUND, NOT `text-decoration`, and it has to be:
+     there is no way to animate the length of a real underline. A gradient
+     sized to 0 in one axis grows from the edge it is positioned on, and
+     shrinks back to that same edge when the pointer leaves — the reverse of
+     the way it arrived, which is the gesture. Established in
+     bf-main-about.css; these tokens are that pattern given one home.
+
+     power4.out is GSAP's quintic — the power ladder is power1=quad,
+     power2=cubic, power3=quart, power4=quint, the same note bf-preloader.js
+     and bf-page-transition.js both carry. As a cubic-bezier that is
+     0.22, 1, 0.36, 1.
+
+     NOT DRIVEN BY THE VENDORED GSAP, deliberately. This is one property on
+     one pseudo-state; a tween would mean a JS instance per link, and a
+     collection page carries forty cards plus a header and a footer. CSS
+     transitions run on the compositor and cost nothing at rest.
+
+     THE THICKNESS RIDES THE TYPE SIZE, which is why it is not --bf-border-width
+     like every other rule in the theme. A 1px hairline is the right weight
+     under an 11px footer label and disappears entirely under a 36px bag title:
+     the same absolute line reads as half the weight when the letters above it
+     are three times the size. `em` resolves against whatever element uses the
+     token, so one value covers the whole range — 1.5px under body copy, 1.7
+     under the 24px nav, 2.5 under the bag. The floor is what keeps the small
+     end from going sub-pixel and greying out.
+     ------------------------------------------------------------------ */
+  --bf-underline-thickness: max(0.15rem, 0.07em);
+  --bf-underline-duration: 400ms;
+  --bf-underline-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ------------------------------------------------------------------
      Layout. The design has no container element — content is the viewport
      minus twice the page padding, which is what produces the board widths
      1392 / 976 / 802 / 416 / 358. So --bf-page-max caps the OUTER edge at the
@@ -474,4 +507,19 @@ textarea {
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
+}
+
+/*
+ * ONE RULE SWITCHES OFF EVERY UNDERLINE WIPE IN THE THEME, and that is the
+ * argument for the duration being a token rather than a literal in fifteen
+ * files. Collapsing the duration rather than dropping the transition is
+ * deliberate: the underline still appears on hover, because an underline
+ * arriving is a state change rather than travel, and removing it would cost
+ * these links their only hover feedback. The same distinction bf-main-about.css
+ * draws between parking its arrows and stilling them.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --bf-underline-duration: 1ms;
+  }
 }

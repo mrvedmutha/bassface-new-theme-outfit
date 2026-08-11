@@ -432,14 +432,14 @@
   background-image: linear-gradient(currentcolor, currentcolor);
   background-repeat: no-repeat;
   background-position: 0 100%;
-  background-size: 0 var(--bf-border-width);
-  transition: background-size 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  background-size: 0 var(--bf-underline-thickness);
+  transition: background-size var(--bf-underline-duration) var(--bf-underline-ease);
   text-decoration: none;
 }
 
 .about__link:hover,
 .about__link:focus-visible {
-  background-size: 100% var(--bf-border-width);
+  background-size: 100% var(--bf-underline-thickness);
 }
 
 /* ------------------------------------------------------ reduced motion --- */
