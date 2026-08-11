@@ -1,0 +1,561 @@
+/* @define main-cart */
+
+/*
+ * The bag — `w1pQjE`, and `h3wEI` for the empty state.
+ *
+ * FULL-BLEED, no --bf-page-max cap, matching the masthead, the hero, the footer
+ * and the two other listing pages: the theme's content width is the viewport
+ * minus twice --bf-page-padding, and 1440 is the boards' reference viewport
+ * rather than a ceiling.
+ *
+ * The rows live in bf-cart-line.css under their own block. They also carry the
+ * page's two odd breakpoints, 1280 and 768 — see the note at the top of that
+ * file for why the bag does not use the theme's 1024/834/448 for arrangement.
+ * This file steps type on the theme's own breakpoints, because nothing in the
+ * summary rearranges below 1280; it only gets smaller.
+ */
+
+.main-cart {
+  /*
+   * The content width, as a value the type can be sized against.
+   *
+   * cqw and not vw: `scrollbar-gutter: stable` on <html> means 100vw counts a
+   * gutter the content never gets, so a headline fitted to 100vw overhangs the
+   * page by the width of a scrollbar. Container query units measure this
+   * element's own content box, which is the real thing the wordmark has to fit
+   * inside. That is what `container-type: inline-size` below is for — the
+   * containment it brings is inline-direction only, and this element is a
+   * full-width block whose width never depended on its contents.
+   */
+  --main-cart-content: calc(100cqw - 2 * var(--bf-page-padding));
+
+  /*
+   * Stepped in the media blocks at the foot of the file. Declared here so the
+   * summary's four rules read one name each instead of a value plus a fallback
+   * that would have to be kept in step with this.
+   *
+   * The vw term only ever wins ABOVE 1440 — at exactly 1440, 3.3333vw is 48px
+   * and 1.3889vw is 20, so the board's figures come out unchanged and every
+   * breakpoint below overrides both with a flat rem anyway. It is there because
+   * this page fits its headline to the viewport: a 260px wordmark that grows on
+   * a 2560 screen over a subtotal pinned at 48 is not the board's composition,
+   * it is the board's composition with one element left behind. Same reasoning
+   * as the row's type in bf-cart-line.css; the two must move together.
+   */
+  --main-cart-subtotal-size: max(4.8rem, 3.3333vw);
+  --main-cart-note-size: max(2rem, 1.3889vw);
+
+  container-type: inline-size;
+  display: block;
+}
+
+/* ---------------------------------------------------------------- hero --- */
+
+.main-cart__hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  padding: 10.4rem var(--bf-page-padding) 4.8rem;
+}
+
+/*
+ * FITTED, NOT RAMPED. The board sets 260px at a 1392 content width and the
+ * word spans it exactly; every other board does the same at its own width, so
+ * the figure that carries across is the ratio, 0.1868 of the content.
+ *
+ * That ratio is specific to an EIGHT-CHARACTER heading. DESIGN-STATUS gives the
+ * fit as `width ≈ 5.745 × fontSize + 8 × letterSpacing`, which with the tracking
+ * below reduces to `width ≈ 5.355 × fontSize`. A different heading needs the
+ * 5.745 re-measured — it is the width of that particular string in ems.
+ *
+ * 0.186 and not 0.1868 is a deliberate ~0.5% of slack. Pencil measures the
+ * string against the same Archivo we self-host, but a browser's shaping is not
+ * obliged to agree with it to the pixel, and the failure mode on the high side
+ * is a headline that pushes the page sideways.
+ */
+
+/*
+ * The padding/negative-margin pair is CLIP CLEARANCE, not spacing, and it is
+ * there because the reveal wrapper around this heading has `overflow: hidden`.
+ * A line-height of 0.8 makes the line box shorter than the glyphs it holds:
+ * Archivo's caps stand roughly 0.05em above the top of an 0.8 line box, so the
+ * clip took a slice off the top of every letter at rest. The padding gives the
+ * glyphs room inside the clip and the margin takes the same amount back out of
+ * the layout, so the wordmark sits exactly where it did.
+ *
+ * Applied on both edges: this heading has no descenders, a merchant's might.
+ */
+.main-cart__title {
+  margin: -0.12em 0;
+  padding: 0.12em 0;
+  font-size: calc(0.186 * var(--main-cart-content));
+  font-weight: var(--bf-weight-black);
+  letter-spacing: -0.0488em;
+  line-height: 0.8;
+}
+
+/* 5px, heavier than the 1px and 2px the UI Kit allows, and intentional — it is
+   OUTFIT's weight and the same rule the minimal footer opens with. */
+.main-cart__rule {
+  margin: 0;
+  border: 0;
+  border-top: 5px solid var(--bf-ink);
+}
+
+/* --------------------------------------------------------------- items --- */
+
+.main-cart__items {
+  padding: 4.8rem var(--bf-page-padding);
+}
+
+/* ------------------------------------------------------------- summary --- */
+
+/*
+ * 864 + 16 + 512 = 1392 at the reference width, expressed as the checkout's
+ * share so the totals take every pixel that is left. The checkout column is
+ * WIDER THAN ITS CONTENT on purpose: the board leaves the button starting at
+ * 904 and ending well short of the right edge, which is what stops the page
+ * from reading as a form with a button pinned to the corner.
+ */
+.main-cart__summary {
+  display: flex;
+  gap: var(--bf-space-16);
+  align-items: flex-start;
+  padding: var(--bf-space-16) var(--bf-page-padding) 9.6rem;
+}
+
+.main-cart__totals {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.main-cart__subtotal {
+  display: flex;
+  gap: var(--bf-space-16);
+  align-items: center;
+
+  /* The board's 96-tall row. A min rather than a height so a wrapped amount
+     still has somewhere to go. */
+  min-height: 9.6rem;
+}
+
+/*
+ * 336 of the totals' 864. Flat columns rather than space-between, because the
+ * amount belongs at a fixed offset from the label and not at the far end of
+ * whatever width the viewport happens to have — at 2560 a spaced-between pair
+ * would put "Subtotal" and the figure a metre apart.
+ */
+.main-cart__subtotal-label {
+  flex: 0 0 38.889%;
+  font-size: var(--main-cart-subtotal-size);
+  font-weight: var(--bf-weight-medium);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.main-cart__subtotal-value {
+  font-size: var(--main-cart-subtotal-size);
+  font-weight: var(--bf-weight-black);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.main-cart__discounts {
+  margin: 0 0 var(--bf-space-8);
+  padding: 0;
+  list-style: none;
+}
+
+.main-cart__discount {
+  font-size: var(--main-cart-note-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: var(--bf-leading-relaxed);
+}
+
+.main-cart__note {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--main-cart-note-size);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.02em;
+  line-height: var(--bf-leading-relaxed);
+}
+
+/*
+ * Checkout — the PDP's Add to Bag, in the bag's own size.
+ *
+ * IT IS THE SAME CONTROL AND IT MOVES THE SAME WAY. The first version faded the
+ * arrow up and to the right on hover, which was a different gesture from the one
+ * the theme's primary button already had. On the product page the label and the
+ * arrow shift right by an arrow's width while a second arrow slides in from the
+ * left, and A CLIP IS WHAT MAKES THAT READ AS ONE ARROW CROSSING THE LABEL: the
+ * outgoing one leaves through an edge at the same moment the incoming one
+ * arrives through the other. Two primary buttons on one storefront must not have
+ * two hovers, so the rules below are bf-main-product.css's, name for name — with
+ * one addition, on the face, noted there.
+ *
+ * The faces are the same idea too, minus two of them. Add to Bag rolls through
+ * idle → pending → added or error, because the add is a fetch and the page stays
+ * where it is. Checkout is a form POST that leaves: there is no result to show,
+ * only the wait before the browser goes, and that wait is the whole reason the
+ * state exists — a customer who sees nothing happen presses it again.
+ *
+ * 64px at every breakpoint DOWNWARD — OUTFIT pins it and so does the board, from
+ * 1440 to 390 — and proportional above 1440, like everything else on this page.
+ * At exactly 1440 the vw term is 64px, so the board is unchanged.
+ */
+.main-cart__checkout {
+  /* One arrow's width, and the arrow is rendered at this same figure in the
+     section — `size: '1.2em'`. If one changes the other has to. 1.2em of 64 is
+     the board's 76px box, which draws a ~32px glyph: Lucide's arrow-up-right
+     spans 7 to 17 of a 24 viewBox. */
+  --main-cart-checkout-arrow: 1.2em;
+
+  /* Theirs, not ours: a negative first control point undershoots before it
+     moves, so the group leans back a hair and then goes. A standard ease-out
+     reads as a slide; this reads as a flick. */
+  --main-cart-checkout-duration: 500ms;
+  --main-cart-checkout-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
+
+  /* The roll is a different gesture and gets its own pair — an answer arriving,
+     not a flick, so it is shorter with no undershoot to lean back on. */
+  --main-cart-checkout-roll-duration: 380ms;
+  --main-cart-checkout-roll-ease: cubic-bezier(0.33, 1, 0.68, 1);
+
+  position: relative;
+  overflow: hidden;
+
+  /* Grid with both faces in the one cell, so the button is as wide and as tall
+     as its widest face and never resizes as they swap. */
+  display: grid;
+  flex: 0 0 36.782%;
+  align-items: center;
+  justify-items: start;
+  min-height: 9.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: max(6.4rem, 4.4444vw);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.031em;
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+}
+
+/*
+ * Relative, so the lead arrow's `left: 0` anchors to the face it belongs to and
+ * travels with it when the face rolls away.
+ *
+ * `overflow: hidden` HERE AND NOT ONLY ON THE BUTTON is what makes the hover
+ * read as one arrow moving from the right of the label to the left of it, and it
+ * is the fix for the version that visibly showed two. The product page's button
+ * hugs its widest face, so an arrow shifted a full arrow-width right leaves
+ * through the button's own edge. This one cannot: it is held at 36.782% of the
+ * summary to sit in the board's column, and its widest face is "Checking out…",
+ * which is about 90px longer than "Checkout ↗" — so the outgoing arrow shifted
+ * into that slack stayed comfortably inside the clip and simply sat there beside
+ * the incoming one.
+ *
+ * Clipping the face fixes it independently of both: the face is exactly as wide
+ * as its own content, so an arrow pushed one arrow-width past the label is one
+ * arrow-width outside the face. The button's own clip is still load-bearing —
+ * it is what hides the parked pending face — so both are needed.
+ *
+ * `align-self: stretch` is the other line that differs from the product page's.
+ * There the button hugs its face, so parking the next one 110% of ITS OWN height
+ * below is 110% of the button too. Here the button is held at the board's
+ * 96-tall row to sit level with the subtotal beside it, and a 64px face pushed
+ * 70px down still had 10px of "Checking out" showing under "Checkout" at rest.
+ * Stretched, the face is the button's height and 110% is past its bottom edge
+ * again; the flex centring below keeps the label where it was.
+ */
+.main-cart__checkout-face {
+  position: relative;
+  overflow: hidden;
+  grid-area: 1 / 1;
+  display: flex;
+  gap: var(--bf-space-8);
+  align-self: stretch;
+  align-items: center;
+  transition: transform var(--main-cart-checkout-roll-duration) var(--main-cart-checkout-roll-ease);
+}
+
+/* Parked one full height below, where the button's clip hides it. 110% rather
+   than 100% so no subpixel rounding leaves a hairline showing along the bottom. */
+.main-cart__checkout-face--pending {
+  transform: translateY(110%);
+}
+
+.main-cart__checkout[data-state="pending"] .main-cart__checkout-face--idle {
+  transform: translateY(-110%);
+}
+
+.main-cart__checkout[data-state="pending"] .main-cart__checkout-face--pending {
+  transform: none;
+}
+
+/* Three real full stops, not drawn circles: they inherit the face and its size,
+   so they sit on the baseline as an ellipsis rather than as three shapes that
+   happen to be near some text. All three hold their space at rest, so the fade
+   cannot shuffle the label's width. */
+.main-cart__checkout-dot {
+  opacity: 0.25;
+}
+
+.main-cart__checkout[data-state="pending"] .main-cart__checkout-dot {
+  animation: main-cart-checkout-dot 1200ms ease-in-out infinite;
+}
+
+.main-cart__checkout[data-state="pending"] .main-cart__checkout-dot:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.main-cart__checkout[data-state="pending"] .main-cart__checkout-dot:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+@keyframes main-cart-checkout-dot {
+  0%,
+  70%,
+  100% {
+    opacity: 0.25;
+  }
+
+  35% {
+    opacity: 1;
+  }
+}
+
+.main-cart__checkout-arrow,
+.main-cart__checkout-label {
+  display: inline-flex;
+  transition: transform var(--main-cart-checkout-duration) var(--main-cart-checkout-ease);
+}
+
+/* Absolute, so it takes no space in the flow — the button must not be an arrow
+   wider than it looks, and the label must not start shifted across. */
+.main-cart__checkout-arrow--lead {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+}
+
+/* Keyboard focus gets the same movement. The button is one control, so
+   :focus-visible on it is the exact keyboard equivalent of the hover. */
+.main-cart__checkout:hover .main-cart__checkout-arrow--lead,
+.main-cart__checkout:focus-visible .main-cart__checkout-arrow--lead {
+  transform: translateX(0);
+}
+
+/* Scoped to the idle face: the arrows only exist there, but the label class is
+   on both, and the pending face has no arrow to make room for. */
+.main-cart__checkout:hover .main-cart__checkout-face--idle .main-cart__checkout-label,
+.main-cart__checkout:hover .main-cart__checkout-arrow:not(.main-cart__checkout-arrow--lead),
+.main-cart__checkout:focus-visible .main-cart__checkout-face--idle .main-cart__checkout-label,
+.main-cart__checkout:focus-visible .main-cart__checkout-arrow:not(.main-cart__checkout-arrow--lead) {
+  transform: translateX(var(--main-cart-checkout-arrow));
+}
+
+/* In flight. Keyed off aria-disabled, which the script sets anyway to stop a
+   second submit — a separate state class would be a second source of truth for
+   one condition. */
+.main-cart__checkout[aria-disabled="true"] {
+  cursor: default;
+}
+
+/* --------------------------------------------------------------- empty --- */
+
+/*
+ * The same construct as the empty collection and empty search — two oversized
+ * lines and a link — at a different size, and that difference is the board's.
+ * Those two pages open on a 48px title and set the lines at 96; this one opens
+ * on a 260px wordmark, and 96 under it would read as body copy.
+ *
+ * Fitted to the content width for the same reason the wordmark is: 0.111 of it
+ * is the board's 154.8 at 1392, and holding the ratio is what keeps a two-line
+ * statement two lines on a 390 screen instead of four.
+ */
+.main-cart__empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-40);
+  padding: var(--bf-space-24) var(--bf-page-padding) 16rem;
+}
+
+/* Clip clearance, for the same reason and at the same figure as the wordmark —
+   these lines are set at a line-height of 0.9 inside a reveal wrapper. */
+.main-cart__empty-lines {
+  margin: -0.12em 0;
+  padding: 0.12em 0;
+  font-size: calc(0.111 * var(--main-cart-content));
+}
+
+.main-cart__empty-line {
+  display: block;
+  font-weight: var(--bf-weight-extrabold);
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+
+/* Identical to .main-search__cta and .main-collection__cta by intent, not by
+   accident: it is the same control on the third of three empty states, and the
+   three must not drift. Changing one means changing all three. */
+
+/* `width: fit-content` and not `align-self: start`: the link is inside its own
+   reveal wrapper now, so it has no flex parent left to align against, and a
+   full-width <a> would give the hover a target the size of the page. */
+.main-cart__cta {
+  display: flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  width: fit-content;
+  color: inherit;
+  font-size: clamp(2.4rem, 2.7778vw, 4rem);
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.025em;
+  line-height: var(--bf-leading-tight);
+  text-decoration: none;
+}
+
+.main-cart__cta-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+@media (hover: hover) {
+  .main-cart__cta-icon {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .main-cart__cta:hover .main-cart__cta-icon {
+    transform: translate(0.4rem, -0.4rem);
+  }
+}
+
+/* No focus ring, matching the rows and the other two listing pages. See the
+   note in bf-cart-line.css for what that costs. */
+.main-cart__checkout:focus,
+.main-cart__checkout:focus-visible,
+.main-cart__cta:focus,
+.main-cart__cta:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ============================================================== <1440 ==== *
+ * The summary stops sitting side by side and stacks: subtotal row with the
+ * amount pushed to the right edge, note under it, checkout on its own line.
+ * The rows rearrange at 1280 rather than here — the two are independent, and
+ * the boards at 1024 draw exactly this pairing.
+ */
+
+@media screen and (width < 1440px) {
+  .main-cart {
+    --main-cart-subtotal-size: 3.2rem;
+    --main-cart-note-size: 1.4rem;
+  }
+
+  /* `stretch`, because the stacked totals row has to be the full content width
+     for the space-between below to have two ends to work with. Left at the
+     desktop rule's flex-start, the block shrank to its own content and
+     "Subtotal" and the amount sat side by side in the middle of the page. */
+  .main-cart__summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--bf-space-24);
+  }
+
+  .main-cart__totals {
+    flex: 0 0 auto;
+    gap: var(--bf-space-6);
+  }
+
+  /* Now that the row is the full content width, the label and the amount belong
+     at its two ends — the fixed 336 offset was a column in a grid that no
+     longer exists here. */
+  .main-cart__subtotal {
+    justify-content: space-between;
+    min-height: 0;
+    line-height: 1.1;
+  }
+
+  .main-cart__subtotal-label {
+    flex: 0 0 auto;
+  }
+
+  /* align-self overrides the stretch above: the button is a control, not a
+     band, and a stretched one would put its clip at the far edge of the page. */
+  .main-cart__checkout {
+    flex: 0 0 auto;
+    align-self: start;
+    min-height: 0;
+  }
+}
+
+@media screen and (width < 1024px) {
+  .main-cart {
+    --main-cart-subtotal-size: 2.8rem;
+    --main-cart-note-size: 1.3rem;
+  }
+}
+
+@media screen and (width < 834px) {
+  .main-cart {
+    --main-cart-subtotal-size: 2.2rem;
+    --main-cart-note-size: 1.2rem;
+  }
+
+  .main-cart__hero {
+    padding-top: 8rem;
+    padding-bottom: 4rem;
+  }
+
+  .main-cart__summary {
+    gap: var(--bf-space-20);
+  }
+
+  .main-cart__empty {
+    padding-bottom: 9.6rem;
+  }
+}
+
+/*
+ * The roll between the faces stays — it is the button reporting what it is
+ * doing, and removing it would leave a checkout that says nothing while the
+ * browser waits. What goes is the decoration: the hover's travel, the lead
+ * arrow, and the dots' pulse.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .main-cart__checkout-arrow,
+  .main-cart__checkout-label,
+  .main-cart__cta-icon {
+    transition: none;
+  }
+
+  .main-cart__checkout:hover .main-cart__checkout-arrow--lead,
+  .main-cart__checkout:focus-visible .main-cart__checkout-arrow--lead {
+    transform: translateX(-100%);
+  }
+
+  .main-cart__checkout:hover .main-cart__checkout-face--idle .main-cart__checkout-label,
+  .main-cart__checkout:hover .main-cart__checkout-arrow:not(.main-cart__checkout-arrow--lead),
+  .main-cart__checkout:focus-visible .main-cart__checkout-face--idle .main-cart__checkout-label,
+  .main-cart__checkout:focus-visible .main-cart__checkout-arrow:not(.main-cart__checkout-arrow--lead) {
+    transform: none;
+  }
+
+  .main-cart__checkout[data-state="pending"] .main-cart__checkout-dot {
+    animation: none;
+  }
+
+  .main-cart__cta:hover .main-cart__cta-icon {
+    transform: none;
+  }
+}

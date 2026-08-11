@@ -1,0 +1,234 @@
+{%- comment -%}
+  One row of the bag — the boards' `Cart Line Item — Compact` (`ZUIpS`) and
+  `Cart Line Item — Mobile` (`sH865`), used at every width.
+
+  ONE ARRANGEMENT, NOT THREE. The 1440 board `UUnfX` draws this row as three text
+  columns with the image between them; it is not what ships. See the note at the
+  top of bf-cart-line.css for why. What matters here is that the markup below is
+  the same at every width, and that only two things in it are not in the order
+  they are drawn:
+
+    - price sits next to the title in the DOM because that is the order the two
+      are read out in; `order: 1` moves it under the options where it is drawn.
+    - Delete comes before the stepper for the same reason — removing a line is
+      the more consequential control, so it is reached first by keyboard.
+
+  Both are one line each in bf-cart-line.css.
+
+  Accepts:
+    item         - a line_item from cart.items. Required.
+    index        - 0-based position in cart.items. Required: the +1 of it is the
+                   LINE NUMBER /cart/change.js addresses, and it is what
+                   bf-main-cart.js reads back off data-line.
+    remove_label - visible text of the delete control, e.g. 'Delete'.
+    type_label   - prefix on the product-type line, e.g. 'Type:'.
+
+  Usage:
+    {%- for item in cart.items -%}
+      {%- render 'bf-cart-line',
+        item: item,
+        index: forloop.index0,
+        remove_label: section.settings.remove_label,
+        type_label: section.settings.type_label
+      -%}
+    {%- endfor -%}
+
+  The two visible strings are parameters because `render` isolates scope — a
+  snippet cannot see `section`. Accessible names are NOT parameters: they come
+  from Dawn's locale files, which are already translated into the thirty
+  languages the theme ships, and a section setting would be one English string
+  on every storefront.
+
+  The line NUMBER, not item.key, is what goes on the wire. Both identify the
+  line to Shopify, but a line number is only stable for the length of one render
+  while a key is stable across renders — and since every mutation re-renders
+  this whole section, the shorter-lived identifier is the one that cannot go
+  stale behind us.
+
+  PRICE IS THE LINE TOTAL, not the unit price. The board reads ₹2,198 against a
+  quantity of 2 on a ₹1,099 tee, which is `final_line_price`.
+{%- endcomment -%}
+
+{%- liquid
+  assign line = index | plus: 1
+  assign discounted = false
+  if item.original_line_price > item.final_line_price
+    assign discounted = true
+  endif
+-%}
+
+{%- comment -%}
+  cart-line--first is what zeroes the row's 48px top padding. It is a modifier
+  and not :first-child in the stylesheet because each row is wrapped in its own
+  <bf-reveal> for the entrance, which makes every row the first child of
+  something.
+{%- endcomment -%}
+<div class="cart-line{% if index == 0 %} cart-line--first{% endif %}" data-line="{{ line }}">
+  <div class="cart-line__inner">
+    <div class="cart-line__info">
+      <a class="cart-line__title" href="{{ item.url }}">{{ item.product.title | escape }}</a>
+
+      <div class="cart-line__price">
+        {%- if discounted -%}
+          {%- comment -%}
+            <s> rather than a class, so the saving survives a stylesheet that
+            failed to load — and the two visually-hidden labels because "₹2,198
+            ₹1,999" read out in sequence says nothing about which is which.
+          {%- endcomment -%}
+          <span class="visually-hidden">{{ 'products.product.price.regular_price' | t }}</span>
+          <s class="cart-line__price-was">{{ item.original_line_price | money }}</s>
+          <span class="visually-hidden">{{ 'products.product.price.sale_price' | t }}</span>
+        {%- endif -%}
+
+        <span class="cart-line__price-now">{{ item.final_line_price | money }}</span>
+      </div>
+
+      <div class="cart-line__variant">
+        {%- comment -%}
+          The board's two lines are `Type: Oversized T-Shirt` and `Size: L`. The
+          first is product.type, the second a variant option, and they are drawn
+          differently on purpose — the type is set back at 0.6 while the option
+          carries the weight, because the option is the thing a customer checks
+          before paying.
+
+          Options are looped rather than pinned to "Size". Every product on the
+          store has exactly one option today, but a tee that gained a colour
+          would otherwise silently drop it from the bag.
+        {%- endcomment -%}
+        {%- if item.product.type != blank -%}
+          <span class="cart-line__type">
+            {{- type_label }}
+            {{ item.product.type -}}
+          </span>
+        {%- endif -%}
+
+        {%- unless item.product.has_only_default_variant -%}
+          {%- for option in item.options_with_values -%}
+            <span class="cart-line__option">{{ option.name }}: {{ option.value }}</span>
+          {%- endfor -%}
+        {%- endunless -%}
+
+        {%- comment -%}
+          A property whose name starts with an underscore is Shopify's own
+          convention for "internal, do not display" — apps stash state there.
+          Blank values are skipped for the same reason Dawn skips them: an empty
+          property is one an app set and did not fill in.
+        {%- endcomment -%}
+        {%- for property in item.properties -%}
+          {%- assign first_character = property.first | slice: 0 -%}
+          {%- unless property.last == blank or first_character == '_' -%}
+            <span class="cart-line__option">{{ property.first }}: {{ property.last }}</span>
+          {%- endunless -%}
+        {%- endfor -%}
+
+        {%- if item.selling_plan_allocation != null -%}
+          <span class="cart-line__option">{{ item.selling_plan_allocation.selling_plan.name }}</span>
+        {%- endif -%}
+
+        {%- for discount in item.line_level_discount_allocations -%}
+          <span class="cart-line__discount">
+            {{ discount.discount_application.title }} (−{{ discount.amount | money }})
+          </span>
+        {%- endfor -%}
+      </div>
+    </div>
+
+    {%- comment -%}
+      aria-hidden with tabindex -1: the title above already links to the same
+      product, and two adjacent links to one destination make a screen reader
+      announce every product in the bag twice.
+    {%- endcomment -%}
+    <a class="cart-line__media" href="{{ item.url }}" aria-hidden="true" tabindex="-1">
+      {%- if item.image -%}
+        <img
+          class="cart-line__image"
+          src="{{ item.image | image_url: width: 600 }}"
+          srcset="
+            {{ item.image | image_url: width: 300 }} 300w,
+            {{ item.image | image_url: width: 600 }} 600w,
+            {{ item.image | image_url: width: 900 }} 900w
+          "
+          sizes="(min-width: 1280px) 18vw, 36vw"
+          alt=""
+          width="{{ item.image.width }}"
+          height="{{ item.image.height }}"
+          loading="lazy"
+        >
+      {%- endif -%}
+    </a>
+
+    <div class="cart-line__actions">
+      {%- comment -%}
+        A LINK, not a button, and Dawn's own remove control is one too:
+        `item.url_to_remove` is a real /cart/change URL, so deleting a line still
+        works with the script absent. bf-main-cart.js intercepts the click and
+        never lets the navigation happen when it is present.
+      {%- endcomment -%}
+      <a
+        class="cart-line__remove"
+        href="{{ item.url_to_remove }}"
+        aria-label="{{ 'sections.cart.remove_title' | t: title: item.title }}"
+        data-remove
+      >
+        {{- remove_label -}}
+      </a>
+
+      {%- comment -%}
+        <bf-quantity> is the PDP's stepper, reused whole: it owns stepUp/stepDown
+        against the input's own min and max and disables the button that would do
+        nothing. All it emits is a `change` on the input, which is the same event
+        a customer typing a number produces — so bf-main-cart.js listens for one
+        thing and never has to know which of the three raised it.
+
+        min is 0, not 1: stepping down off the last one is how the boards' only
+        other removal gesture works, and the stepper would otherwise stop at 1
+        with the customer pressing a dead button.
+      {%- endcomment -%}
+      <bf-quantity class="cart-line__qty">
+        <button
+          class="cart-line__step"
+          type="button"
+          data-step="down"
+          aria-label="{{ 'products.product.quantity.decrease' | t: product: item.title }}"
+        >
+          {%- render 'bf-icon', icon: 'minus', size: '1em' -%}
+        </button>
+
+        <label class="visually-hidden" for="bf-cart-qty-{{ line }}">
+          {{- 'products.product.quantity.input_label' | t: product: item.title -}}
+        </label>
+        <input
+          class="cart-line__count"
+          id="bf-cart-qty-{{ line }}"
+          type="number"
+          name="updates[]"
+          value="{{ item.quantity }}"
+          min="0"
+          step="1"
+          inputmode="numeric"
+          autocomplete="off"
+          data-quantity
+        >
+
+        <button
+          class="cart-line__step"
+          type="button"
+          data-step="up"
+          aria-label="{{ 'products.product.quantity.increase' | t: product: item.title }}"
+        >
+          {%- render 'bf-icon', icon: 'plus', size: '1em' -%}
+        </button>
+      </bf-quantity>
+    </div>
+  </div>
+
+  {%- comment -%}
+    Per line, not per page: "you can only add 2 of this item" belongs beside the
+    line it is about, and a customer who has scrolled to the fourth tee will not
+    see a message parked at the top of the bag. Written by bf-main-cart.js from
+    the quantity /cart/change.js actually granted.
+  {%- endcomment -%}
+  <p class="cart-line__error" data-line-error role="status" hidden></p>
+
+  <hr class="cart-line__rule">
+</div>

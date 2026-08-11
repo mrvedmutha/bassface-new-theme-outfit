@@ -1,0 +1,293 @@
+{%- comment -%}
+  Bassface bag — replaces Dawn's main-cart-items + main-cart-footer pair for
+  templates/cart.json. Boards: `w1pQjE` 1440, `Gg2md` 1024, `NDdvm` 834,
+  `r4WGv` 448, `B93pNf` 390, and `h3wEI` for the empty bag.
+
+  ONE SECTION, NOT TWO. Dawn splits the bag across two sections so the subtotal
+  can be reordered or dropped in the editor, and pays for it by keeping the
+  <form> in the first and the submit button in the second, then re-rendering
+  both on every quantity change. The board draws one composition — title, rule,
+  rows, subtotal, checkout — with no seam a merchant would want to move, and one
+  section means one round trip and one thing to swap.
+
+  WHY IT IS NOT DAWN'S SECTION RESTYLED. Same reason as bf-main-search: the
+  stock page paints itself from Dawn's colour-scheme settings, so /cart stayed
+  black-on-white while the header above it followed the theme switcher — visible
+  in the before-shots as a white page under a cream masthead. Every colour here
+  is --bf-ink on --bf-surface. Beyond the paint, <cart-items> addresses its
+  markup by Dawn's own class names (.cart-item, .cart-item__name,
+  #Quantity-{n}, .loading__spinner), so keeping the element would have meant
+  keeping that vocabulary inside a BEM block named `cart-line`.
+
+  NO BREADCRUMB AND NO 48px PAGE TITLE. DESIGN-STATUS is explicit that the bag
+  deliberately does not use the standard page shell: the title is a full-bleed
+  wordmark fitted to the content width, and there is nothing above it.
+
+  The <form> is real and posts to /cart. bf-main-cart.js takes over both
+  controls it holds, but with the script absent a customer can still edit the
+  numbers and press Checkout — Shopify processes `updates[]` on that POST before
+  it forwards to checkout — and Delete is a plain link to Shopify's own
+  /cart/change URL. Nothing on this page needs JavaScript to work.
+{%- endcomment -%}
+
+{{ 'bf-reveal.css' | asset_url | stylesheet_tag }}
+{{ 'bf-cart-line.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-cart.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-reveal.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-quantity.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-main-cart.js' | asset_url }}" defer="defer"></script>
+
+{%- comment -%}
+  data-updated-message is what the live region says once a change has gone
+  through. Composed here rather than in the script because it is a translated
+  string and a money-formatted total, and both belong to the server — Dawn's own
+  cart live region is this same sentence. It rides on the element rather than
+  inside it so that bf-main-cart.js, which swaps the contents, has to copy the
+  new one across deliberately instead of inheriting a stale figure.
+{%- endcomment -%}
+<bf-main-cart
+  class="main-cart"
+  data-section-id="{{ section.id }}"
+  data-error-message="{{ section.settings.error_message | escape }}"
+  data-updated-message="{{ 'sections.cart.new_estimated_total' | t }}: {{ cart.total_price | money_with_currency }}"
+>
+  {%- comment -%}
+    The entrance, and it is the product page's, not a new one: <bf-reveal
+    type="rise"> clips a wrapper and climbs its child out from under the top
+    edge, on the hero's own 1400ms quart-out. It waits on the preloader handing
+    over AND on reaching the viewport, so the wordmark does not play out behind
+    a curtain that has not lifted yet.
+
+    The RESTING STATE IS THE VISIBLE ONE — nothing is hidden until bf-reveal.js
+    adds `is-concealed`. A blocked script leaves a plain, readable bag rather
+    than a page of empty boxes.
+
+    --reveal-index is the stagger, one step per row, so the list is dealt out
+    rather than arriving as a block. The hero is 0 by default; the rows start at
+    1 and the summary follows the last of them.
+
+    bf-main-cart.js strips these wrappers out of every re-rendered section it
+    swaps in. The rise is how the page ARRIVES; replaying it because someone
+    pressed + would be the page arriving again, which it did not.
+  {%- endcomment -%}
+  <div class="main-cart__hero">
+    <bf-reveal class="reveal reveal--rise">
+      <h1 class="main-cart__title">{{ section.settings.heading }}</h1>
+    </bf-reveal>
+    <hr class="main-cart__rule">
+  </div>
+
+  {%- if cart == empty -%}
+    <div class="main-cart__empty">
+      <bf-reveal class="reveal reveal--rise" style="--reveal-index: 1">
+        <p class="main-cart__empty-lines">
+          <span class="main-cart__empty-line">{{ section.settings.empty_line_1 }}</span>
+          <span class="main-cart__empty-line">{{ section.settings.empty_line_2 }}</span>
+        </p>
+      </bf-reveal>
+
+      <bf-reveal class="reveal reveal--rise" style="--reveal-index: 2">
+        <a
+          class="main-cart__cta"
+          href="{{ section.settings.empty_cta_url | default: routes.all_products_collection_url }}"
+        >
+          {{ section.settings.empty_cta_label }}
+          <span class="main-cart__cta-icon" aria-hidden="true">
+            {%- render 'bf-icon', icon: 'arrow-up-right', size: 48 -%}
+          </span>
+        </a>
+      </bf-reveal>
+    </div>
+  {%- else -%}
+    <form action="{{ routes.cart_url }}" method="post" novalidate>
+      <div class="main-cart__items">
+        {%- for item in cart.items -%}
+          <bf-reveal class="reveal reveal--rise" style="--reveal-index: {{ forloop.index }}">
+            {%- render 'bf-cart-line',
+              item: item,
+              index: forloop.index0,
+              remove_label: section.settings.remove_label,
+              type_label: section.settings.type_label
+            -%}
+          </bf-reveal>
+        {%- endfor -%}
+      </div>
+
+      <div class="main-cart__summary">
+        <div class="main-cart__totals">
+          <div class="main-cart__subtotal">
+            <span class="main-cart__subtotal-label">{{ section.settings.subtotal_label }}</span>
+            <span class="main-cart__subtotal-value">{{ cart.total_price | money }}</span>
+          </div>
+
+          {%- comment -%}
+            Cart-level discounts sit under the subtotal rather than beside it:
+            the board has one row and no second column, and an order discount
+            that moved the amount without saying why is the one thing on this
+            page a customer would dispute.
+          {%- endcomment -%}
+          {%- if cart.cart_level_discount_applications.size > 0 -%}
+            <ul class="main-cart__discounts" role="list">
+              {%- for discount in cart.cart_level_discount_applications -%}
+                <li class="main-cart__discount">
+                  {{ discount.title }} (−{{ discount.total_allocated_amount | money }})
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          <p class="main-cart__note">{{ section.settings.tax_note }}</p>
+        </div>
+
+        {%- comment -%}
+          name="checkout" is what tells /cart to forward to the checkout after it
+          has applied any `updates[]` the form carries. Same button with or
+          without the script — nothing here is a JavaScript-only control.
+
+          Two faces stacked in one grid cell, rolled through by bf-main-cart.js
+          writing data-state on the button. The product page's Add to Bag has
+          four because it stays on the page and has a result to report; this one
+          has two because a checkout LEAVES, and the only thing to say is that
+          the wait has started. Without it the button is pressed, nothing visibly
+          happens for as long as Shopify takes to answer, and it gets pressed
+          again.
+
+          The hover is the product page's, whole: a second arrow parked off the
+          left edge slides in while the label and the trailing arrow shift right
+          by an arrow's width. `1.2em` is that width, and bf-main-cart.css
+          repeats the figure as --main-cart-checkout-arrow — the two have to
+          agree or the incoming arrow lands short of where the label left.
+
+          aria-hidden on the pending face keeps the button's accessible name
+          "Checkout" for anyone arriving mid-roll; the wait itself reaches
+          assistive tech through aria-disabled.
+        {%- endcomment -%}
+        <button class="main-cart__checkout" type="submit" name="checkout">
+          <span class="main-cart__checkout-face main-cart__checkout-face--idle">
+            <span class="main-cart__checkout-arrow main-cart__checkout-arrow--lead" aria-hidden="true">
+              {%- render 'bf-icon', icon: 'arrow-up-right', size: '1.2em' -%}
+            </span>
+            <span class="main-cart__checkout-label">{{ section.settings.checkout_label }}</span>
+            <span class="main-cart__checkout-arrow" aria-hidden="true">
+              {%- render 'bf-icon', icon: 'arrow-up-right', size: '1.2em' -%}
+            </span>
+          </span>
+
+          {%- comment -%}
+            Three real full stops, not drawn circles: they inherit the face and
+            its 64px size, so they sit on the baseline as an ellipsis rather than
+            as three shapes that happen to be near some text.
+          {%- endcomment -%}
+          <span class="main-cart__checkout-face main-cart__checkout-face--pending" aria-hidden="true">
+            <span class="main-cart__checkout-label">
+              {{- section.settings.pending_label -}}
+              <span class="main-cart__checkout-dot">.</span>
+              <span class="main-cart__checkout-dot">.</span>
+              <span class="main-cart__checkout-dot">.</span>
+            </span>
+          </span>
+        </button>
+      </div>
+    </form>
+  {%- endif -%}
+
+  {%- comment -%}
+    One live region for the whole page, holding whatever the last mutation did —
+    "Removed Afrojack …", "Bag updated". The per-line errors beside each row are
+    role="status" in their own right; this one exists because a REMOVED line
+    takes its own error node with it, so there would otherwise be nothing left
+    in the document to announce the thing that just happened.
+  {%- endcomment -%}
+  <p class="visually-hidden" role="status" data-cart-status></p>
+</bf-main-cart>
+
+{% schema %}
+{
+  "name": "Cart",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "info": "Set at a size fitted to an 8-character word. A longer heading renders smaller — see bf-main-cart.css.",
+      "default": "YOUR BAG"
+    },
+    {
+      "type": "text",
+      "id": "subtotal_label",
+      "label": "Subtotal label",
+      "default": "Subtotal"
+    },
+    {
+      "type": "text",
+      "id": "tax_note",
+      "label": "Note under the subtotal",
+      "default": "Taxes and shipping will be calculated at checkout."
+    },
+    {
+      "type": "text",
+      "id": "checkout_label",
+      "label": "Checkout button",
+      "default": "Checkout"
+    },
+    {
+      "type": "text",
+      "id": "pending_label",
+      "label": "Checkout button, while waiting",
+      "info": "Shown with an animated ellipsis after it while the browser leaves for the checkout.",
+      "default": "Checking out"
+    },
+    {
+      "type": "header",
+      "content": "Line items"
+    },
+    {
+      "type": "text",
+      "id": "type_label",
+      "label": "Product type prefix",
+      "info": "Renders as \"Type: Oversized T-Shirt\".",
+      "default": "Type:"
+    },
+    {
+      "type": "text",
+      "id": "remove_label",
+      "label": "Remove link",
+      "default": "Delete"
+    },
+    {
+      "type": "text",
+      "id": "error_message",
+      "label": "Update failed message",
+      "default": "That didn't go through. Try again."
+    },
+    {
+      "type": "header",
+      "content": "Empty bag"
+    },
+    {
+      "type": "text",
+      "id": "empty_line_1",
+      "label": "First line",
+      "default": "Not even one tee?"
+    },
+    {
+      "type": "text",
+      "id": "empty_line_2",
+      "label": "Second line",
+      "default": "That's sad."
+    },
+    {
+      "type": "text",
+      "id": "empty_cta_label",
+      "label": "Link label",
+      "default": "Explore the shop"
+    },
+    {
+      "type": "url",
+      "id": "empty_cta_url",
+      "label": "Link",
+      "info": "Defaults to all products."
+    }
+  ]
+}
+{% endschema %}
