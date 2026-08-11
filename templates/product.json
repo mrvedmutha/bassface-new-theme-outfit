@@ -14,9 +14,28 @@
       "settings": {
         "breadcrumb_home": "Home",
         "breadcrumb_label": "Breadcrumb",
-        "tax_note": "Inclusive of all taxes"
+        "tax_note": "Inclusive of all taxes",
+        "cta_label": "Add to Bag",
+        "sold_out_label": "Sold out",
+        "pending_label": "Adding",
+        "added_label": "Added",
+        "retry_label": "Try again",
+        "error_message": "Couldn't add to bag. Please try again.",
+        "feedback_duration": 2,
+        "delivery_prefix": "Order today, get it by",
+        "default_region": "Metro",
+        "detect_region": true,
+        "shipping_policy_page": "",
+        "offers": "BASS350 — Buy 2, get ₹350 off.",
+        "payment_methods": "Visa, Mastercard, RuPay, UPI, Cash on Delivery",
+        "description_label": "Product Description",
+        "size_chart_label": "Size Chart",
+        "shipping_label": "Shipping & Returns",
+        "shipping_content": "<p>Dispatched within 3-5 Working Days. Free returns within 2 days of delivery, on unworn items with tags attached.</p>"
       }
     }
   },
-  "order": ["main"]
+  "order": [
+    "main"
+  ]
 }
