@@ -1,0 +1,148 @@
+{%- comment -%}
+  Bassface legal pages — the boards are `dtbGV` Privacy, `FsLJt` Refund,
+  `Lb6aG` Shipping, `pnQNk` Terms, `pukrO` Contact Information,
+  `D9kj1` Partial Payment and `ZwHbP` Privacy Choices, all at 1440.
+
+  ONE SECTION, ONE TEMPLATE, SEVEN PAGES. Shopify has no policy template type,
+  so the store's /policies/* URLs cannot carry this design at all — every legal
+  page here is an ordinary Page assigned the `Legal` template by hand, under
+  Online Store > Pages > … > Theme template, exactly as About is. The footer
+  already knows: bf-footer.liquid switches to its minimal variant on
+  `template.suffix == 'legal'`.
+
+  THE COPY LIVES IN THE PAGE, NOT IN SETTINGS, and it has to. Seven pages share
+  this one template, so anything stored in section settings or blocks would be
+  stored ONCE and appear identically on all seven. `page.content` is the only
+  per-page surface there is, which makes the page editor the single place a
+  policy is ever edited — and the right place, since these are documents a
+  lawyer amends, not a layout a designer arranges.
+
+  The consequence is that the design's section pattern — the `01` numeral, the
+  hairline, the block types — has to be reachable from what the rich text editor
+  produces. It is, entirely in CSS: see the authoring contract in
+  bf-main-legal.css, which is the file to read before touching any of this. The
+  numerals are counters, so they renumber themselves when a section is added or
+  removed. Nothing on this page stores a number.
+
+  NO REVEAL ON THE INDEX, deliberately. bf-page-transition swaps the whole of
+  <main> on a policy-to-policy click, so every <bf-reveal> inside it is a fresh
+  element that animates again. On the title that is right — it is the thing that
+  changed. On the index it would be wrong twice over: the column the visitor is
+  aiming at would jump under the cursor, and the one part of the page that is
+  supposed to feel bolted down would be the part that moves.
+{%- endcomment -%}
+
+{{ 'bf-breadcrumb.css' | asset_url | stylesheet_tag }}
+{{ 'bf-reveal.css' | asset_url | stylesheet_tag }}
+{{ 'bf-legal-index.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-legal.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-reveal.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign updated = page.metafields.custom.last_updated
+
+  if updated.type == 'date' or updated.type == 'date_time'
+    assign updated_text = updated.value | date: '%-d %B %Y'
+  else
+    assign updated_text = updated.value
+  endif
+-%}
+
+<div class="legal">
+  {%- render 'bf-breadcrumb',
+    current: page.title,
+    home_label: section.settings.breadcrumb_home,
+    label: section.settings.breadcrumb_label
+  -%}
+
+  <div class="legal__header">
+    <bf-reveal class="reveal reveal--rise">
+      <h1 class="legal__title">{{ page.title }}</h1>
+    </bf-reveal>
+
+    {%- comment -%}
+      "Last updated" is a page metafield rather than a setting for the same
+      reason the body is: a setting would give all seven pages one date, and the
+      one thing a visitor checks on a policy is whether it changed since they
+      last read it. Absent on a page that has never set it, which is correct —
+      an invented date is worse than none.
+
+      Definition to create: custom.last_updated, type Date, on Pages.
+    {%- endcomment -%}
+    {%- if updated_text != blank -%}
+      <p class="legal__updated">
+        {{- section.settings.updated_label }}
+        {{ updated_text -}}
+      </p>
+    {%- endif -%}
+  </div>
+
+  <div class="legal__body">
+    {%- render 'bf-legal-index',
+      menu: section.settings.index_menu,
+      heading: section.settings.index_heading,
+      label: section.settings.index_label
+    -%}
+
+    {%- comment -%}
+      `page.content` is already sanitised HTML from the page editor, so it is
+      output raw — an `escape` here would print the markup as text.
+
+      The wrapper is what the counters are scoped to and what the swap fades in,
+      so it stays even when the page is empty.
+    {%- endcomment -%}
+    <div class="legal__doc">{{ page.content }}</div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Legal page",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Title and body come from the page itself — this template is shared by every legal page, so anything set here shows on all of them."
+    },
+    {
+      "type": "link_list",
+      "id": "index_menu",
+      "label": "Legal menu",
+      "info": "The index down the side. Point it at Pages, not /policies/ URLs. The current page is marked automatically. Suggested menu: legal."
+    },
+    {
+      "type": "text",
+      "id": "index_heading",
+      "label": "Index eyebrow",
+      "default": "LEGAL"
+    },
+    {
+      "type": "text",
+      "id": "index_label",
+      "label": "Index landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Legal"
+    },
+    {
+      "type": "text",
+      "id": "updated_label",
+      "label": "Last updated prefix",
+      "info": "Shown only on pages with a custom.last_updated metafield, followed by the date.",
+      "default": "Last updated"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Breadcrumb home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Breadcrumb landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    }
+  ]
+}
+{% endschema %}

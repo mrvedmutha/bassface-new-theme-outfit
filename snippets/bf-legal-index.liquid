@@ -4,14 +4,18 @@
   wide on all seven policy boards.
 
   Accepts:
-    handle  - linklist handle. Defaults to 'legal'.
+    menu    - a linklist, straight from a `link_list` setting. Preferred, and
+              what the section passes, so the merchant picks the menu in the
+              editor rather than matching a handle by hand.
+    handle  - linklist handle, used only when `menu` is blank. Defaults to
+              'legal', which is what a bare render resolves to.
     heading - the eyebrow text. Defaults to 'LEGAL'. Uppercased by CSS, since
               this one is a fixed word rather than merchant copy — unlike
               bf-about-head's label, which arrives already capitalised.
     label   - the landmark name read by screen readers. Defaults to 'Legal'.
 
   Usage:
-    {%- render 'bf-legal-index' -%}
+    {%- render 'bf-legal-index', menu: section.settings.index_menu -%}
 
   The consumer loads bf-legal-index.css.
 
@@ -41,7 +45,10 @@
   assign handle = handle | default: 'legal'
   assign heading = heading | default: 'LEGAL'
   assign label = label | default: 'Legal'
-  assign menu = linklists[handle]
+
+  if menu == blank
+    assign menu = linklists[handle]
+  endif
 -%}
 
 {%- if menu.links.size > 0 -%}

@@ -1,0 +1,367 @@
+/* @define legal; weak */
+
+/*
+ * WEAK MODE, AND THE ONLY FILE IN THE THEME THAT USES IT.
+ *
+ * Strict BEM says every selector in this file must be `.legal`, `.legal__x` or
+ * `.legal--x`. That holds for the page's own markup and this file obeys it
+ * there. It cannot hold inside `.legal__doc`, because that subtree is
+ * `page.content` — HTML the rich text editor emits, with no classes on it and
+ * no way for us to put any there. `h2`, `li` and `td` are the only handles that
+ * exist.
+ *
+ * `weak` still enforces the block: every CLASS in this file must belong to
+ * `legal`, so a stray `.sidebar` is caught exactly as before. What it permits
+ * is a scoped descendant of an element of the block, which is precisely the one
+ * thing needed and nothing wider. The alternative was 29 stylelint-disable
+ * comments, all giving this same reason.
+ */
+
+/*
+ * The legal pages — seven boards, one document template. `dtbGV` Privacy,
+ * `FsLJt` Refund, `Lb6aG` Shipping, `pnQNk` Terms, `pukrO` Contact Information,
+ * `D9kj1` Partial Payment, `ZwHbP` Privacy Choices.
+ *
+ * ======================================================================
+ * THE AUTHORING CONTRACT — read this before editing a policy in the admin
+ * ======================================================================
+ *
+ * Every legal page's body is `page.content`, straight out of the rich text
+ * editor, because seven pages share one template and the page is the only
+ * per-page surface there is. So the design's section pattern is reached by
+ * writing ordinary rich text, and this file is what turns it into the board:
+ *
+ *   first paragraph   the intro, 18/1.6
+ *   Heading 2         a numbered section: `01`, hairline under it
+ *   Heading 3         an inline subheading, 16/700
+ *   paragraph         body copy, 16/1.6
+ *   bulleted list     dash at 0.5 opacity, text beside it
+ *   a paragraph that  a note, 15 italic at 0.65 — set the WHOLE paragraph
+ *   is entirely       italic and nothing else, or it reads as body copy
+ *   italic
+ *   table             the key/value layout Contact Information uses. Two
+ *                     columns; the editor has no table button, so paste it
+ *                     through the `<>` HTML view
+ *
+ * THE NUMERALS ARE COUNTERS, NOT TYPED. Deleting the third section renumbers
+ * the rest on the next render. Never type `01` into a heading — you would get
+ * `01 01`, and the two would disagree the first time the order changed. This is
+ * the same rule bf-main-about.liquid states for its own runs: a stored number is
+ * a second source of truth that goes stale.
+ *
+ * ======================================================================
+ *
+ * FULL-BLEED, no --bf-page-max cap, matching About, Contact, the cart and the
+ * footer. The two columns are the boards' fixed 280 and 760 and they stay left,
+ * so past 1440 the trailing space grows rather than the measure. That is the
+ * board's own arrangement — DESIGN-STATUS.md calls the ~270px of trailing space
+ * at 1440 intentional, and 760 of running text is the readable measure whatever
+ * the viewport does. Centring the pair or letting the document fill would both
+ * be a theme-wide decision about wide screens, which bf-main-search.css makes
+ * the same argument for leaving alone.
+ */
+
+.legal {
+  display: block;
+}
+
+/* --------------------------------------------------------------- header --- */
+
+/* 48 below, matching About's header. Off the 4px token scale, so a literal —
+   bf-breadcrumb.css and bf-main-cart.css handle their off-scale figures the
+   same way. The 48/500 title itself is bf-base.css's bare h1, including the
+   step to 36 below 1024, so `legal__title` only has a margin to clear. */
+.legal__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+  padding: 0 var(--bf-page-padding) 4.8rem;
+}
+
+.legal__title {
+  margin: 0;
+}
+
+.legal__updated {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-text-caption-weight);
+  letter-spacing: var(--bf-text-caption-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* ----------------------------------------------------------------- body --- */
+
+/*
+ * Stacked below the laptop breakpoint: index first, then the document at full
+ * content width, per the responsive note in DESIGN-STATUS.md. The index turns
+ * itself into a two-up grid at this width — that layout lives in
+ * bf-legal-index.css, since it belongs to the component rather than to the page
+ * holding it.
+ */
+.legal__body {
+  display: grid;
+  gap: var(--bf-space-40);
+
+  /* 96, off-scale, and the boards' `[0,24,96,24]`. */
+  padding: 0 var(--bf-page-padding) 9.6rem;
+}
+
+/* -------------------------------------------------------------- document --- */
+
+/*
+ * `counter-reset` is what makes the section numerals restart per page rather
+ * than run on from whatever came before, and it must sit on the scope that
+ * holds the h2s — not on `.legal`, which would still work today but would
+ * quietly keep counting if a second document ever shared the page.
+ */
+.legal__doc {
+  counter-reset: legal-section;
+  color: var(--bf-ink);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+
+  /* 1.6, and the boards mean it — long-form legal text is the one place in the
+     theme that wants more leading than --bf-leading-relaxed's 1.4. */
+  line-height: 1.6;
+
+  /* Legal copy carries bare URLs and support addresses, and the document track
+     can shrink to 616 at 1024. One unbreakable string is all it takes to push
+     the whole grid wider than the page. */
+  overflow-wrap: break-word;
+}
+
+/*
+ * BODY COPY IS SOLID INK, NOT MUTED, and this is the page's one real colour
+ * rule. The UI Kit reserves 0.5–0.6 for secondary text, but here the legal text
+ * IS the content; only "Last updated", the list dashes, the section numerals,
+ * the table labels and the inactive index links drop back.
+ */
+.legal__doc > * {
+  margin: 0;
+}
+
+.legal__doc > * + * {
+  margin-top: var(--bf-space-20);
+}
+
+/*
+ * The 6px inset the boards give every block under a heading. Headings sit flush
+ * so the numerals line up down the left edge and the inset reads as text
+ * hanging off them.
+ */
+.legal__doc > p,
+.legal__doc > table {
+  padding-inline-start: var(--bf-space-6);
+}
+
+/* The intro, above the first section. 18 is not in the UI Kit — a literal
+   rather than a var() standing in for a token that does not exist. */
+.legal__doc > p:first-child {
+  font-size: 1.8rem;
+}
+
+/* ------------------------------------------------------------- sections --- */
+
+/*
+ * `NN Heading` on one row with the hairline under both — the About page's
+ * `about__head`, reached without markup to hang it on.
+ *
+ * Flex rather than a text-indent so a heading that wraps keeps its second line
+ * clear of the numeral instead of running back under it. The heading's own text
+ * becomes an anonymous flex item, which is exactly the two-column row wanted.
+ */
+.legal__doc h2 {
+  display: flex;
+  gap: var(--bf-space-16);
+  align-items: baseline;
+  padding-bottom: var(--bf-space-12);
+  border-bottom: var(--bf-border-hairline);
+  font-size: var(--bf-text-subhead-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-subhead-tracking);
+  line-height: var(--bf-leading-snug);
+}
+
+.legal__doc > * + h2 {
+  margin-top: var(--bf-space-64);
+}
+
+/* 13/900 tracked +0.5px at 0.5 opacity — `about__num`, declaration for
+   declaration, because it is the same numeral doing the same job. The em figure
+   differs from the eyebrow token's while the drawn result matches, since the
+   half-pixel is against 13 rather than 11.
+
+   `flex: none` keeps a two-digit numeral from being squeezed by a long
+   heading. */
+.legal__doc h2::before {
+  content: counter(legal-section, decimal-leading-zero);
+  counter-increment: legal-section;
+  flex: none;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-weight-black);
+  letter-spacing: 0.0385em;
+}
+
+/* The inline subheading. 16/700 — body size at emphasis weight, which is what
+   the UI Kit's body note already describes. */
+.legal__doc h3 {
+  padding-inline-start: var(--bf-space-6);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+.legal__doc > * + h3 {
+  margin-top: var(--bf-space-24);
+}
+
+/* ---------------------------------------------------------------- lists --- */
+
+/* The 6px inset lives here rather than in the block rule above, because it also
+   has to beat the browser's own 40px `padding-inline-start` on a list. */
+.legal__doc ul,
+.legal__doc ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-10);
+  padding-inline-start: var(--bf-space-6);
+  list-style: none;
+}
+
+/*
+ * The dash is a marker, not content — `aria-hidden` is unavailable on generated
+ * text, but a CSS ::before is not in the accessibility tree at all, which is the
+ * same outcome bf-breadcrumb.liquid reasons its way to for its separators.
+ *
+ * GRID, NOT FLEX, and only so a nested list survives. As a flex row a nested
+ * <ul> becomes a third item and lands to the RIGHT of the text; as a grid it
+ * falls to a second row, where the rule below moves it under the text rather
+ * than under the dash.
+ */
+.legal__doc li {
+  display: grid;
+  gap: var(--bf-space-10);
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.legal__doc li > ul,
+.legal__doc li > ol {
+  grid-column: 2;
+  padding-inline-start: 0;
+}
+
+.legal__doc li::before {
+  content: "—";
+  flex: none;
+  color: var(--bf-ink-muted);
+}
+
+/* An ordered list keeps its numbers, since a list the author numbered is one
+   where the order carries meaning — a returns procedure, not a set of points. */
+.legal__doc ol {
+  counter-reset: legal-item;
+}
+
+.legal__doc ol > li::before {
+  content: counter(legal-item) ".";
+  counter-increment: legal-item;
+}
+
+/* ----------------------------------------------------------------- note --- */
+
+/*
+ * A paragraph that is ENTIRELY italic is a note: 15 italic at 0.65. Anything
+ * with a stray roman word in it stays body copy, which is the behaviour to
+ * want — half-italic prose is emphasis, not an aside.
+ *
+ * `:has()` degrades to nothing where it is unsupported, leaving an ordinary
+ * italic paragraph. That is a smaller, quieter note rather than a broken one.
+ */
+.legal__doc p:has(> em:only-child) {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-ui-size);
+}
+
+/* ---------------------------------------------------------------- table --- */
+
+/*
+ * Contact Information's key/value layout — a 200px label column, the value at
+ * 16/700, a hairline under every row. The only board that abandons prose, and
+ * the only one that needs a table.
+ */
+.legal__doc table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.legal__doc td,
+.legal__doc th {
+  padding: var(--bf-space-16) 0;
+  border-bottom: var(--bf-border-hairline);
+  text-align: start;
+  vertical-align: baseline;
+}
+
+.legal__doc td:first-child,
+.legal__doc th:first-child {
+  width: 20rem;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-text-caption-weight);
+  letter-spacing: var(--bf-text-caption-tracking);
+}
+
+.legal__doc td:last-child,
+.legal__doc th:last-child {
+  font-weight: var(--bf-weight-bold);
+}
+
+/* ---------------------------------------------------------------- inline --- */
+
+.legal__doc strong {
+  font-weight: var(--bf-weight-bold);
+}
+
+/* Underlined rather than coloured: the theme has one ink per surface, so a link
+   inside a document has nothing to be but underlined. Matches the breadcrumb's
+   and the footer's hover treatment. */
+.legal__doc a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.legal__doc a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* -------------------------------------------------------------- laptop up --- */
+
+/*
+ * The board's two-column split: the 280 index, an 80 gutter, the 760 document.
+ * `align-items: start` so the index stays at the top of a 5000px page instead
+ * of stretching down it, and `justify-content: start` so the pair holds the
+ * left edge past 1440 rather than drifting to the middle.
+ *
+ * 80 is off the 4px token scale, like the 48 and 96 above.
+ *
+ * THE DOCUMENT TRACK IS `minmax(0, 76rem)`, NOT A FLAT 76rem, and it has to be.
+ * 280 + 80 + 760 is 1120 of content, which needs a 1168 viewport once the 24
+ * gutters are paid for — so a fixed track overflows the page across the whole
+ * 1024–1168 band, which is most laptops in portrait and every iPad Pro. The
+ * minmax lets the column give way down to whatever is there (616 at 1024) and
+ * reach the board's 760 exactly at 1168 and above, where the boards live.
+ */
+@media screen and (width >= 1024px) {
+  .legal__body {
+    gap: 8rem;
+    grid-template-columns: 28rem minmax(0, 76rem);
+    align-items: start;
+    justify-content: start;
+  }
+}
