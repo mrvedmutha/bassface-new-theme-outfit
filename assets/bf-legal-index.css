@@ -121,6 +121,32 @@
  * compete with the document's own section hairlines across the gutter.
  */
 @media screen and (width >= 1024px) {
+  /*
+   * STICKY, and only here. A policy runs 3000–9000px; a static index scrolls off
+   * inside the first screen and the visitor is left reading a wall of clauses
+   * with no way back to the other six without returning to the top. Pinned, the
+   * whole set stays reachable from anywhere in the document, which is the point
+   * of putting an index beside the text rather than above it.
+   *
+   * Stacked, there is nothing to stick against — the index sits above the
+   * document, so pinning it would park a two-up grid over the copy for the
+   * entire scroll. Hence the media query rather than a base rule.
+   *
+   * The offset is bf-main-product's, to the token: the masthead bar is fixed at
+   * 108, so anything pinned to `top: 0` slides under it. No JS partner is needed
+   * the way `.main-product__aside` needs one — that column can outgrow the
+   * viewport and has to be pinned by its bottom edge instead; seven links and an
+   * eyebrow are ~250px and always fit.
+   *
+   * The section supplies the other half of this: `align-items: start` on
+   * `.legal__body`, without which the grid item stretches to the row height and
+   * has no travel to stick within. It is already there for its own reasons.
+   */
+  .legal-index {
+    position: sticky;
+    top: calc(var(--bf-header-height) + var(--bf-space-24));
+  }
+
   .legal-index__list {
     display: flex;
     flex-direction: column;
