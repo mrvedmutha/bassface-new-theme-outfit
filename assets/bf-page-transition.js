@@ -178,6 +178,44 @@
 
   const fire = (name, detail) => document.dispatchEvent(new CustomEvent(name, { detail }));
 
+  /*
+   * THE SCROLLBAR STAYS PUT FOR THE LENGTH OF A NAVIGATION.
+   *
+   * Without this it vanishes on the first frame of the cover and returns after
+   * the reveal, and the whole page steps 15px wider and back again with it —
+   * measured on classic scrollbars, the root is 1441px at rest and 1456px for
+   * every frame of a transition.
+   *
+   * The cause is one declaration in the vendored lenis.css:
+   *
+   *   .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+   *
+   * `overflow: clip` does not make a scroll container, and `scrollbar-gutter`
+   * reserves a gutter only on one — so bf-base.css's `scrollbar-gutter: stable`,
+   * which exists precisely to stop this jump, does not apply while Lenis is
+   * stopped. It was written against the `overflow: hidden` fallback, which IS a
+   * scroll container and where the gutter does hold.
+   *
+   * AN INLINE STYLE, NOT A STYLESHEET, for two reasons. The rule being beaten is
+   * in a file we do not edit and is loaded after this component's CSS, so a
+   * selector would have to out-specify it — and the only one that does
+   * (`html.lenis.lenis-stopped.is-navigating`) is exactly what the BEM linter
+   * exists to reject. The router already writes `is-navigating` to <html> and
+   * drives clip-path inline frame by frame; this belongs to the same moment.
+   *
+   * Scrolling is not handed back with it in any way that matters: the curtain is
+   * over the page, Lenis still swallows the wheel, and #apply resets the scroll
+   * position at the swap — so the most a dragged scrollbar can do is move a page
+   * nobody can see.
+   */
+  const holdScrollbar = () => {
+    document.documentElement.style.overflowY = 'scroll';
+  };
+
+  const releaseScrollbar = () => {
+    document.documentElement.style.overflowY = '';
+  };
+
   /* ---------------------------------------------------------------- links -- */
 
   /* Takes anything with the URL shape — an <a> exposes protocol, origin and
@@ -502,6 +540,10 @@
       document.documentElement.classList.add(NAVIGATING);
       fire('bf:scroll-lock');
 
+      /* Immediately after the lock, because the lock is what takes the scrollbar
+         away — see holdScrollbar. */
+      holdScrollbar();
+
       if (animated) await this.#cover();
 
       /* The hold runs ALONGSIDE the fetch, not after it. Sequencing them would
@@ -532,6 +574,11 @@
       }
 
       document.documentElement.classList.remove(NAVIGATING);
+
+      /* Before the unlock, not after: the unlock restores the root's own
+         overflow and the gutter with it, so releasing first would leave one
+         frame with neither this nor `scrollbar-gutter` holding the space. */
+      releaseScrollbar();
       fire('bf:scroll-unlock');
       fire('bf:page-revealed');
     }

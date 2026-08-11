@@ -118,11 +118,33 @@
   visibility: hidden;
 }
 
-/* Scroll stays locked until the preloader hands control back. The class goes on
-   <html> synchronously as the section parses, before any content can paint.
-   `overflow` on the root element propagates to the viewport, so this alone
-   locks scrolling — no matching rule on <body> is needed. */
+/*
+ * Scroll is held until the preloader hands control back. The class goes on
+ * <html> synchronously as the section parses, before any content can paint.
+ * `overflow` on the root element propagates to the viewport, so this alone is
+ * the lock — no matching rule on <body> is needed.
+ *
+ * `overflow-y: scroll` AND NOT `hidden`, WHICH IS WHAT IT WAS. Hidden is still a
+ * scroll container, so bf-base.css's `scrollbar-gutter: stable` kept the 15px
+ * reserved and nothing jumped — but a hidden scroll container never paints a
+ * scrollbar, so what sat in that 15px for the length of the intro was an empty
+ * strip beside a full-bleed black panel. Asked for directly: the scrollbar the
+ * page will have should be the scrollbar it shows while the panel is up. The
+ * transition curtain does the same thing for the same reason, from
+ * bf-page-transition.js.
+ *
+ * The cost is that the page behind CAN be scrolled during the intro, by dragging
+ * the bar or by keyboard. It is a fresh load with a panel over it and the
+ * preloader ends on `window.scrollTo(0, 0)`, so there is nothing to arrive at
+ * out of place — this buys the missing scrollbar and pays a scroll position that
+ * is reset anyway.
+ *
+ * overflow-x stays hidden. Left to compute from `visible` it would be coerced to
+ * `auto` to sit beside a scrolling y, which is a second scrollbar this has no
+ * reason to risk.
+ */
 .is-preloading {
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
