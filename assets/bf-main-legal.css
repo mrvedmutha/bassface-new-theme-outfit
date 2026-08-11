@@ -407,4 +407,17 @@
     align-items: start;
     justify-content: start;
   }
+
+  /*
+   * THE DOCUMENT IS PINNED TO COLUMN 2 rather than left to auto-placement,
+   * because bf-legal-index renders NOTHING when its menu is missing or empty —
+   * an unset `index_menu` with no `legal` linklist to fall back on. Auto-placed,
+   * the document then slides into the 280 index track and the whole policy
+   * renders in a column narrower than a phone. Pinned, a missing menu costs an
+   * empty gutter and the copy still reads, which is a bug you notice and fix
+   * rather than one that destroys the page.
+   */
+  .legal__doc {
+    grid-column: 2;
+  }
 }

@@ -3,6 +3,7 @@
     "main": {
       "type": "bf-main-legal",
       "settings": {
+        "index_menu": "footer-policies-new",
         "index_heading": "LEGAL",
         "index_label": "Legal",
         "updated_label": "Last updated",
