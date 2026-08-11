@@ -14,8 +14,23 @@
  * underneath it. Animating height or transform on the same panel would either
  * reflow the page or drag a 100vh layer across it every frame.
  *
- * Colours arrive as custom properties set inline by the snippet, so this file
- * stays static and cacheable — same arrangement as the preloader.
+ * THE CURTAIN IS THE PAGE INVERTED, and it follows the theme switcher. Written
+ * out per theme, the brief is:
+ *
+ *   red    red panel,   cream wordmark
+ *   light  black panel, cream wordmark
+ *   dark   cream panel, black wordmark
+ *
+ * which is, in all three cases, exactly the (surface, ink) pair the theme
+ * already publishes swapped — the same pair the nav drawer takes. So there are
+ * no per-theme rules here and nothing to keep in sync: two tokens do it, and a
+ * fourth theme added to bf-base.css would be themed here for free.
+ *
+ * NOT set inline by the snippet from theme settings, which is what this was
+ * before. A custom property written to the element's style attribute wins over
+ * any stylesheet rule, so a merchant colour picker and a theme-driven panel
+ * cannot both exist — and the panel has to re-resolve the moment a visitor
+ * touches the switcher, mid-session, with no page load to re-render Liquid.
  */
 
 .page-transition {
@@ -29,8 +44,8 @@
   /* The intro preloader sits at 100 and must stay on top: on a hard load into
      a page the two are briefly alive together, and the intro is the one that
      owns the screen. */
-  background: var(--page-transition-bg, #000);
-  color: var(--page-transition-mark, #ede4dd);
+  background: var(--bf-surface-invert);
+  color: var(--bf-ink-invert);
 
   /* Parked below the bottom edge. The router drives it from here and returns it
      here, so the resting state in the stylesheet is always the hidden one. */

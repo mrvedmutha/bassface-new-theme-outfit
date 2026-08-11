@@ -212,20 +212,8 @@
         "content": "Checkout, account and app pages always load normally. Turning this off restores standard browser navigation everywhere."
       },
       {
-        "type": "header",
-        "content": "Colours"
-      },
-      {
-        "type": "color",
-        "id": "page_transition_background_color",
-        "label": "Panel",
-        "default": "#000000"
-      },
-      {
-        "type": "color",
-        "id": "page_transition_mark_color",
-        "label": "Wordmark",
-        "default": "#EDE4DD"
+        "type": "paragraph",
+        "content": "The panel has no colour settings: it inverts whichever theme the visitor has picked. Red gives a red panel with a cream wordmark, Cream a black panel with a cream wordmark, and Dark a cream panel with a black wordmark."
       }
     ]
   },

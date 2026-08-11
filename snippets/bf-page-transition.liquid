@@ -12,8 +12,13 @@
 
   Styles are in assets/bf-page-transition.css, pulled in from <head> where being
   render-blocking is correct: the panel is full-bleed and must already be
-  clipped away on the first frame. Colours come in as custom properties set
-  inline here, so that file stays static and cacheable.
+  clipped away on the first frame.
+
+  NO COLOURS ARE SET HERE. The panel takes the active theme's inverted pair
+  straight from the tokens on <html>, so it re-resolves the instant a visitor
+  moves the theme switcher — see the header comment in the stylesheet. An inline
+  --page-transition-bg from a merchant setting used to live on this element, and
+  it beat every stylesheet rule by virtue of being inline.
 
   The script is NOT deferred behind the preloader's. It only needs to exist
   before the first click, and a visitor can click during the intro.
@@ -21,11 +26,7 @@
 
 {%- if settings.page_transition_enabled -%}
   <bf-page-transition>
-    <div
-      class="page-transition"
-      aria-hidden="true"
-      style="--page-transition-bg: {{ settings.page_transition_background_color }}; --page-transition-mark: {{ settings.page_transition_mark_color }};"
-    >
+    <div class="page-transition" aria-hidden="true">
       {%- comment -%}
         The mask is what the letters rise out of and drop back into — same
         arrangement as the preloader's, one size down. letter_class is what lets
