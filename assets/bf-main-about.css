@@ -1,0 +1,543 @@
+/* @define about */
+
+/*
+ * The About page — `Yo66c`, 1440 only.
+ *
+ * FULL-BLEED, no --bf-page-max cap, matching the masthead, the hero, the footer
+ * and every other page in this theme: the content width is the viewport minus
+ * twice --bf-page-padding, and 1440 is the board's reference viewport rather
+ * than a ceiling.
+ *
+ * ONE CHASSIS, FOUR TIMES. Sections 01-04 are the same three parts — a `NN
+ * LABEL` head, a 1px rule, a content row 40 below it — and only the row differs.
+ * `about__head` (in snippets/bf-about-head.liquid) is that repeat; the three
+ * `about__row--*` modifiers are the only per-section geometry.
+ *
+ * TYPE THAT IS NOT A TOKEN. Most of the board lands on bf-base.css exactly —
+ * the 48 title, the 32/900 support headline, the 24 feature title, the 11
+ * eyebrow key are all tokens to the letter. Four styles are not in the UI Kit
+ * and are written as literals here: the 88 display line, the 36/500 mission
+ * quote, the 20/400 way label and the 14/900 section head. They belong to this
+ * page and nowhere else, so promoting them to tokens would put four names in a
+ * global file with one caller each.
+ *
+ * OPACITY BECOMES A TOKEN. The board draws de-emphasised copy at .6 and the
+ * numbers at .5; both resolve to --bf-ink-muted (55%), which sits between them
+ * and is the system's name for exactly this. The .35 hairlines are
+ * --bf-hairline on the nose. Three literal opacities would have said the same
+ * thing in a way nothing else in the theme could match.
+ */
+
+.about {
+  /* The rule draw, and it is the hero's: 1600ms expo-out from the left edge.
+     One pair, because every rule on this page is the same gesture. */
+  --about-draw-duration: 1600ms;
+  --about-draw-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  display: block;
+}
+
+/* ---------------------------------------------------------------- header --- */
+
+.about__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+
+  /* 48, which is off the 4px token scale. A literal rather than a var()
+     standing in for a token that does not exist — bf-breadcrumb.css and
+     bf-main-cart.css handle their off-scale figures the same way. */
+  padding: 0 var(--bf-page-padding) 4.8rem;
+}
+
+.about__title {
+  margin: 0;
+}
+
+/* 64rem is the measure the collection, search and all-collections pages each
+   give a column of text under a title. Four pages agreeing beats four
+   literals. */
+.about__intro {
+  width: 64rem;
+  max-width: 100%;
+  margin: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+/* ------------------------------------------------------------- statement --- */
+
+.about__statement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  padding: 0 var(--bf-page-padding) 5.6rem;
+}
+
+/*
+ * 88 at 1440 and proportional above it — 6.1111vw is 88px at exactly 1440, so
+ * the board comes out unchanged and a 2560 screen gets the board's composition
+ * rather than the board's composition with its one big element left behind.
+ * Same reasoning, same shape, as the bag's wordmark.
+ *
+ * Plain vw and not the bag's cqw: that page fits a single word to the content
+ * width to the pixel, where this line wraps and only has to feel the same size.
+ *
+ * Stepped down below the two breakpoints at the foot of the file, where the
+ * proportional figure would otherwise put four words on a line.
+ */
+.about__display {
+  display: block;
+  font-size: max(4.4rem, 6.1111vw);
+  font-weight: var(--bf-weight-black);
+  letter-spacing: -0.0398em;
+  line-height: 0.955;
+}
+
+/* The per-line clip, its timing and its descender padding all live on
+   `reveal--rise-display` in bf-reveal.css — the variant exists for exactly this
+   and the Contact and policy pages will want it too. bf-split-lines.js builds
+   the wrappers; nothing about the movement is this page's business. */
+
+/* ------------------------------------------------------------- sections --- */
+
+.about__block {
+  display: block;
+  padding: 0 var(--bf-page-padding) 5.6rem;
+}
+
+.about__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+}
+
+/* 14/900 — the board's, and the only place in the theme that uses it. Uppercase
+   comes from the setting's own text, not from text-transform, so a merchant who
+   writes "Mission" gets "Mission". */
+.about__head-title {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: var(--bf-weight-black);
+  letter-spacing: 0.0857em;
+  line-height: var(--bf-leading-tight);
+}
+
+.about__head-number {
+  color: var(--bf-ink-muted);
+  letter-spacing: 0.0357em;
+}
+
+/* bf-base.css already resets <hr> to `border: 0; border-top: var(--bf-border);
+   margin: 0`, which is this rule exactly, so only the heavy variant needs
+   saying. A class (0,1,0) beats the element selector (0,0,1). */
+.about__rule--heavy {
+  border-top-width: var(--bf-border-width-section);
+}
+
+/*
+ * The draw. bf-reveal.js puts `is-concealed` / `is-revealed` on any element
+ * carrying `.reveal`, whatever pose the classes after it name, so a rule gets
+ * the preloader-aware, viewport-aware, reduced-motion-aware trigger for free
+ * and there is no second script on this page.
+ *
+ * scaleX from the left is the only direction that reads as a rule being ruled
+ * rather than a bar being stretched — bf-hero.css makes the same argument for
+ * the homepage's 5px rule.
+ */
+.about__draw .about__rule {
+  transform-origin: left center;
+}
+
+.about__draw:where(.is-concealed) .about__rule {
+  transform: scaleX(0);
+}
+
+.about__draw:where(.is-revealed) .about__rule {
+  transform: none;
+  transition: transform var(--about-draw-duration) var(--about-draw-ease)
+    calc(var(--reveal-index) * var(--reveal-stagger));
+}
+
+/* ----------------------------------------------------------------- rows --- */
+
+/*
+ * 40 above the row, not the 24 the rest of the section is spaced at: the board
+ * gives the row its own 16 of top padding on top of the section's 24 gap, and
+ * that extra sixteen is what stops the first line of content sitting on the
+ * rule.
+ */
+.about__row {
+  padding-top: var(--bf-space-40);
+}
+
+/*
+ * The three two-column arrangements. The 80 gutter is shared; only the split
+ * differs, and each one is the board's — the wide half is the one carrying the
+ * argument, which is the left in 01 and 04 and the right in 03.
+ */
+.about__row--mission,
+.about__row--support,
+.about__row--contact {
+  display: grid;
+  gap: 8rem;
+  align-items: start;
+}
+
+.about__row--mission {
+  grid-template-columns: minmax(0, 1fr) 36rem;
+}
+
+.about__row--support {
+  grid-template-columns: 56rem minmax(0, 1fr);
+}
+
+.about__row--contact {
+  grid-template-columns: minmax(0, 1fr) 40rem;
+}
+
+.about__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-20);
+  min-width: 0;
+}
+
+.about__col--aside {
+  gap: var(--bf-space-16);
+}
+
+/* ------------------------------------------------------------ mission --- */
+
+/* 36/500, the board's, and not --bf-text-cta-size: that token is 36/400 with no
+   tracking, which is the Add to Bag button and a different voice. */
+.about__quote {
+  margin: 0;
+  font-size: 3.6rem;
+  font-weight: var(--bf-weight-medium);
+  letter-spacing: -0.0278em;
+  line-height: var(--bf-leading-snug);
+}
+
+.about__note {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+.about__signature {
+  margin: 0;
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-caption-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* ---------------------------------------------------------------- lists --- */
+
+.about__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * The hairline is a border on the ROW, not on the list item, and that is
+ * load-bearing: the row is the single child of a `reveal--rise` wrapper, so a
+ * border on it climbs out from under the clip with the text. A border on the
+ * <li> would sit outside the clip and be drawn before its own row arrived.
+ */
+.about__feature,
+.about__way,
+.about__detail {
+  border-bottom: var(--bf-border-hairline);
+}
+
+.about__feature {
+  display: grid;
+  gap: var(--bf-space-32);
+  grid-template-columns: 4rem 32rem minmax(0, 1fr);
+  align-items: start;
+  padding: var(--bf-space-24) 0;
+}
+
+/* 13/900 tracked +0.5px. The eyebrow token is the same half-pixel at 11, so the
+   em figure differs while the drawn result matches. */
+.about__num {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-caption-size);
+  font-weight: var(--bf-weight-black);
+  letter-spacing: 0.0385em;
+  line-height: var(--bf-leading-snug);
+}
+
+.about__feature-title {
+  margin: 0;
+  font-size: var(--bf-text-subhead-size);
+  font-weight: var(--bf-text-subhead-weight);
+  letter-spacing: var(--bf-text-subhead-tracking);
+  line-height: var(--bf-leading-snug);
+}
+
+.about__feature-desc {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+.about__way {
+  display: grid;
+  gap: var(--bf-space-24);
+  grid-template-columns: 4rem minmax(0, 1fr);
+  align-items: center;
+  padding: 1.8rem 0;
+}
+
+/* 20/400. --bf-text-control-size is the same 20 at 900, which is the PDP's size
+   picker shouting; this is a list item speaking. */
+.about__way-label {
+  font-size: 2rem;
+  font-weight: var(--bf-weight-regular);
+  letter-spacing: -0.02em;
+  line-height: var(--bf-leading-snug);
+}
+
+.about__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-6);
+  align-items: start;
+  padding: var(--bf-space-16) 0;
+}
+
+.about__detail-key {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+.about__detail-value {
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-snug);
+}
+
+/* --------------------------------------------------------------- contact --- */
+
+/* 32 at two weights: 900 for the support argument, 500 for the contact
+   question. --bf-text-price-size is 32/900/-0.025em, which is the first of them
+   exactly, so only the lighter one restates a weight. */
+.about__headline {
+  margin: 0;
+  font-size: var(--bf-text-price-size);
+  font-weight: var(--bf-weight-medium);
+  letter-spacing: var(--bf-text-price-tracking);
+  line-height: var(--bf-leading-snug);
+}
+
+.about__headline--strong {
+  font-weight: var(--bf-text-price-weight);
+}
+
+/*
+ * The page's one primary link, and IT IS THE SAME CONTROL AS ADD TO BAG AND
+ * CHECKOUT. The label and its arrow shift right by an arrow's width while a
+ * second arrow slides in from the left, and THE CLIP IS WHAT MAKES THAT READ AS
+ * ONE ARROW CROSSING THE LABEL: the outgoing one leaves through an edge at the
+ * same moment the incoming one arrives through the other. Three primary links
+ * on one storefront must not have three hovers, so the rules below are
+ * bf-main-cart.css's, name for name.
+ */
+.about__cta {
+  /* One arrow's width, and the arrow is rendered at this same figure in the
+     section — `size: 22`. If one changes the other has to. */
+  --about-cta-arrow: 2.2rem;
+  --about-cta-duration: 500ms;
+
+  /* Theirs, not ours: a negative first control point undershoots before it
+     moves, so the pair leans back a hair and then goes. A standard ease-out
+     reads as a slide; this reads as a flick. */
+  --about-cta-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
+
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+
+  /* The board's 8 above the link, inside the rise wrapper's clip where it is
+     simply eight pixels of nothing. */
+  margin-top: var(--bf-space-8);
+  font-size: var(--bf-text-subhead-size);
+  font-weight: var(--bf-text-subhead-weight);
+  letter-spacing: var(--bf-text-subhead-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+.about__cta-icon,
+.about__cta-label {
+  display: inline-flex;
+  transition: transform var(--about-cta-duration) var(--about-cta-ease);
+}
+
+/* Absolute, so it takes no space in the flow — the link must not be an arrow
+   wider than it looks, and the label must not start shifted across. */
+.about__cta-icon--lead {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+}
+
+/* Keyboard focus gets the same movement. The link is one control, so
+   :focus-visible on it is the exact keyboard equivalent of the hover. */
+.about__cta:hover .about__cta-icon--lead,
+.about__cta:focus-visible .about__cta-icon--lead {
+  transform: translateX(0);
+}
+
+.about__cta:hover .about__cta-label,
+.about__cta:hover .about__cta-icon:not(.about__cta-icon--lead),
+.about__cta:focus-visible .about__cta-label,
+.about__cta:focus-visible .about__cta-icon:not(.about__cta-icon--lead) {
+  transform: translateX(var(--about-cta-arrow));
+}
+
+/* ------------------------------------------------------------ underline --- */
+
+/*
+ * The wipe, and it is a background rather than `text-decoration` because there
+ * is no way to animate the length of an underline: a gradient sized to 0 in one
+ * axis grows from the side it is positioned on, and it sits on the same
+ * baseline offset a real underline would.
+ *
+ * bf-base.css underlines `li a` outright, so the reset is not tidiness — it is
+ * what stops a static underline sitting under the animated one. bf-footer.css
+ * and bf-hero.css both do this.
+ */
+.about__link {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-border-width);
+  transition: background-size 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.about__link:hover,
+.about__link:focus-visible {
+  background-size: 100% var(--bf-border-width);
+}
+
+/* ------------------------------------------------------ reduced motion --- */
+
+/*
+ * The entrances are handled in JavaScript — bf-reveal.js and bf-split-lines.js
+ * both return before applying a pose — so what is left here is the hover work,
+ * which is CSS only and has to be switched off in CSS.
+ *
+ * The arrows are PARKED, not stilled: dropping only the transition would leave
+ * the lead arrow jumping into place instantly, which is the same movement
+ * without the part that made it legible. The underline still appears, because
+ * an underline arriving is a state change rather than travel, and losing it
+ * would cost the only hover feedback these links have.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  .about__cta-icon,
+  .about__cta-label {
+    transition: none;
+  }
+
+  .about__cta:hover .about__cta-icon--lead,
+  .about__cta:focus-visible .about__cta-icon--lead {
+    transform: translateX(-100%);
+  }
+
+  .about__cta:hover .about__cta-label,
+  .about__cta:hover .about__cta-icon:not(.about__cta-icon--lead),
+  .about__cta:focus-visible .about__cta-label,
+  .about__cta:focus-visible .about__cta-icon:not(.about__cta-icon--lead) {
+    transform: none;
+  }
+
+  .about__link {
+    transition: none;
+  }
+}
+
+/* ============================================================= <1024 ==== *
+ * Two columns become one, per the document-page rule in DESIGN-STATUS.
+ *
+ * SOURCE ORDER, NOT THE RULE'S "side column first". That instruction is written
+ * for the policy pages, whose side column is an index of the other policies and
+ * belongs above the body. This page's aside is a footnote to the argument
+ * beside it — a signature under a mission, a phone number under an invitation —
+ * and floating it above the thing it annotates would read as the page starting
+ * twice. Deviation recorded here rather than in the board.
+ */
+
+@media screen and (width < 1024px) {
+  .about__row--mission,
+  .about__row--support,
+  .about__row--contact {
+    gap: var(--bf-space-40);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .about__display {
+    font-size: 6.4rem;
+  }
+
+  .about__feature {
+    grid-template-columns: 4rem 24rem minmax(0, 1fr);
+  }
+}
+
+/* ============================================================== <834 ==== *
+ * The feature row stops being three columns. At 802 of content the description
+ * is down to ~300px against a 240 title, which reads as two ragged columns
+ * rather than a title and its gloss, so the gloss moves under the title and
+ * keeps the number's gutter.
+ */
+
+@media screen and (width < 834px) {
+  .about__display {
+    font-size: 4.8rem;
+  }
+
+  .about__feature {
+    gap: var(--bf-space-8) var(--bf-space-24);
+    grid-template-columns: 4rem minmax(0, 1fr);
+  }
+
+  .about__feature-desc {
+    grid-column: 2;
+  }
+
+  .about__quote {
+    font-size: 2.8rem;
+  }
+
+  .about__headline {
+    font-size: 2.4rem;
+  }
+
+  .about__block,
+  .about__statement {
+    padding-bottom: var(--bf-space-40);
+  }
+}

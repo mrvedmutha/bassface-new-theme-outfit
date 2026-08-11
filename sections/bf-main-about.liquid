@@ -1,0 +1,440 @@
+{%- comment -%}
+  Bassface About page — the board is `Yo66c`, 1440 only.
+
+  A DOCUMENT PAGE, not a listing: no imagery, no cards, no grid. Four numbered
+  sections under one display statement, which is the whole composition. Anything
+  added here that carries a picture is a different page.
+
+  ASSIGNED BY HAND. `templates/page.about.json` exists but Shopify does not route
+  a page to it automatically — the "About" template has to be picked on the page
+  itself in the admin, under Online Store > Pages > About > Theme template.
+
+  THE FIRST bf-main-* SECTION WITH BLOCKS. The three repeating runs — the four
+  WHAT WE DO rows, the three support ways, the three contact details — are block
+  types rather than numbered settings, so the merchant can add a fifth row
+  without a deploy. Shopify keeps blocks in ONE flat ordered list, so each run
+  filters the list by type and renders its own; reordering a `feature` past a
+  `way` in the editor changes nothing, since the two never share a container.
+
+  Numbering is derived from position in the filtered run, never stored. A stored
+  number is a second source of truth that goes stale the moment a row is deleted
+  from the middle.
+{%- endcomment -%}
+
+{{ 'bf-breadcrumb.css' | asset_url | stylesheet_tag }}
+{{ 'bf-reveal.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-about.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-reveal.js' | asset_url }}" defer="defer"></script>
+<script src="{{ 'bf-split-lines.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign features = section.blocks | where: 'type', 'feature'
+  assign ways = section.blocks | where: 'type', 'way'
+  assign details = section.blocks | where: 'type', 'detail'
+-%}
+
+<div class="about">
+  {%- comment -%}
+    The crumb is the PAGE's title, not the section's heading, because the board
+    makes them differ on purpose: "About" in the trail, "About Bassface" as the
+    title. Taking it from `page.title` also means the trail follows whatever the
+    merchant renamed the page to, which is the thing a visitor navigating back
+    up is looking for. Falls back to the heading if this template is ever
+    rendered somewhere there is no page object.
+  {%- endcomment -%}
+  {%-
+    render 'bf-breadcrumb',
+    current: page.title | default: section.settings.heading,
+    home_label: section.settings.breadcrumb_home,
+    label: section.settings.breadcrumb_label
+  -%}
+
+  {%- comment -%}
+    The entrance is the product page's and the bag's — <bf-reveal
+    class="reveal reveal--rise"> clips a wrapper and climbs its single child out
+    from under the top edge. It waits on the preloader handing over AND on
+    reaching the viewport, so nothing plays behind a curtain that has not lifted.
+
+    THE RESTING STATE IS THE VISIBLE ONE. Nothing here is hidden until
+    bf-reveal.js adds `is-concealed`, so a blocked script leaves a plain readable
+    page rather than a column of empty boxes. Every wrapper on this page obeys
+    that, including the rules.
+
+    --reveal-index is the stagger, one step per element within a group.
+  {%- endcomment -%}
+  <div class="about__header">
+    <bf-reveal class="reveal reveal--rise">
+      <h1 class="about__title">{{ section.settings.heading }}</h1>
+    </bf-reveal>
+
+    {%- if section.settings.description != blank -%}
+      <bf-reveal class="reveal reveal--rise" style="--reveal-index: 1">
+        <p class="about__intro">{{ section.settings.description }}</p>
+      </bf-reveal>
+    {%- endif -%}
+  </div>
+
+  {%- comment -%}
+    The 88px statement between two 2px rules — the one moment on the page.
+
+    <bf-split-lines> rewrites the paragraph into one <bf-reveal> per VISUAL line
+    and hands the movement straight back to the machinery above, so the lines
+    climb out one after another instead of the block arriving as a slab. It does
+    nothing at all under reduced motion or without JavaScript, and the paragraph
+    it starts as is the paragraph it ends as.
+
+    The rules draw rather than rise: scaleX from the left, the hero's gesture for
+    a rule being ruled instead of a bar being stretched.
+  {%- endcomment -%}
+  <div class="about__statement">
+    <bf-reveal class="reveal about__draw">
+      <hr class="about__rule about__rule--heavy">
+    </bf-reveal>
+
+    <bf-split-lines
+      class="about__display"
+      data-line-class="reveal--rise-display"
+    >
+      {{- section.settings.statement -}}
+    </bf-split-lines>
+
+    <bf-reveal class="reveal about__draw" style="--reveal-index: 1">
+      <hr class="about__rule about__rule--heavy">
+    </bf-reveal>
+  </div>
+
+  {%- comment -%} 01 — MISSION {%- endcomment -%}
+  <section class="about__block">
+    {%- render 'bf-about-head', number: '01', label: section.settings.mission_label -%}
+
+    <div class="about__row about__row--mission">
+      <div class="about__col">
+        <bf-reveal class="reveal reveal--rise">
+          <p class="about__quote">{{ section.settings.mission_quote }}</p>
+        </bf-reveal>
+      </div>
+
+      <div class="about__col about__col--aside">
+        <bf-reveal class="reveal reveal--rise" style="--reveal-index: 1">
+          <p class="about__note">{{ section.settings.mission_note }}</p>
+        </bf-reveal>
+        <bf-reveal class="reveal reveal--rise" style="--reveal-index: 2">
+          <p class="about__signature">{{ section.settings.mission_signature }}</p>
+        </bf-reveal>
+      </div>
+    </div>
+  </section>
+
+  {%- comment -%} 02 — WHAT WE DO {%- endcomment -%}
+  {%- if features.size > 0 -%}
+    <section class="about__block">
+      {%- render 'bf-about-head', number: '02', label: section.settings.features_label -%}
+
+      <div class="about__row">
+        <ul class="about__list">
+          {%- for block in features -%}
+            <li class="about__item" {{ block.shopify_attributes }}>
+              <bf-reveal class="reveal reveal--rise" style="--reveal-index: {{ forloop.index0 }}">
+                <div class="about__feature">
+                  <span class="about__num" aria-hidden="true">
+                    {%- render 'bf-about-number', position: forloop.index -%}
+                  </span>
+                  <h3 class="about__feature-title">{{ block.settings.title }}</h3>
+                  <p class="about__feature-desc">{{ block.settings.description }}</p>
+                </div>
+              </bf-reveal>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} 03 — SUPPORT THE COMEBACK {%- endcomment -%}
+  <section class="about__block">
+    {%- render 'bf-about-head', number: '03', label: section.settings.support_label -%}
+
+    <div class="about__row about__row--support">
+      <div class="about__col about__col--copy">
+        <bf-reveal class="reveal reveal--rise">
+          <h3 class="about__headline about__headline--strong">{{ section.settings.support_headline }}</h3>
+        </bf-reveal>
+        <bf-reveal class="reveal reveal--rise" style="--reveal-index: 1">
+          <p class="about__note">{{ section.settings.support_body }}</p>
+        </bf-reveal>
+      </div>
+
+      <div class="about__col">
+        <ul class="about__list">
+          {%- for block in ways -%}
+            <li class="about__item" {{ block.shopify_attributes }}>
+              <bf-reveal class="reveal reveal--rise" style="--reveal-index: {{ forloop.index0 }}">
+                <div class="about__way">
+                  <span class="about__num" aria-hidden="true">
+                    {%- render 'bf-about-number', position: forloop.index -%}
+                  </span>
+                  <span class="about__way-label">{{ block.settings.label }}</span>
+                </div>
+              </bf-reveal>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {%- comment -%} 04 — GET IN TOUCH {%- endcomment -%}
+  <section class="about__block about__block--last">
+    {%- render 'bf-about-head', number: '04', label: section.settings.contact_label -%}
+
+    <div class="about__row about__row--contact">
+      <div class="about__col about__col--copy">
+        <bf-reveal class="reveal reveal--rise">
+          <h3 class="about__headline">{{ section.settings.contact_headline }}</h3>
+        </bf-reveal>
+
+        {%- if section.settings.cta_label != blank -%}
+          <bf-reveal class="reveal reveal--rise" style="--reveal-index: 1">
+            {%- comment -%}
+              22px against a 24px label, not the board's literal 20. The board's
+              icon is an already-tightened path; ours is Lucide's stroke glyph in
+              a 24 viewBox where the ink only spans 6 to 18, so a 20px box would
+              draw a 10px arrow. See the arrow note in DESIGN-STATUS.
+
+              TWO ARROWS, AND THE FIRST ONE IS THE POINT. This is the storefront's
+              primary-link gesture, the one Add to Bag and Checkout already make:
+              on hover the label and its arrow shift right by an arrow's width
+              while a second arrow arrives from the left, and the link's own clip
+              is what makes the pair read as ONE arrow crossing the label rather
+              than two arrows appearing. Three links, one movement — the rules
+              are bf-main-cart.css's, name for name.
+
+              The lead arrow is aria-hidden and absolutely positioned, so it adds
+              nothing to the accessible name and nothing to the link's width.
+            {%- endcomment -%}
+            <a class="about__cta" href="{{ section.settings.cta_url | default: routes.root_url }}">
+              <span class="about__cta-icon about__cta-icon--lead" aria-hidden="true">
+                {%- render 'bf-icon', icon: 'arrow-up-right', size: 22 -%}
+              </span>
+              <span class="about__cta-label">{{ section.settings.cta_label }}</span>
+              <span class="about__cta-icon" aria-hidden="true">
+                {%- render 'bf-icon', icon: 'arrow-up-right', size: 22 -%}
+              </span>
+            </a>
+          </bf-reveal>
+        {%- endif -%}
+      </div>
+
+      <div class="about__col about__col--aside">
+        <ul class="about__list">
+          {%- for block in details -%}
+            <li class="about__item" {{ block.shopify_attributes }}>
+              <bf-reveal class="reveal reveal--rise" style="--reveal-index: {{ forloop.index0 }}">
+                <div class="about__detail">
+                  <span class="about__detail-key">{{ block.settings.label }}</span>
+
+                  {%- if block.settings.url != blank -%}
+                    <a class="about__detail-value about__link" href="{{ block.settings.url }}">
+                      {{- block.settings.value -}}
+                    </a>
+                  {%- else -%}
+                    <span class="about__detail-value">{{ block.settings.value }}</span>
+                  {%- endif -%}
+                </div>
+              </bf-reveal>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+{% schema %}
+{
+  "name": "About page",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Page title",
+      "default": "About Bassface"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Intro paragraph",
+      "default": "One stop for all EDM lovers. An independent project turned apparel label, built on the music we can't stop playing."
+    },
+    {
+      "type": "textarea",
+      "id": "statement",
+      "label": "Display statement",
+      "info": "The large line between two rules. Reveals one line at a time — keep it to two or three lines at desktop.",
+      "default": "We started with the music. The apparel came after."
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Breadcrumb home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Breadcrumb landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    },
+    {
+      "type": "header",
+      "content": "01 — Mission"
+    },
+    {
+      "type": "text",
+      "id": "mission_label",
+      "label": "Section label",
+      "default": "MISSION"
+    },
+    {
+      "type": "textarea",
+      "id": "mission_quote",
+      "label": "Mission statement",
+      "default": "Keep Bassface a go-to place for discovering new EDM drops, hidden gems, and artist highlights — all delivered with consistency, honesty, and love for the music."
+    },
+    {
+      "type": "textarea",
+      "id": "mission_note",
+      "label": "Side note",
+      "default": "It started as a place to talk about the music. It turned into apparel you can wear to the show. Same obsession, different format."
+    },
+    {
+      "type": "text",
+      "id": "mission_signature",
+      "label": "Signature",
+      "default": "Bassface — since 2023"
+    },
+    {
+      "type": "header",
+      "content": "02 — What we do"
+    },
+    {
+      "type": "text",
+      "id": "features_label",
+      "label": "Section label",
+      "default": "WHAT WE DO"
+    },
+    {
+      "type": "paragraph",
+      "content": "Rows come from the \"What we do\" blocks below. They are numbered automatically in the order they appear."
+    },
+    {
+      "type": "header",
+      "content": "03 — Support"
+    },
+    {
+      "type": "text",
+      "id": "support_label",
+      "label": "Section label",
+      "default": "SUPPORT THE COMEBACK"
+    },
+    {
+      "type": "textarea",
+      "id": "support_headline",
+      "label": "Headline",
+      "default": "Bassface has always been an independent passion project."
+    },
+    {
+      "type": "textarea",
+      "id": "support_body",
+      "label": "Body",
+      "default": "Every like, share, and message keeps this project alive."
+    },
+    {
+      "type": "header",
+      "content": "04 — Get in touch"
+    },
+    {
+      "type": "text",
+      "id": "contact_label",
+      "label": "Section label",
+      "default": "GET IN TOUCH"
+    },
+    {
+      "type": "textarea",
+      "id": "contact_headline",
+      "label": "Headline",
+      "default": "Want to collaborate, send promos, or just say hi?"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "Link label",
+      "info": "Leave blank to hide the link.",
+      "default": "Contact us"
+    },
+    {
+      "type": "url",
+      "id": "cta_url",
+      "label": "Link URL"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "feature",
+      "name": "What we do row",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Weekly picks"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "The best new EDM releases, rounded up every week."
+        }
+      ]
+    },
+    {
+      "type": "way",
+      "name": "Support way",
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "Share our posts and playlists"
+        }
+      ]
+    },
+    {
+      "type": "detail",
+      "name": "Contact detail",
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "EMAIL"
+        },
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Value",
+          "default": "hello@bassface.in"
+        },
+        {
+          "type": "text",
+          "id": "url",
+          "label": "Link",
+          "info": "A mailto:, tel: or https: URL. Leave blank to render the value as plain text."
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

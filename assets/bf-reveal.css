@@ -1,7 +1,8 @@
 /* @define reveal */
 
 /*
- * The two entrance poses driven by bf-reveal.js.
+ * The entrance poses driven by bf-reveal.js — a curtain, a rise, and the rise
+ * again at display weight.
  *
  * THE RESTING STATE IS THE VISIBLE ONE. Nothing here hides anything until the
  * script adds `is-concealed`, which is the whole safety argument: a failed or
@@ -94,4 +95,73 @@
   transform: none;
   transition: transform var(--reveal-rise-duration) var(--reveal-rise-ease)
     calc(var(--reveal-index) * var(--reveal-stagger));
+}
+
+/* ------------------------------------------------- rise, display weight --- */
+
+/*
+ * The rise at display size — one visual line of a big statement, as built by
+ * bf-split-lines.js. Everything below is what changes when the type gets large
+ * enough that the plain rise stops working on it.
+ *
+ * The hero's numbers, not the theme's: 1800ms expo-out 150ms apart, against the
+ * 1400/60 above. A 90px line covers far more ground than a product title, and at
+ * the shorter timing it arrives as a flick rather than a lift.
+ *
+ * The padding/margin pair is not decoration. A line box is only as tall as its
+ * line-height, and display type is routinely set below 1.0, so clipping to it
+ * shaves the descenders off g, p and y. The padding gives the overflow somewhere
+ * to happen and the negative margin takes the space back out of the layout —
+ * bf-hero.css's `.hero__line` solves the same problem the same way.
+ *
+ * 130% follows from that padding: the clip is now taller than the text, so the
+ * 110% above would leave a sliver of the line showing below the fold of its own
+ * wrapper. Same specificity as the rule it overrides, so source order decides,
+ * which is why this block sits after it.
+ *
+ * nowrap because a re-wrap inside a clipped line box loses a whole line, where
+ * an overflow loses a few pixels of one word. The lines were measured against
+ * this exact container at this exact width, so it only ever matters at sub-pixel
+ * rounding.
+ */
+.reveal--rise-display {
+  --reveal-rise-duration: 1800ms;
+  --reveal-rise-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --reveal-stagger: 150ms;
+
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+/* The moving child, built by bf-split-lines.js along with the wrapper around it.
+   Named rather than reached with `> *` like the poses above, because a bare
+   universal is the one thing the BEM linter cannot see past — and a line of a
+   statement has earned a name anyway. */
+.reveal__line {
+  display: block;
+  white-space: nowrap;
+}
+
+/*
+ * BOTH POSES, NOT JUST THE PRIMED ONE, and that pairing is the whole reason
+ * this reads as two rules instead of one.
+ *
+ * The poses above balance at (0,1,0) each — `.reveal--rise:where(…) > *`, where
+ * the :where() and the universal both count nothing — so source order alone
+ * decides which wins and the primed rule can sit on its own. Naming the child
+ * costs a class: `.reveal--rise-display:where(…) .reveal__line` is (0,2,0), and
+ * a lone concealed override at that weight OUTRANKS the revealed rule it is
+ * supposed to hand back to. The line then sits at translateY(130%) with
+ * `is-revealed` on it, clipped out of sight, forever.
+ *
+ * So the revealed pose is restated at the same weight and after it. The
+ * transition itself is not restated — it comes from the (0,1,0) rule above,
+ * which is untouched because these two only ever set `transform`.
+ */
+.reveal--rise-display:where(.is-concealed) .reveal__line {
+  transform: translateY(130%);
+}
+
+.reveal--rise-display:where(.is-revealed) .reveal__line {
+  transform: none;
 }

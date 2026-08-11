@@ -1,0 +1,111 @@
+{
+  "sections": {
+    "main": {
+      "type": "bf-main-about",
+      "blocks": {
+        "feature-1": {
+          "type": "feature",
+          "settings": {
+            "title": "Weekly picks",
+            "description": "The best new EDM releases, rounded up every week."
+          }
+        },
+        "feature-2": {
+          "type": "feature",
+          "settings": {
+            "title": "Short reviews",
+            "description": "Why each track stands out — no filler, no paid placements."
+          }
+        },
+        "feature-3": {
+          "type": "feature",
+          "settings": {
+            "title": "Curated playlists",
+            "description": "Built for different moods, rooms and hours of the night."
+          }
+        },
+        "feature-4": {
+          "type": "feature",
+          "settings": {
+            "title": "Artist spotlights",
+            "description": "Deep dives on the artists, labels and scenes we back."
+          }
+        },
+        "way-1": {
+          "type": "way",
+          "settings": {
+            "label": "Share our posts and playlists"
+          }
+        },
+        "way-2": {
+          "type": "way",
+          "settings": {
+            "label": "Follow on social media"
+          }
+        },
+        "way-3": {
+          "type": "way",
+          "settings": {
+            "label": "Join the community and spread the word"
+          }
+        },
+        "detail-email": {
+          "type": "detail",
+          "settings": {
+            "label": "EMAIL",
+            "value": "hello@bassface.in",
+            "url": "mailto:hello@bassface.in"
+          }
+        },
+        "detail-phone": {
+          "type": "detail",
+          "settings": {
+            "label": "PHONE",
+            "value": "+91-9941864844",
+            "url": "tel:+919941864844"
+          }
+        },
+        "detail-press": {
+          "type": "detail",
+          "settings": {
+            "label": "PRESS & PROMOS",
+            "value": "mail2bassfacemusic@gmail.com",
+            "url": "mailto:mail2bassfacemusic@gmail.com"
+          }
+        }
+      },
+      "block_order": [
+        "feature-1",
+        "feature-2",
+        "feature-3",
+        "feature-4",
+        "way-1",
+        "way-2",
+        "way-3",
+        "detail-email",
+        "detail-phone",
+        "detail-press"
+      ],
+      "settings": {
+        "heading": "About Bassface",
+        "description": "One stop for all EDM lovers. An independent project turned apparel label, built on the music we can't stop playing.",
+        "statement": "We started with the music. The apparel came after.",
+        "breadcrumb_home": "Home",
+        "breadcrumb_label": "Breadcrumb",
+        "mission_label": "MISSION",
+        "mission_quote": "Keep Bassface a go-to place for discovering new EDM drops, hidden gems, and artist highlights — all delivered with consistency, honesty, and love for the music.",
+        "mission_note": "It started as a place to talk about the music. It turned into apparel you can wear to the show. Same obsession, different format.",
+        "mission_signature": "Bassface — since 2023",
+        "features_label": "WHAT WE DO",
+        "support_label": "SUPPORT THE COMEBACK",
+        "support_headline": "Bassface has always been an independent passion project.",
+        "support_body": "Every like, share, and message keeps this project alive.",
+        "contact_label": "GET IN TOUCH",
+        "contact_headline": "Want to collaborate, send promos, or just say hi?",
+        "cta_label": "Contact us",
+        "cta_url": "/pages/contact"
+      }
+    }
+  },
+  "order": ["main"]
+}

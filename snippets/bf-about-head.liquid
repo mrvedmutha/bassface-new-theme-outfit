@@ -1,0 +1,38 @@
+{%- comment -%}
+  The numbered section head the About board repeats four times: a `NN LABEL`
+  row, then a hairline under it.
+
+  Accepts:
+    number - required, the two-digit string. Literal ('01'), not derived: these
+             are the four fixed sections of the page, not a list.
+    label  - required, the section name. Uppercased by the design, not by CSS —
+             it comes out of a theme setting already capitalised, so a merchant
+             writing "Mission" gets "Mission".
+
+  Usage:
+    {%- render 'bf-about-head', number: '01', label: section.settings.mission_label -%}
+
+  Only the head, not the whole section — Liquid has no way to hand a block of
+  markup to a snippet, and the alternative (capturing each section's row into a
+  string and passing it in) buys nothing while making four readable rows of
+  markup unreadable. The section element and its content stay in the caller.
+
+  The rule DRAWS rather than rises: bf-reveal.js puts `is-concealed` /
+  `is-revealed` on any element carrying `.reveal`, whatever pose the classes
+  after it describe, so `about__draw` in bf-main-about.css gets the same
+  preloader-aware, viewport-aware, reduced-motion-aware trigger as the rises
+  without a second script to run it.
+{%- endcomment -%}
+
+<div class="about__head">
+  <bf-reveal class="reveal reveal--rise">
+    <h2 class="about__head-title">
+      <span class="about__head-number" aria-hidden="true">{{ number }}</span>
+      <span class="about__head-label">{{ label }}</span>
+    </h2>
+  </bf-reveal>
+
+  <bf-reveal class="reveal about__draw">
+    <hr class="about__rule">
+  </bf-reveal>
+</div>

@@ -1,0 +1,17 @@
+{%- comment -%}
+  Zero-pads a 1-based position to the two-digit form the About board draws:
+  1 -> 01, 9 -> 09, 10 -> 10.
+
+  Accepts:
+    position - required, the 1-based index. Pass `forloop.index`.
+
+  Usage:
+    {%- render 'bf-about-number', position: forloop.index -%}
+
+  A snippet rather than a filter chain because `prepend: '0'` is wrong the moment
+  a run reaches ten rows, and rather than an `assign` because `render` runs in an
+  isolated scope — a variable set in here is not visible to the caller. This one
+  OUTPUTS, so it is called where the digits belong.
+{%- endcomment -%}
+{%- if position < 10 -%}0{%- endif -%}
+{{- position -}}
