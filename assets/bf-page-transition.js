@@ -87,6 +87,27 @@
    */
   const OPAQUE = /^\/(?:checkout|account|apps|tools|services|\d+\/(?:checkouts|orders))(?:\/|$)/;
 
+  /*
+   * Links that route but skip the curtain, opted in by an ancestor carrying
+   * `data-no-curtain`.
+   *
+   * NOT THE SAME THING AS `data-no-transition`, and the two are one word apart
+   * for a reason worth stating: that one takes a link away from the router
+   * entirely and gives it back to the browser as a hard load. This one keeps
+   * every part of the navigation — the fetch, the prefetch, the pushState, the
+   * head swap — and drops only the black panel over the top of it.
+   *
+   * The legal index is the user. Its seven links sit beside the document they
+   * change, so the visitor is looking at both halves at once; a two-and-a-half
+   * second curtain over a column that does not move would read as the whole
+   * site reloading to change one paragraph. The document's own fade in
+   * bf-main-legal.css is the entire entrance there.
+   *
+   * Nothing needs adding here for a section to use it — put the attribute on
+   * any element and every routable link under it becomes instant.
+   */
+  const NO_CURTAIN = '[data-no-curtain]';
+
   /* `type` values a re-inserted <script> should actually run — the trailing `?`
      is the common no-attribute case. Everything else — application/json for the
      product payload, ld+json for structured data, text/template — is data and
@@ -485,7 +506,7 @@
       if (!link || samePage(new URL(link.href))) return;
 
       event.preventDefault();
-      this.navigate(link.href);
+      this.navigate(link.href, { curtain: !link.closest(NO_CURTAIN) });
     };
 
     /*

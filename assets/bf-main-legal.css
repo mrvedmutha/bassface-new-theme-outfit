@@ -131,6 +131,49 @@
      can shrink to 616 at 1024. One unbreakable string is all it takes to push
      the whole grid wider than the page. */
   overflow-wrap: break-word;
+  animation: legal-doc-in 260ms ease-out backwards;
+}
+
+/*
+ * THE ENTRANCE, AND THE ONLY THING THAT MOVES WHEN ONE POLICY REPLACES ANOTHER.
+ *
+ * The index links carry `data-no-curtain`, so bf-page-transition swaps <main>
+ * with no panel over it — see the note there. Without something the swap is a
+ * hard cut: 5000px of one document becomes 1500px of another between two
+ * frames, with the scroll snapping to the top in the same instant. It reads as
+ * a fault rather than a navigation.
+ *
+ * NO JAVASCRIPT, AND NO HOOK IN THE ROUTER, because none is needed. The swap
+ * inserts a brand new `.legal__doc` element, and a fresh element runs its
+ * animations on mount — so the fade is simply what arriving looks like, whether
+ * it arrived from a fetch or from a page load.
+ *
+ * On a hard load it plays under the preloader and is finished long before the
+ * curtain lifts, which is correct: the preloader IS the entrance there, and the
+ * document should already be sitting still when it hands over. That is also why
+ * this is a plain animation rather than a <bf-reveal> — reveal exists to WAIT
+ * for the preloader, and here there is nothing to wait for.
+ *
+ * `backwards`, not `both`: the fill only needs to hold the opening pose before
+ * the animation starts. Holding the closing one would leave a `transform` on
+ * the element for the rest of its life, and a transformed ancestor is a
+ * containing block for anything fixed inside it.
+ *
+ * The document only, never the index — the column the visitor is aiming at must
+ * not move under the cursor. bf-main-legal.liquid makes the same argument for
+ * keeping <bf-reveal> off it.
+ */
+@keyframes legal-doc-in {
+  from {
+    transform: translateY(var(--bf-space-8));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legal__doc {
+    animation: none;
+  }
 }
 
 /*

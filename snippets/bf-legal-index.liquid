@@ -52,7 +52,17 @@
 -%}
 
 {%- if menu.links.size > 0 -%}
-  <nav class="legal-index" aria-label="{{ label }}">
+  {%- comment -%}
+    `data-no-curtain` is read by bf-page-transition.js: these seven links route
+    like any other — fetched, prefetched on hover, pushState'd — but without the
+    black panel. The index sits beside the document it changes, so the visitor
+    is watching both halves at once and a two-and-a-half second curtain over a
+    column that does not move would read as the whole site reloading.
+
+    NOT `data-no-transition`, which is the opposite instruction: that one takes
+    a link away from the router entirely and hard-loads it.
+  {%- endcomment -%}
+  <nav class="legal-index" aria-label="{{ label }}" data-no-curtain>
     <p class="legal-index__label">{{ heading }}</p>
     <hr>
 
