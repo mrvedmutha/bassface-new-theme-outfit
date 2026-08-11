@@ -1,0 +1,39 @@
+{%- comment -%}
+  The numbered section head the Contact board repeats three times: a `NN LABEL`
+  row, then a rule under it.
+
+  Accepts:
+    number - required, the two-digit string. Literal ('01'), not derived: these
+             are the three fixed sections of the page, not a list.
+    label  - required, the section name. Uppercased by the design, not by CSS —
+             it comes out of a theme setting already capitalised, so a merchant
+             writing "Reach us" gets "Reach us".
+
+  Usage:
+    {%- render 'bf-contact-head', number: '02', label: section.settings.reach_label -%}
+
+  Deliberately NOT shared with `bf-about-head`. That snippet emits `about__*`
+  class names, which belong to bf-main-about.css; a snippet emitting one block's
+  classes for a second block's page is the fastest way to end up with a
+  stylesheet nobody can delete. The markup is nine lines. See the chassis note at
+  the top of bf-main-contact.css for when this should be extracted properly.
+
+  The rule DRAWS rather than rises: bf-reveal.js puts `is-concealed` /
+  `is-revealed` on any element carrying `.reveal`, whatever pose the classes
+  after it describe, so `main-contact__draw` in bf-main-contact.css gets the same
+  preloader-aware, viewport-aware, reduced-motion-aware trigger as the rises
+  without a second script to run it.
+{%- endcomment -%}
+
+<div class="main-contact__head">
+  <bf-reveal class="reveal reveal--rise">
+    <h2 class="main-contact__head-title">
+      <span class="main-contact__head-number" aria-hidden="true">{{ number }}</span>
+      <span class="main-contact__head-label">{{ label }}</span>
+    </h2>
+  </bf-reveal>
+
+  <bf-reveal class="reveal main-contact__draw">
+    <hr class="main-contact__rule">
+  </bf-reveal>
+</div>

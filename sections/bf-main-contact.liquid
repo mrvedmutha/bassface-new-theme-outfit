@@ -1,0 +1,557 @@
+{%- comment -%}
+  Bassface Contact page — the board is `Sll8J`, 1440 only.
+
+  A DOCUMENT PAGE with one form on it: no imagery, no map, no cards. Three
+  numbered sections — `01 SEND A MESSAGE` beside `02 REACH US`, then
+  `03 BEFORE YOU WRITE` across the full width — and that is the whole
+  composition.
+
+  ASSIGNED BY HAND. `templates/page.contact.json` exists but Shopify does not
+  route a page to it automatically — the "contact" template has to be picked on
+  the page itself in the admin, under Online Store > Pages > Contact > Theme
+  template. That template is Dawn's own `page.contact.json`, overwritten: this
+  section replaces both `main-page` and the stock `contact-form` section that
+  used to be in it.
+
+  EVERYTHING A MERCHANT MIGHT CHANGE IS A BLOCK, NOT A HARDCODED LINE. The three
+  reach-us rows, the four social links and the four `BEFORE YOU WRITE` figures
+  are all block types, so an address, a handle or a returns window changes in the
+  theme editor rather than in a deploy. Shopify keeps blocks in ONE flat ordered
+  list, so each run filters the list by type and renders its own; reordering a
+  `social` past a `detail` in the editor changes nothing, since the two never
+  share a container.
+
+  THE FORM POSTS TO SHOPIFY, NOT TO US. `{% form 'contact' %}` renders the
+  action, the authenticity token and the redirect back; there is no endpoint to
+  configure and no JavaScript on this page beyond the shared entrance script.
+  Submissions arrive at the sender email under Settings > Notifications.
+
+  FIELD NAMES ARE THE CANONICAL FOUR, which is a deliberate departure from
+  Dawn's stock `sections/contact-form.liquid`. Dawn posts the name, phone and
+  comment under TRANSLATED keys — `contact[Comment]` and so on — so that the
+  notification email reads in the merchant's language. The cost is that
+  `form.body`, `form.name` and `form.phone` then come back empty when Shopify
+  redirects after a validation failure, and the visitor loses everything they
+  typed because the only field that ever fails is the email. Posting
+  `contact[name]`, `contact[email]`, `contact[phone]` and `contact[body]` keeps
+  all four values through a failed post, and those are the keys Shopify's own
+  notification template already understands.
+{%- endcomment -%}
+
+{{ 'bf-breadcrumb.css' | asset_url | stylesheet_tag }}
+{{ 'bf-reveal.css' | asset_url | stylesheet_tag }}
+{{ 'bf-main-contact.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bf-reveal.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign details = section.blocks | where: 'type', 'detail'
+  assign socials = section.blocks | where: 'type', 'social'
+  assign facts = section.blocks | where: 'type', 'fact'
+  assign form_id = 'ContactForm-' | append: section.id
+-%}
+
+<div class="main-contact">
+  {%- comment -%}
+    The crumb is the PAGE's title, not the section's heading, so the trail
+    follows whatever the merchant renamed the page to — which is the thing a
+    visitor navigating back up is looking for. Falls back to the heading if this
+    template is ever rendered somewhere there is no page object.
+  {%- endcomment -%}
+  {%-
+    render 'bf-breadcrumb',
+    current: page.title | default: section.settings.heading,
+    home_label: section.settings.breadcrumb_home,
+    label: section.settings.breadcrumb_label
+  -%}
+
+  {%- comment -%}
+    The entrance is the About page's and the product page's — <bf-reveal
+    class="reveal reveal--rise"> clips a wrapper and climbs its single child out
+    from under the top edge. It waits on the preloader handing over AND on
+    reaching the viewport, so nothing plays behind a curtain that has not lifted.
+
+    THE RESTING STATE IS THE VISIBLE ONE. Nothing is hidden until bf-reveal.js
+    adds `is-concealed`, so a blocked script leaves a plain, usable form rather
+    than a column of invisible fields.
+
+    Anything holding a focusable control uses `main-contact__lift` instead of
+    `reveal--rise` — same trigger, no clip, so focus rings survive. The note in
+    bf-main-contact.css explains why that matters more here than anywhere else.
+
+    --reveal-index is the stagger, one step per element within a group.
+  {%- endcomment -%}
+  <div class="main-contact__header">
+    <bf-reveal class="reveal reveal--rise">
+      <h1 class="main-contact__title">{{ section.settings.heading }}</h1>
+    </bf-reveal>
+
+    {%- if section.settings.description != blank -%}
+      <bf-reveal class="reveal reveal--rise" style="--reveal-index: 1">
+        <p class="main-contact__intro">{{ section.settings.description }}</p>
+      </bf-reveal>
+    {%- endif -%}
+  </div>
+
+  <div class="main-contact__main">
+    {%- comment -%} 01 — SEND A MESSAGE {%- endcomment -%}
+    <div class="main-contact__column">
+      {%- render 'bf-contact-head', number: '01', label: section.settings.form_label -%}
+
+      {%- form 'contact', id: form_id, class: 'main-contact__form' -%}
+        {%- comment -%}
+          Shopify only ever rejects the email address on a contact form, but the
+          errors object is iterated rather than tested for 'email' so a future
+          field that can fail is reported instead of swallowed. `autofocus` with
+          tabindex="-1" moves the visitor to the message on arrival, which is the
+          only way they learn the post failed after a full page reload.
+        {%- endcomment -%}
+        {%- if form.posted_successfully? -%}
+          <div class="main-contact__status">
+            <h3 class="main-contact__status-title" tabindex="-1" autofocus>
+              {{ section.settings.success_title }}
+            </h3>
+            <p class="main-contact__status-text">{{ section.settings.success_body }}</p>
+          </div>
+        {%- elsif form.errors -%}
+          <div class="main-contact__status">
+            <h3 class="main-contact__status-title" role="alert" tabindex="-1" autofocus>
+              {{ 'templates.contact.form.error_heading' | t }}
+            </h3>
+            <ul class="main-contact__status-list" role="list">
+              {%- for field in form.errors -%}
+                <li>
+                  {{ form.errors.translated_fields[field] | capitalize }}
+                  {{ form.errors.messages[field] }}
+                </li>
+              {%- endfor -%}
+            </ul>
+          </div>
+        {%- endif -%}
+
+        <div class="main-contact__fields">
+          <div class="main-contact__row">
+            <bf-reveal class="reveal main-contact__lift">
+              <div class="main-contact__field">
+                <label class="main-contact__label" for="{{ form_id }}-name">
+                  {{- section.settings.name_label -}}
+                </label>
+                <input
+                  id="{{ form_id }}-name"
+                  class="main-contact__input"
+                  type="text"
+                  name="contact[name]"
+                  value="{% if form.name %}{{ form.name }}{% elsif customer %}{{ customer.name }}{% endif %}"
+                  placeholder="{{ section.settings.name_placeholder | escape }}"
+                  autocomplete="name"
+                >
+              </div>
+            </bf-reveal>
+
+            <bf-reveal class="reveal main-contact__lift" style="--reveal-index: 1">
+              <div class="main-contact__field">
+                <label class="main-contact__label" for="{{ form_id }}-email">
+                  {{- section.settings.email_label -}}
+                </label>
+                <input
+                  id="{{ form_id }}-email"
+                  class="main-contact__input"
+                  type="email"
+                  name="contact[email]"
+                  value="{% if form.email %}{{ form.email }}{% elsif customer %}{{ customer.email }}{% endif %}"
+                  placeholder="{{ section.settings.email_placeholder | escape }}"
+                  autocomplete="email"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  aria-required="true"
+                  {% if form.errors contains 'email' %}
+                    aria-invalid="true"
+                  {% endif %}
+                  required
+                >
+              </div>
+            </bf-reveal>
+          </div>
+
+          <bf-reveal class="reveal main-contact__lift" style="--reveal-index: 2">
+            <div class="main-contact__field">
+              <label class="main-contact__label" for="{{ form_id }}-phone">
+                {{- section.settings.phone_label -}}
+              </label>
+              {%- comment -%}
+                No `pattern` attribute. Dawn's is `[0-9\-]*`, which silently
+                rejects the `+91` its own placeholder asks for — and the board's
+                placeholder is `+91` too. A phone number that reaches the
+                merchant slightly malformed is worth more than one the browser
+                refused to send.
+              {%- endcomment -%}
+              <input
+                id="{{ form_id }}-phone"
+                class="main-contact__input"
+                type="tel"
+                name="contact[phone]"
+                value="{% if form.phone %}{{ form.phone }}{% elsif customer %}{{ customer.phone }}{% endif %}"
+                placeholder="{{ section.settings.phone_placeholder | escape }}"
+                autocomplete="tel"
+              >
+            </div>
+          </bf-reveal>
+
+          <bf-reveal class="reveal main-contact__lift" style="--reveal-index: 3">
+            <div class="main-contact__field">
+              <label class="main-contact__label" for="{{ form_id }}-body">
+                {{- section.settings.comment_label -}}
+              </label>
+              {%- comment -%}
+                The closing tag sits hard against the output tag on purpose: a
+                textarea renders every character between the tags, so newlines
+                and indentation here would come back as leading whitespace in the
+                field on a failed post.
+              {%- endcomment -%}
+              <textarea
+                id="{{ form_id }}-body"
+                class="main-contact__input main-contact__input--area"
+                name="contact[body]"
+                rows="6"
+                placeholder="{{ section.settings.comment_placeholder | escape }}"
+              >{{ form.body }}</textarea>
+            </div>
+          </bf-reveal>
+
+          <bf-reveal class="reveal main-contact__lift" style="--reveal-index: 4">
+            <div class="main-contact__submit-wrap">
+              <button class="main-contact__submit" type="submit">
+                {{ section.settings.submit_label }}
+              </button>
+            </div>
+          </bf-reveal>
+        </div>
+      {%- endform -%}
+    </div>
+
+    {%- comment -%} 02 — REACH US {%- endcomment -%}
+    <div class="main-contact__column">
+      {%- render 'bf-contact-head', number: '02', label: section.settings.reach_label -%}
+
+      {%- if details.size > 0 -%}
+        <ul class="main-contact__details" role="list">
+          {%- for block in details -%}
+            <li {{ block.shopify_attributes }}>
+              <bf-reveal class="reveal main-contact__lift" style="--reveal-index: {{ forloop.index0 }}">
+                <div class="main-contact__detail">
+                  <span class="main-contact__detail-key">{{ block.settings.label }}</span>
+
+                  {%- if block.settings.url != blank -%}
+                    <a class="main-contact__detail-value main-contact__link" href="{{ block.settings.url }}">
+                      {{- block.settings.value -}}
+                    </a>
+                  {%- else -%}
+                    <span class="main-contact__detail-value">{{ block.settings.value }}</span>
+                  {%- endif -%}
+                </div>
+              </bf-reveal>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if socials.size > 0 -%}
+        <div class="main-contact__socials">
+          {%- if section.settings.socials_label != blank -%}
+            <bf-reveal class="reveal reveal--rise">
+              <p class="main-contact__socials-label">{{ section.settings.socials_label }}</p>
+            </bf-reveal>
+          {%- endif -%}
+
+          <ul class="main-contact__socials-list" role="list">
+            {%- for block in socials -%}
+              <li {{ block.shopify_attributes }}>
+                <bf-reveal class="reveal main-contact__lift" style="--reveal-index: {{ forloop.index0 }}">
+                  {%- comment -%}
+                    16px against a 16px label, where the board draws 14. The
+                    board's icon is an already-tightened path; ours is Lucide's
+                    stroke glyph in a 24 viewBox where the ink only spans 6 to
+                    18, so a 14px box would draw a 7px arrow. Same correction the
+                    About page's CTA makes, and the same reason.
+
+                    TWO ARROWS, AND THE FIRST ONE IS THE POINT. On hover the
+                    label and its arrow shift right by an arrow's width while a
+                    second arrow arrives from the left, and the link's own clip
+                    is what makes the pair read as ONE arrow crossing the label
+                    rather than two arrows appearing. This is the storefront's
+                    primary-link gesture — Add to Bag, Checkout and the About
+                    CTA already make it.
+
+                    The lead arrow is aria-hidden and absolutely positioned, so
+                    it adds nothing to the accessible name and nothing to the
+                    link's width.
+
+                    `rel` and `target` are the merchant's call, not ours: a
+                    social link that steals the tab is a nuisance, so it opens in
+                    a new one, and `noopener` is what stops that new tab reaching
+                    back through window.opener.
+                  {%- endcomment -%}
+                  <a
+                    class="main-contact__social"
+                    href="{{ block.settings.url | default: '#' }}"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <span class="main-contact__social-icon main-contact__social-icon--lead" aria-hidden="true">
+                      {%- render 'bf-icon', icon: 'arrow-up-right', size: 16 -%}
+                    </span>
+                    <span class="main-contact__social-label">{{ block.settings.label }}</span>
+                    <span class="main-contact__social-icon" aria-hidden="true">
+                      {%- render 'bf-icon', icon: 'arrow-up-right', size: 16 -%}
+                    </span>
+                  </a>
+                </bf-reveal>
+              </li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+
+  {%- comment -%} 03 — BEFORE YOU WRITE {%- endcomment -%}
+  {%- if facts.size > 0 -%}
+    <section class="main-contact__block">
+      {%- render 'bf-contact-head', number: '03', label: section.settings.facts_label -%}
+
+      {%- comment -%}
+        `role="list"` on every list in this section, and it is not belt and
+        braces: Safari drops list semantics from any <ul> whose `list-style` is
+        `none`, which is all three of them. The role puts the semantics back.
+      {%- endcomment -%}
+      <ul class="main-contact__facts" role="list">
+        {%- for block in facts -%}
+          <li {{ block.shopify_attributes }}>
+            <bf-reveal class="reveal reveal--rise" style="--reveal-index: {{ forloop.index0 }}">
+              <div class="main-contact__fact">
+                <span class="main-contact__fact-key">{{ block.settings.label }}</span>
+                <p class="main-contact__fact-value">{{ block.settings.value }}</p>
+                <p class="main-contact__fact-desc">{{ block.settings.description }}</p>
+              </div>
+            </bf-reveal>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </section>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Contact page",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Page title",
+      "default": "Contact"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Intro paragraph",
+      "default": "Order questions, sizing help, collabs, promos — or just say hi. We read everything and reply within two working days."
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_home",
+      "label": "Breadcrumb home link",
+      "default": "Home"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_label",
+      "label": "Breadcrumb landmark name",
+      "info": "Read by screen readers to announce the navigation. Not shown.",
+      "default": "Breadcrumb"
+    },
+    {
+      "type": "header",
+      "content": "01 — Send a message"
+    },
+    {
+      "type": "text",
+      "id": "form_label",
+      "label": "Section label",
+      "default": "SEND A MESSAGE"
+    },
+    {
+      "type": "text",
+      "id": "name_label",
+      "label": "Name field label",
+      "default": "NAME"
+    },
+    {
+      "type": "text",
+      "id": "name_placeholder",
+      "label": "Name field placeholder",
+      "default": "Your name"
+    },
+    {
+      "type": "text",
+      "id": "email_label",
+      "label": "Email field label",
+      "info": "This is the only required field. Keep the asterisk.",
+      "default": "EMAIL *"
+    },
+    {
+      "type": "text",
+      "id": "email_placeholder",
+      "label": "Email field placeholder",
+      "default": "you@email.com"
+    },
+    {
+      "type": "text",
+      "id": "phone_label",
+      "label": "Phone field label",
+      "default": "PHONE"
+    },
+    {
+      "type": "text",
+      "id": "phone_placeholder",
+      "label": "Phone field placeholder",
+      "default": "+91"
+    },
+    {
+      "type": "text",
+      "id": "comment_label",
+      "label": "Message field label",
+      "default": "COMMENT"
+    },
+    {
+      "type": "textarea",
+      "id": "comment_placeholder",
+      "label": "Message field placeholder",
+      "default": "Tell us what's up — order number helps if it's about a delivery."
+    },
+    {
+      "type": "text",
+      "id": "submit_label",
+      "label": "Submit button label",
+      "default": "Submit"
+    },
+    {
+      "type": "text",
+      "id": "success_title",
+      "label": "Success heading",
+      "info": "Shown after the form is sent.",
+      "default": "MESSAGE SENT"
+    },
+    {
+      "type": "textarea",
+      "id": "success_body",
+      "label": "Success message",
+      "default": "Thanks for writing in. We read everything and reply within two working days."
+    },
+    {
+      "type": "header",
+      "content": "02 — Reach us"
+    },
+    {
+      "type": "text",
+      "id": "reach_label",
+      "label": "Section label",
+      "default": "REACH US"
+    },
+    {
+      "type": "paragraph",
+      "content": "Email addresses and phone numbers come from the \"Contact detail\" blocks below."
+    },
+    {
+      "type": "text",
+      "id": "socials_label",
+      "label": "Social links label",
+      "info": "Leave blank to hide it.",
+      "default": "FOLLOW"
+    },
+    {
+      "type": "header",
+      "content": "03 — Before you write"
+    },
+    {
+      "type": "text",
+      "id": "facts_label",
+      "label": "Section label",
+      "default": "BEFORE YOU WRITE"
+    },
+    {
+      "type": "paragraph",
+      "content": "Figures come from the \"Fact\" blocks below. Four fit on one row at desktop."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "detail",
+      "name": "Contact detail",
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "SUPPORT EMAIL"
+        },
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Value",
+          "default": "hello@bassface.in"
+        },
+        {
+          "type": "text",
+          "id": "url",
+          "label": "Link",
+          "info": "A mailto:, tel: or https: URL. Leave blank to render the value as plain text.",
+          "default": "mailto:hello@bassface.in"
+        }
+      ]
+    },
+    {
+      "type": "social",
+      "name": "Social link",
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "Instagram"
+        },
+        {
+          "type": "url",
+          "id": "url",
+          "label": "URL"
+        }
+      ]
+    },
+    {
+      "type": "fact",
+      "name": "Fact",
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "PROCESSING"
+        },
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Figure",
+          "info": "Kept short — this is set at 28px and sits on one line at desktop.",
+          "default": "3–5 days"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Orders are packed and dispatched within three to five working days."
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

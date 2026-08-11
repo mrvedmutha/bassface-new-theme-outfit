@@ -1,22 +1,128 @@
 {
   "sections": {
     "main": {
-      "type": "main-page",
+      "type": "bf-main-contact",
+      "blocks": {
+        "detail-email": {
+          "type": "detail",
+          "settings": {
+            "label": "SUPPORT EMAIL",
+            "value": "hello@bassface.in",
+            "url": "mailto:hello@bassface.in"
+          }
+        },
+        "detail-phone": {
+          "type": "detail",
+          "settings": {
+            "label": "SUPPORT PHONE",
+            "value": "+91-9941864844",
+            "url": "tel:+919941864844"
+          }
+        },
+        "detail-press": {
+          "type": "detail",
+          "settings": {
+            "label": "PRESS & PROMOS",
+            "value": "mail2bassfacemusic@gmail.com",
+            "url": "mailto:mail2bassfacemusic@gmail.com"
+          }
+        },
+        "social-instagram": {
+          "type": "social",
+          "settings": {
+            "label": "Instagram",
+            "url": "https://www.instagram.com/bassfacemusics.in"
+          }
+        },
+        "social-facebook": {
+          "type": "social",
+          "settings": {
+            "label": "Facebook",
+            "url": "https://www.facebook.com/bassfacemusics.in"
+          }
+        },
+        "social-x": {
+          "type": "social",
+          "settings": {
+            "label": "X (Twitter)",
+            "url": "https://x.com/bassfacemusics"
+          }
+        },
+        "social-youtube": {
+          "type": "social",
+          "settings": {
+            "label": "YouTube",
+            "url": "https://www.youtube.com/@bassfacemusics"
+          }
+        },
+        "fact-processing": {
+          "type": "fact",
+          "settings": {
+            "label": "PROCESSING",
+            "value": "3–5 days",
+            "description": "Orders are packed and dispatched within three to five working days."
+          }
+        },
+        "fact-shipping": {
+          "type": "fact",
+          "settings": {
+            "label": "SHIPPING",
+            "value": "5–7 days",
+            "description": "Delivery lands five to seven days after dispatch, anywhere in India."
+          }
+        },
+        "fact-returns": {
+          "type": "fact",
+          "settings": {
+            "label": "RETURNS",
+            "value": "2-day window",
+            "description": "Refunds are accepted within two days of delivery, on eligible items only."
+          }
+        },
+        "fact-response": {
+          "type": "fact",
+          "settings": {
+            "label": "RESPONSE",
+            "value": "2 working days",
+            "description": "Support replies to every email and form within two working days."
+          }
+        }
+      },
+      "block_order": [
+        "detail-email",
+        "detail-phone",
+        "detail-press",
+        "social-instagram",
+        "social-facebook",
+        "social-x",
+        "social-youtube",
+        "fact-processing",
+        "fact-shipping",
+        "fact-returns",
+        "fact-response"
+      ],
       "settings": {
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
-    "form": {
-      "type": "contact-form",
-      "settings": {
-        "heading": "",
-        "heading_size": "h1",
-        "color_scheme": "scheme-1",
-        "padding_top": 36,
-        "padding_bottom": 36
+        "heading": "Contact",
+        "description": "Order questions, sizing help, collabs, promos — or just say hi. We read everything and reply within two working days.",
+        "breadcrumb_home": "Home",
+        "breadcrumb_label": "Breadcrumb",
+        "form_label": "SEND A MESSAGE",
+        "name_label": "NAME",
+        "name_placeholder": "Your name",
+        "email_label": "EMAIL *",
+        "email_placeholder": "you@email.com",
+        "phone_label": "PHONE",
+        "phone_placeholder": "+91",
+        "comment_label": "COMMENT",
+        "comment_placeholder": "Tell us what's up — order number helps if it's about a delivery.",
+        "submit_label": "Submit",
+        "success_title": "MESSAGE SENT",
+        "success_body": "Thanks for writing in. We read everything and reply within two working days.",
+        "reach_label": "REACH US",
+        "socials_label": "FOLLOW",
+        "facts_label": "BEFORE YOU WRITE"
       }
     }
   },
-  "order": ["main", "form"]
+  "order": ["main"]
 }

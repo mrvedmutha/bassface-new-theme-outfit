@@ -1,0 +1,718 @@
+/* @define main-contact */
+
+/*
+ * The Contact page — `Sll8J`, 1440 only.
+ *
+ * FULL-BLEED, no --bf-page-max cap, matching the About page and every other
+ * page in this theme: content is the viewport minus twice --bf-page-padding,
+ * and 1440 is the board's reference viewport rather than a ceiling.
+ *
+ * BLOCK NAME IS `main-contact`, NOT `contact`. Dawn's stock
+ * assets/section-contact-form.css already defines `.contact`, `.contact__fields`
+ * and `.contact__button`, and that file is still in the tree (and still in the
+ * stylelint ignore list). Two blocks with one name is a collision waiting for
+ * the day someone drops the stock section onto a page that also runs this one.
+ * bf-main-cart.css took the same escape hatch for the same reason.
+ *
+ * THE NUMBERED-HEAD CHASSIS IS THE ABOUT PAGE'S, RESTATED. `main-contact__head`
+ * below is `about__head` from bf-main-about.css name for name — a `NN LABEL`
+ * row at 14/900, a rule under it, the rule drawn with scaleX from the left.
+ * Restating eight lines beats extracting a third stylesheet that both pages
+ * would then have to load, and this file already follows the precedent
+ * bf-main-about.css set when it restated bf-main-cart.css's checkout hover
+ * rather than sharing them. If a THIRD page wants this chassis, extract it then.
+ *
+ * TYPE THAT IS NOT A TOKEN. Most of the board lands on bf-base.css exactly — the
+ * 48 title, the 16 body, the 11 eyebrow key, the 15/700 submit label. Four
+ * styles are not in the UI Kit and are written as literals: the 14/900 section
+ * head, the 20/700 reach-us value, the 28/900 fact figure and the 14/20 fact
+ * description. They belong to this page and the About page, and promoting four
+ * names into a global file sourced from the UI Kit frame would put four
+ * non-kit tokens in the one file whose contract is "the kit, nothing else".
+ *
+ * OPACITY BECOMES A TOKEN. The board draws labels at .5, placeholders at .45 and
+ * fact descriptions at .6; all three resolve to --bf-ink-muted (55%), which sits
+ * between them and is the system's name for exactly this. The .35 hairlines are
+ * --bf-hairline on the nose.
+ */
+
+.main-contact {
+  /* The rule draw, and it is the hero's and the About page's: 1600ms expo-out
+     from the left edge. One pair, because every rule on this page is the same
+     gesture. */
+  --main-contact-draw-duration: 1600ms;
+  --main-contact-draw-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* The lift — the entrance for anything holding a focusable control. See the
+     note on `.main-contact__lift` for why it is not `reveal--rise`. */
+  --main-contact-lift-duration: 1000ms;
+  --main-contact-lift-ease: cubic-bezier(0.25, 1, 0.5, 1);
+
+  display: block;
+}
+
+/* ---------------------------------------------------------------- header --- */
+
+.main-contact__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+
+  /* 48, off the 4px token scale. A literal rather than a var() standing in for
+     a token that does not exist — bf-main-about.css and bf-breadcrumb.css
+     handle their off-scale figures the same way. */
+  padding: 0 var(--bf-page-padding) 4.8rem;
+}
+
+.main-contact__title {
+  margin: 0;
+}
+
+/* 64rem is the measure the About, collection, search and all-collections pages
+   each give a column of text under a title. Five pages agreeing beats five
+   literals. */
+.main-contact__intro {
+  width: 64rem;
+  max-width: 100%;
+  margin: 0;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+/* ------------------------------------------------------------------ head --- */
+
+.main-contact__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+}
+
+/* 14/900. Uppercase comes from the setting's own text, not from text-transform,
+   so a merchant who writes "Reach us" gets "Reach us". */
+.main-contact__head-title {
+  display: flex;
+  gap: var(--bf-space-12);
+  align-items: center;
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: var(--bf-weight-black);
+  letter-spacing: 0.0857em;
+  line-height: var(--bf-leading-tight);
+}
+
+.main-contact__head-number {
+  color: var(--bf-ink-muted);
+  letter-spacing: 0.0357em;
+}
+
+/* bf-base.css already resets <hr> to `border: 0; border-top: var(--bf-border);
+   margin: 0`, which is this page's rule exactly, so nothing is restated here —
+   only the draw below has anything to say. */
+
+/*
+ * The draw. bf-reveal.js puts `is-concealed` / `is-revealed` on any element
+ * carrying `.reveal`, whatever pose the classes after it name, so a rule gets
+ * the preloader-aware, viewport-aware, reduced-motion-aware trigger for free and
+ * there is no second script on this page.
+ *
+ * scaleX from the left is the only direction that reads as a rule being ruled
+ * rather than a bar being stretched.
+ */
+.main-contact__draw .main-contact__rule {
+  transform-origin: left center;
+}
+
+.main-contact__draw:where(.is-concealed) .main-contact__rule {
+  transform: scaleX(0);
+}
+
+.main-contact__draw:where(.is-revealed) .main-contact__rule {
+  transform: none;
+  transition: transform var(--main-contact-draw-duration) var(--main-contact-draw-ease)
+    calc(var(--reveal-index) * var(--reveal-stagger));
+}
+
+/* ------------------------------------------------------------------ lift --- */
+
+/*
+ * THE ENTRANCE FOR ANYTHING WITH A FOCUSABLE CONTROL IN IT, and it exists
+ * because `reveal--rise` cannot be used there.
+ *
+ * `reveal--rise` clips its wrapper with `overflow: hidden` and slides the child
+ * out from under the top edge. An element's own outline is not clipped by its
+ * own overflow — but a DESCENDANT's is, and bf-base.css draws focus as a 2px
+ * outline at 4px offset. Wrapping this page's inputs, its submit button or its
+ * mailto links in a rise would therefore shave the focus ring off every control
+ * on the page, which is the one thing a contact form cannot afford.
+ *
+ * So the moving parts travel without a clip: a short rise plus a fade, at the
+ * theme's own rise easing, over a slightly shorter duration because there is no
+ * clip edge to hide the start of the movement behind. Everything that is purely
+ * type — the title, the intro, the section heads, the fact tiles — still uses
+ * `reveal--rise` and looks identical to the About page.
+ *
+ * THE RESTING STATE IS THE VISIBLE ONE, exactly as in bf-reveal.css: nothing is
+ * hidden until bf-reveal.js adds `is-concealed`, so a blocked script leaves a
+ * plain, usable form rather than a column of invisible fields.
+ */
+
+/* No base rule — bf-reveal.css's `.reveal` already sets `display: block`, and
+   this pose is only ever used alongside it. */
+
+.main-contact__lift:where(.is-concealed) {
+  opacity: 0;
+  transform: translateY(2.4rem);
+}
+
+.main-contact__lift:where(.is-revealed) {
+  opacity: 1;
+  transform: none;
+  transition: transform var(--main-contact-lift-duration) var(--main-contact-lift-ease)
+      calc(var(--reveal-index) * var(--reveal-stagger)),
+    opacity var(--main-contact-lift-duration) var(--main-contact-lift-ease)
+      calc(var(--reveal-index) * var(--reveal-stagger));
+}
+
+/* ------------------------------------------------------------------ main --- */
+
+/*
+ * 01 beside 02, at the About page's 80 gutter.
+ *
+ * A RATIO, NOT THE BOARD'S FIXED 440 — and the 1024 case is the whole reason.
+ * The board draws 872 beside 440 at a content width of 1392, which a fixed
+ * `minmax(0, 1fr) 44rem` reproduces exactly at 1440. It also holds the aside at
+ * 440 all the way down to the breakpoint, so at 1024 (976 of content, less the
+ * 80 gutter) the form is left with 456 — barely wider than the aside it is
+ * supposed to dominate, and narrow enough that NAME and EMAIL become two 208px
+ * boxes. The page would go from a form with a footnote to two columns of
+ * roughly equal weight, which is not the composition the board describes.
+ *
+ * 2fr / 1fr keeps the proportion instead of the pixel count: 875/437 at the
+ * 1392 reference, three pixels off a board figure that was a round number to
+ * begin with, and 597/299 at 1024, where the form still clearly leads. The
+ * deviation is deliberate and recorded here rather than in the board.
+ *
+ * `minmax(0, …)` on both tracks because a grid track's default `min-width: auto`
+ * refuses to shrink below its content — one long unbroken address in the aside
+ * would otherwise widen the track and push the form off the page.
+ */
+.main-contact__main {
+  display: grid;
+  gap: 8rem;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  padding: 0 var(--bf-page-padding) 5.6rem;
+}
+
+.main-contact__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ form --- */
+
+/* The 8 is the board's: every run of content on this page starts eight pixels
+   below its rule rather than at the section's own 24 gap. */
+.main-contact__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-24);
+  padding-top: var(--bf-space-8);
+}
+
+.main-contact__row {
+  display: grid;
+  gap: var(--bf-space-24);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.main-contact__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-10);
+  min-width: 0;
+}
+
+.main-contact__label {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/*
+ * The board draws the field as `outline: 1px solid; outline-offset: -0.5px`,
+ * which is how the design tool spells an inside border. In CSS that is a border,
+ * and it has to be a real border rather than an outline so the box model
+ * accounts for it and two fields side by side line up on the same edge.
+ *
+ * `width: 100%` with `box-sizing: border-box` from Dawn's reset: a bare input
+ * ignores its grid track and falls back to the UA's `size` attribute width,
+ * which is roughly 20 characters and nothing to do with the column.
+ */
+.main-contact__input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--bf-space-16) var(--bf-space-20);
+  border: var(--bf-border);
+  border-radius: var(--bf-radius);
+  background: none;
+  color: inherit;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+  appearance: none;
+}
+
+/*
+ * 180 tall on the board. `resize: vertical` rather than the UA's default `both`:
+ * a textarea dragged wider than its column overflows the grid track and pushes
+ * the aside off the page, where taller is harmless and genuinely useful on a
+ * long message.
+ *
+ * `display: block` kills the inline-block baseline gap that would otherwise put
+ * four unexplained pixels under the field.
+ */
+.main-contact__input--area {
+  display: block;
+  height: 18rem;
+  resize: vertical;
+}
+
+.main-contact__input::placeholder {
+  color: var(--bf-ink-muted);
+
+  /* Firefox dims placeholders to 54% on top of the colour. Without this the
+     board's .45 lands nearer .3. */
+  opacity: 1;
+}
+
+/* The field is the visible control and it already draws a 1px edge, so the ring
+   is offset far enough to read as a ring rather than as a thicker border. This
+   is bf-base.css's `:focus-visible` restated only to close the offset up —
+   4px around a 20px-padded box looks detached. */
+.main-contact__input:focus-visible {
+  outline: var(--bf-border-width-section) solid var(--bf-ink);
+  outline-offset: var(--bf-space-4);
+}
+
+/* An invalid field after a failed post. Colour is not available as a signal —
+   the whole theme is one ink — so the state is drawn as weight, and the
+   message beside it carries the meaning. */
+.main-contact__input[aria-invalid="true"] {
+  border-width: var(--bf-border-width-section);
+}
+
+/* --------------------------------------------------------------- status --- */
+
+/*
+ * Success and error, which the board does not draw — DESIGN-STATUS lists "Form
+ * validation / error states" as outstanding. Built in-system rather than
+ * invented: a rule above and below, the section head's 14/900 for the heading,
+ * body copy under it. It reads as one more numbered run on a page made of them.
+ */
+.main-contact__status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-8);
+  padding: var(--bf-space-20) 0;
+  border-top: var(--bf-border);
+  border-bottom: var(--bf-border);
+}
+
+.main-contact__status-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: var(--bf-weight-black);
+  letter-spacing: 0.0857em;
+  line-height: var(--bf-leading-tight);
+}
+
+/* tabindex="-1" is on this element so the post lands focus here; the ring would
+   otherwise be drawn around a block that is already framed by two rules. */
+.main-contact__status-title:focus-visible {
+  outline: none;
+}
+
+.main-contact__status-list {
+  margin: 0;
+  padding: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-body-size);
+  line-height: var(--bf-leading-relaxed);
+  list-style: none;
+}
+
+.main-contact__status-text {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-body-size);
+  line-height: var(--bf-leading-relaxed);
+}
+
+/* --------------------------------------------------------------- submit --- */
+
+.main-contact__submit-wrap {
+  padding-top: var(--bf-space-8);
+}
+
+/*
+ * THE FILL INVERTS ON HOVER, and the 1px border is what makes that free: at rest
+ * the border is ink on an ink fill and cannot be seen, so the button matches the
+ * board exactly, and on hover the fill drops away to leave the outline already
+ * drawn. Nothing moves, nothing reflows — the two states are the same box.
+ *
+ * This is the filter drawer chip's gesture run backwards
+ * (`filter-drawer__option--chip:has(:checked)` fills to mark a state), not a new
+ * one. The arrow-crossing hover is reserved for LINKS that go somewhere —
+ * Add to Bag, Checkout, the About CTA and the socials below; a submit button
+ * stays where it is, so an arrow leaving the box would be a lie about what the
+ * control does.
+ */
+.main-contact__submit {
+  --main-contact-submit-duration: 300ms;
+
+  padding: var(--bf-space-16) var(--bf-space-32);
+  border: var(--bf-border);
+  border-radius: var(--bf-radius);
+  background-color: var(--bf-ink);
+  color: var(--bf-surface);
+  font-size: var(--bf-text-ui-size);
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: var(--bf-text-ui-tracking);
+  line-height: var(--bf-leading-tight);
+  cursor: pointer;
+  transition: background-color var(--main-contact-submit-duration) ease,
+    color var(--main-contact-submit-duration) ease;
+}
+
+.main-contact__submit:hover,
+.main-contact__submit:focus-visible {
+  background-color: transparent;
+  color: var(--bf-ink);
+}
+
+/* ------------------------------------------------------------- reach us --- */
+
+.main-contact__details {
+  margin: 0;
+  padding: var(--bf-space-8) 0 0;
+  list-style: none;
+}
+
+/*
+ * The hairline is a border on the ROW rather than on the list item, for the same
+ * reason bf-main-about.css gives: the row is the single child of its entrance
+ * wrapper, so a border on it arrives with the text instead of being drawn ahead
+ * of it.
+ */
+.main-contact__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-6);
+  align-items: start;
+  padding: 1.8rem 0;
+  border-bottom: var(--bf-border-hairline);
+}
+
+.main-contact__detail-key {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* 20/700. --bf-text-control-size is the same 20 at 900, which is the PDP's size
+   picker shouting; this is an address being given. */
+.main-contact__detail-value {
+  overflow-wrap: anywhere;
+  font-size: 2rem;
+  font-weight: var(--bf-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: var(--bf-leading-snug);
+}
+
+/* -------------------------------------------------------------- socials --- */
+
+.main-contact__socials {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+  padding-top: var(--bf-space-16);
+}
+
+.main-contact__socials-label {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+.main-contact__socials-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * THE SAME CONTROL AS ADD TO BAG, CHECKOUT AND THE ABOUT PAGE'S CTA. The label
+ * and its arrow shift right by an arrow's width while a second arrow slides in
+ * from the left, and THE CLIP IS WHAT MAKES THAT READ AS ONE ARROW CROSSING THE
+ * LABEL rather than two arrows appearing: the outgoing one leaves through an
+ * edge at the same moment the incoming one arrives through the other.
+ *
+ * Four primary link gestures on one storefront must not be four different
+ * hovers, so the rules below are bf-main-cart.css's and bf-main-about.css's,
+ * name for name — only the arrow width changes, because this label is 16 where
+ * the About CTA's is 24.
+ *
+ * `overflow: hidden` here clips the lead arrow, not the link's own focus ring:
+ * an element's outline is drawn outside its border box and is not subject to its
+ * own overflow. The ring stays whole.
+ */
+.main-contact__social {
+  /* One arrow's width, and the arrow is rendered at this same figure in the
+     section — `size: 16`. If one changes the other has to. */
+  --main-contact-social-arrow: 1.6rem;
+  --main-contact-social-duration: 500ms;
+
+  /* Theirs, not ours: a negative first control point undershoots before it
+     moves, so the pair leans back a hair and then goes. A standard ease-out
+     reads as a slide; this reads as a flick. */
+  --main-contact-social-ease: cubic-bezier(0.8, -0.01, 0.34, 1.01);
+
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  gap: var(--bf-space-8);
+  align-items: center;
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-tight);
+
+  /* bf-base.css underlines `li a` outright. These carry an arrow instead, and a
+     static underline under a moving pair reads as a second, competing state. */
+  text-decoration: none;
+}
+
+.main-contact__social-icon,
+.main-contact__social-label {
+  display: inline-flex;
+  transition: transform var(--main-contact-social-duration) var(--main-contact-social-ease);
+}
+
+/* Absolute, so it takes no space in the flow — the link must not be an arrow
+   wider than it looks, and the label must not start shifted across. */
+.main-contact__social-icon--lead {
+  position: absolute;
+  left: 0;
+  transform: translateX(-100%);
+}
+
+/* Keyboard focus gets the same movement. The link is one control, so
+   :focus-visible on it is the exact keyboard equivalent of the hover. */
+.main-contact__social:hover .main-contact__social-icon--lead,
+.main-contact__social:focus-visible .main-contact__social-icon--lead {
+  transform: translateX(0);
+}
+
+.main-contact__social:hover .main-contact__social-label,
+.main-contact__social:hover .main-contact__social-icon:not(.main-contact__social-icon--lead),
+.main-contact__social:focus-visible .main-contact__social-label,
+.main-contact__social:focus-visible .main-contact__social-icon:not(.main-contact__social-icon--lead) {
+  transform: translateX(var(--main-contact-social-arrow));
+}
+
+/* ------------------------------------------------------------------ 03 --- */
+
+.main-contact__block {
+  display: block;
+  padding: 0 var(--bf-page-padding) 5.6rem;
+}
+
+/* 40 above the row, not the 24 the head is spaced at: the board gives the row
+   its own 16 of top padding on top of the head's 24 gap, and that extra sixteen
+   is what stops the first figure sitting on the rule. */
+.main-contact__facts {
+  display: grid;
+  gap: var(--bf-space-24);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  margin: 0;
+  padding: var(--bf-space-40) 0 0;
+  list-style: none;
+}
+
+.main-contact__fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-12);
+  min-width: 0;
+}
+
+.main-contact__fact-key {
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-tight);
+}
+
+/* 28/900/-0.8. The board's line-height is 31 on 28, which is 1.107 — close
+   enough to --bf-leading-snug (1.15) that a fourth literal here would be
+   precision without a difference. */
+.main-contact__fact-value {
+  margin: 0;
+  font-size: 2.8rem;
+  font-weight: var(--bf-weight-black);
+  letter-spacing: -0.0286em;
+  line-height: var(--bf-leading-snug);
+}
+
+/* 14/20 at .6 on the board. 14 is between --bf-text-caption-size (13) and
+   --bf-text-ui-size (15), so the size is a literal; 20/14 is 1.43, which is
+   --bf-leading-relaxed. */
+.main-contact__fact-desc {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: 1.4rem;
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-relaxed);
+}
+
+/* ------------------------------------------------------------ underline --- */
+
+/*
+ * The wipe, and it is a background rather than `text-decoration` because there
+ * is no way to animate the length of an underline: a gradient sized to 0 in one
+ * axis grows from the side it is positioned on, and it sits on the same baseline
+ * offset a real underline would.
+ *
+ * bf-base.css underlines `li a` outright, so the reset is not tidiness — it is
+ * what stops a static underline sitting under the animated one. bf-main-about.css,
+ * bf-footer.css and bf-hero.css all do this.
+ */
+.main-contact__link {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 var(--bf-border-width);
+  transition: background-size 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.main-contact__link:hover,
+.main-contact__link:focus-visible {
+  background-size: 100% var(--bf-border-width);
+}
+
+/* ------------------------------------------------------ reduced motion --- */
+
+/*
+ * The entrances are handled in JavaScript — bf-reveal.js returns before applying
+ * a pose — so what is left here is the hover work, which is CSS only and has to
+ * be switched off in CSS.
+ *
+ * The arrows are PARKED, not stilled: dropping only the transition would leave
+ * the lead arrow jumping into place instantly, which is the same movement
+ * without the part that made it legible. The underline and the submit's fill
+ * still change, because a state arriving is not travel, and losing them would
+ * cost these controls their only hover feedback.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  .main-contact__social-icon,
+  .main-contact__social-label {
+    transition: none;
+  }
+
+  .main-contact__social:hover .main-contact__social-icon--lead,
+  .main-contact__social:focus-visible .main-contact__social-icon--lead {
+    transform: translateX(-100%);
+  }
+
+  .main-contact__social:hover .main-contact__social-label,
+  .main-contact__social:hover .main-contact__social-icon:not(.main-contact__social-icon--lead),
+  .main-contact__social:focus-visible .main-contact__social-label,
+  .main-contact__social:focus-visible .main-contact__social-icon:not(.main-contact__social-icon--lead) {
+    transform: none;
+  }
+
+  .main-contact__link,
+  .main-contact__submit {
+    transition: none;
+  }
+}
+
+/* ============================================================= <1024 ==== *
+ * Two columns become one, per the document-page rule in DESIGN-STATUS.
+ *
+ * SOURCE ORDER, NOT THE RULE'S "side column first". That instruction is written
+ * for the policy pages, whose side column is an index of the other policies and
+ * belongs above the body. Here the columns are NUMBERED — `01 SEND A MESSAGE`
+ * and `02 REACH US` — and a page that counts its own sections cannot print 02
+ * above 01. bf-main-about.css records the same deviation for its own reason.
+ *
+ * The four facts go to two columns rather than straight to one: at 976 of
+ * content a quarter is 226px, which puts "2 working days" at 28/900 onto three
+ * lines and turns a row of figures into a row of paragraphs.
+ */
+
+@media screen and (width < 1024px) {
+  .main-contact__main {
+    gap: var(--bf-space-40);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main-contact__facts {
+    gap: var(--bf-space-32) var(--bf-space-24);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ============================================================== <834 ==== *
+ * The figure steps down. At 802 of content a half is 393px, which the 28 fits
+ * comfortably — but the same rule has to hold at 448, where a half is 200px and
+ * 28/900 does not. One step, taken here, rather than a second one later.
+ */
+
+@media screen and (width < 834px) {
+  .main-contact__fact-value {
+    font-size: 2.4rem;
+  }
+
+  .main-contact__block,
+  .main-contact__main {
+    padding-bottom: var(--bf-space-40);
+  }
+}
+
+/* ============================================================== <448 ==== *
+ * Name and email stop sharing a row. At 448 the pair is 196px each, which still
+ * holds "you@email.com"; below it the halves are 167 and the placeholder is
+ * clipped mid-word.
+ */
+
+@media screen and (width < 448px) {
+  .main-contact__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main-contact__facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
