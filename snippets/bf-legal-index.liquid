@@ -1,0 +1,68 @@
+{%- comment -%}
+  The legal index — the "LEGAL" eyebrow, a rule, and the list of every legal
+  page, with the one you are on marked. Design component `OnQM1`, drawn at 280
+  wide on all seven policy boards.
+
+  Accepts:
+    handle  - linklist handle. Defaults to 'legal'.
+    heading - the eyebrow text. Defaults to 'LEGAL'. Uppercased by CSS, since
+              this one is a fixed word rather than merchant copy — unlike
+              bf-about-head's label, which arrives already capitalised.
+    label   - the landmark name read by screen readers. Defaults to 'Legal'.
+
+  Usage:
+    {%- render 'bf-legal-index' -%}
+
+  The consumer loads bf-legal-index.css.
+
+  THE ACTIVE ENTRY IS DERIVED, NEVER STORED, and this is the whole point of the
+  snippet. Shopify has no policy template type, so all seven legal pages are
+  ordinary Pages sharing ONE template (page.legal) — there is no per-page
+  template in which to keep a "this one is active" setting, and a setting would
+  be a second source of truth that goes stale the moment a page is renamed or
+  the list is reordered. `link.current` is computed by Shopify against the
+  request being served, so the marker cannot disagree with the page under it.
+
+  It also survives the AJAX swap for free: bf-page-transition.js fetches the
+  real URL from the server, so the index arrives already marked and no script
+  has to move a class around to match.
+
+  ONE MENU, EDITED ONCE. Order and membership come from Navigation, so adding an
+  eighth policy is a page plus a menu entry with no deploy. The footer's policy
+  column should point at this same menu — two lists of the same links are two
+  lists that drift.
+
+  Renders nothing at all when the menu is missing or empty. `linklists` hands
+  back an empty linklist for an unknown handle rather than nil, so the size test
+  covers both.
+{%- endcomment -%}
+
+{%- liquid
+  assign handle = handle | default: 'legal'
+  assign heading = heading | default: 'LEGAL'
+  assign label = label | default: 'Legal'
+  assign menu = linklists[handle]
+-%}
+
+{%- if menu.links.size > 0 -%}
+  <nav class="legal-index" aria-label="{{ label }}">
+    <p class="legal-index__label">{{ heading }}</p>
+    <hr>
+
+    <ul class="legal-index__list">
+      {%- for link in menu.links -%}
+        <li class="legal-index__item">
+          <a
+            class="legal-index__link{% if link.current %} is-active{% endif %}"
+            href="{{ link.url }}"
+            {% if link.current %}
+              aria-current="page"
+            {% endif %}
+          >
+            {{- link.title -}}
+          </a>
+        </li>
+      {%- endfor -%}
+    </ul>
+  </nav>
+{%- endif -%}

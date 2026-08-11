@@ -1,0 +1,137 @@
+/* @define legal-index */
+
+/*
+ * The legal index — eyebrow, rule, and the list of every legal page with the
+ * current one marked. Design component `OnQM1`, drawn at 280 wide on all seven
+ * policy boards.
+ *
+ * The width is NOT set here. The component is 280 on the boards, but that is
+ * the width of the grid track it sits in, and the section owns the grid. Below
+ * the laptop breakpoint the same markup runs full-bleed, so a width on the
+ * block would have to be unset again at every breakpoint that stacks.
+ *
+ * TWO LAYOUTS, ONE MARKUP TREE. The boards are 1440-only for the policy pages,
+ * so everything below the laptop breakpoint is a decision rather than a
+ * transcription — see the grid comment.
+ */
+
+/* Label over rule over links, 16 apart — the same three-part stack, at the same
+   gap, as the footer's `colophon__group`.
+
+   The rule is a bare <hr>, which bf-base.css already draws as `border-top:
+   var(--bf-border); margin: 0` — the full-ink 1px the boards show. A class on
+   it here would carry no declarations. */
+.legal-index {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bf-space-16);
+}
+
+/* The eyebrow is the footer's `colophon__label` to the declaration: 11/400
+   uppercase on the +0.5px track, muted. Two small uppercase labels over a
+   column of links should not be two styles, and this is the second one. */
+.legal-index__label {
+  margin: 0;
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-eyebrow-size);
+  font-weight: var(--bf-text-eyebrow-weight);
+  letter-spacing: var(--bf-text-eyebrow-tracking);
+  line-height: var(--bf-leading-tight);
+  text-transform: uppercase;
+}
+
+/*
+ * BELOW THE LAPTOP BREAKPOINT THE INDEX IS A TWO-UP GRID, NOT A COLUMN, and it
+ * moves above the document rather than beside it.
+ *
+ * A DEVIATION, RECORDED. The responsive note in DESIGN-STATUS.md says the side
+ * column stacks first and the document follows, which is right — but it leaves
+ * the index as a seven-deep vertical list running the full width of a phone,
+ * where each 16px link owns a whole 358px row and the reader scrolls past half
+ * a screen of navigation to reach the page they already chose. Two columns
+ * halves that to four rows and puts the whole set in view at once, which is
+ * what an index is for.
+ *
+ * Row gap is 0 on purpose: the hairline and the padding below do the
+ * separating, and a gap on top of them would break the rules into dashes.
+ */
+.legal-index__list {
+  display: grid;
+  gap: 0 var(--bf-space-24);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * The hairline-under-every-row is the about page's list treatment, and it is
+ * what makes a two-up grid of links read as an index rather than as wrapped
+ * text. It exists only in the stacked layout — the desktop board draws one rule
+ * under the eyebrow and nothing else.
+ */
+.legal-index__item {
+  border-bottom: var(--bf-border-hairline);
+}
+
+/*
+ * `display: block` plus the vertical padding is the tap target, not decoration.
+ * A bare inline link at this size is 21px tall; 12 above and below brings the
+ * row to ~45 and clears the 44px minimum, and the link fills its cell so the
+ * whole row is tappable rather than just the glyphs.
+ */
+.legal-index__link {
+  display: block;
+  padding-block: var(--bf-space-12);
+  color: var(--bf-ink-muted);
+  font-size: var(--bf-text-body-size);
+  font-weight: var(--bf-text-body-weight);
+  letter-spacing: var(--bf-text-body-tracking);
+  line-height: var(--bf-leading-normal);
+  text-decoration: none;
+}
+
+/*
+ * Full ink at 700 — the boards' per-page override, now computed from
+ * `link.current`. See snippets/bf-legal-index.liquid for why that matters.
+ *
+ * `:where()` keeps the state class at zero specificity, so this rule wins on
+ * source order alone and stays beatable by anything after it. Every `is-*` in
+ * the theme is wrapped the same way.
+ */
+.legal-index__link:where(.is-active) {
+  color: var(--bf-ink);
+  font-weight: var(--bf-weight-bold);
+}
+
+/* Hover lifts to full ink as well as underlining: the muted state is the only
+   thing separating a link from the active entry, so brightening is what says
+   "this is the one you are pointing at" without a colour of its own. */
+.legal-index__link:hover {
+  color: var(--bf-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* -------------------------------------------------------------- laptop up -- */
+
+/*
+ * The board's own layout: one column beside the document, no hairlines, no
+ * padded rows. Pointer targets are not a constraint here and the rules would
+ * compete with the document's own section hairlines across the gutter.
+ */
+@media screen and (width >= 1024px) {
+  .legal-index__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bf-space-12);
+  }
+
+  .legal-index__item {
+    border-bottom: 0;
+  }
+
+  .legal-index__link {
+    padding-block: 0;
+  }
+}
